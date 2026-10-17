@@ -8,7 +8,8 @@
                 {
                     "question": "What is C++?",
                     "answer": [
-                        "C++ is a compiled, general-purpose programming language that supports procedural, object-oriented and generic programming."
+                        "C++ is a compiled, general-purpose programming language that supports procedural, object-oriented and generic programming.",
+                        "It was created by Bjarne Stroustrup (pronounced roughly 'Byar-neh Strow-strup')."
                     ]
                 },
                 {
@@ -16,6 +17,641 @@
                     "answer": [
                         "C focuses on procedural programming. C++ adds classes, templates, exceptions, RAII and a rich standard library."
                     ]
+                },
+                {
+                    "question": "What does object oriented language mean?",
+                    "answer": [
+                        "A language is called object oriented when it supports the major pillars of the object model. The minor pillars are useful but not essential.",
+                        "Major pillars: Abstraction, Encapsulation, Modularity, Hierarchy.",
+                        "Minor pillars: Typing (polymorphism), Concurrency, Persistence.",
+                        "C++ supports all of them, but it is a multi-paradigm language: it does not force you to write everything inside classes."
+                    ]
+                },
+                {
+                    "question": "What are the major and minor pillars of OOP?",
+                    "answer": [
+                        "Major pillars (without these a language is not object oriented):",
+                        "Abstraction: expose only the essential features of an object and hide the implementation details. In C++ it is achieved with classes and access specifiers (keep data private, expose public getters/setters or methods).",
+                        "Encapsulation: wrapping data and the functions that operate on it into one logical unit (a class).",
+                        "Modularity: partitioning a program into independent components. Physical modularity: .h, .cpp, .rc files. Logical modularity: namespaces, classes.",
+                        "Hierarchy: ranking or ordering of abstractions. Types of hierarchy: Composition (has-a), Inheritance (is-a), Dependency (use-a), Instantiation (creates-a).",
+                        "Minor pillars (useful but not essential):",
+                        "Typing: enforcing the class of an object; polymorphism (compile time and run time) is the typing mechanism.",
+                        "Concurrency: potentially parallel execution of parts of a computation (multithreading).",
+                        "Persistence: the object continues to exist after its creator ceases to exist, e.g. its state is saved to disk or a database for future access.",
+                        "Note: many textbooks list Inheritance and Polymorphism as the 'four pillars' (Abstraction, Encapsulation, Inheritance, Polymorphism). The Grady Booch model above (4 major + 3 minor elements) is the classic one; mention both in an interview."
+                    ]
+                },
+                {
+                    "question": "How is abstraction achieved in C++?",
+                    "answer": [
+                        "1) Make the data members private.",
+                        "2) Provide public setter and getter (or other) member functions, so the class decides what is visible to the outside world.",
+                        "Access specifiers (public, protected, private) are the main tool for implementing abstraction. Abstract classes (pure virtual functions) are the other."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Account {\n    double balance = 0;          // hidden detail\npublic:\n    void deposit(double amt) { if (amt > 0) balance += amt; }\n    double getBalance() const { return balance; }\n};\n\nint main() {\n    Account a;\n    a.deposit(500);\n    cout << a.getBalance() << endl;   // 500\n    // a.balance = 1;                 // error: 'balance' is private\n}"
+                },
+                {
+                    "question": "What C++ version do you use?",
+                    "answer": [
+                        "C++98 (ISO/IEC 14882:1998) is the first standard, C++03 the second (bug-fix release).",
+                        "C++11 is the third edition (a major update), C++14 the fourth, C++17 the fifth, C++20 the sixth and C++23 the seventh.",
+                        "C++26 is the next standard; compilers expose it experimentally (for example -std=c++2c on GCC/Clang).",
+                        "Choose a flag with the compiler, e.g. g++ -std=c++17 main.cpp. Be ready to say which one your project uses and which features (auto, lambdas, smart pointers, move semantics ...) you rely on."
+                    ]
+                },
+                {
+                    "question": "What C++ compiler do you use?",
+                    "answer": [
+                        "The common ones are GCC (g++), Clang and MSVC. Name the one your project uses and its version.",
+                        "Check the installed version with: g++ --version. Release versions change often, so look at the compiler's release page instead of memorising a number."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "basics",
+            "title": "Basics",
+            "description": "Linkage, memory functions, arrays, endianness and platform independent code.",
+            "questions": [
+                {
+                    "question": "What is internal and external linkage?",
+                    "answer": [
+                        "Linkage = visibility of a name across translation units (.cpp files).",
+                        "Internal linkage: the name is visible only inside the same file. Use static (for variables/functions) or an unnamed namespace. const variables at namespace scope also have internal linkage by default.",
+                        "External linkage: the name is visible in other files too. Ordinary functions and global variables have external linkage; other files access them with the extern keyword."
+                    ],
+                    "code": "// a.cpp\nint counter = 0;                 // external linkage\nstatic int hidden = 5;           // internal linkage (only in a.cpp)\nnamespace { int secret = 1; }    // internal linkage (unnamed namespace)\n\n// b.cpp\nextern int counter;              // refers to counter defined in a.cpp\n// extern int hidden;            // link error: hidden is not visible here"
+                },
+                {
+                    "question": "What is malloc(), calloc(), free() and realloc()?",
+                    "answer": [
+                        "They are C library functions (<cstdlib>) for dynamic memory allocation on the heap.",
+                        "malloc(size): allocates size bytes, memory is uninitialised. Returns void* (cast it in C++) or NULL on failure.",
+                        "calloc(n, size): allocates contiguous space for n elements of the given size and initialises every byte to 0. It takes two parameters compared to malloc().",
+                        "realloc(ptr, newSize): resizes a block previously allocated with malloc/calloc. The block may move, so always assign the result to a temporary first.",
+                        "free(ptr): releases memory. Never free memory twice and never mix free with delete.",
+                        "In C++ prefer new/delete or, better, std::vector and smart pointers."
+                    ],
+                    "code": "#include <cstdlib>\n#include <iostream>\n\nint main() {\n    int n = 5;\n    int* p = (int*)malloc(n * sizeof(int));        // uninitialised\n    if (!p) return 1;\n    for (int i = 0; i < n; ++i) p[i] = i;\n\n    int* q = (int*)calloc(n, sizeof(int));         // all zeros\n    if (!q) { free(p); return 1; }\n\n    int* tmp = (int*)realloc(p, 2 * n * sizeof(int));   // grow\n    if (!tmp) { free(p); free(q); return 1; }           // old block still valid on failure\n    p = tmp;\n\n    std::cout << q[0] << \" \" << p[4] << std::endl;      // 0 4\n    free(p);\n    free(q);\n}"
+                },
+                {
+                    "question": "What is memory corruption?",
+                    "answer": [
+                        "Memory corruption occurs when the contents of a memory location are modified by program behaviour that exceeds what the programmer intended, i.e. memory safety is violated.",
+                        "Typical causes: buffer overflow, use after free, double free, writing through a dangling or uninitialised pointer, wrong delete/delete[] pairing. The most likely cause is a programming error.",
+                        "Tools to find it: AddressSanitizer (-fsanitize=address), Valgrind. Prefer std::vector, std::string and smart pointers to avoid it."
+                    ]
+                },
+                {
+                    "question": "How to know the length/size of an array?",
+                    "answer": [
+                        "Divide the total size of the array by the size of one element.",
+                        "This works only for a real array in the same scope. When an array is passed to a function it decays to a pointer, and sizeof gives the pointer size.",
+                        "In modern C++ use std::size(arr) (C++17) or std::array / std::vector with .size()."
+                    ],
+                    "code": "#include <iostream>\n#include <iterator>\n\nint main() {\n    int arr[10];\n    int size1 = sizeof(arr) / sizeof(int);\n    int size2 = sizeof(arr) / sizeof(arr[0]);   // better: independent of the element type\n    std::cout << size1 << \" \" << size2 << \" \" << std::size(arr) << std::endl;  // 10 10 10\n}"
+                },
+                {
+                    "question": "How to use the main function parameters (argc and argv)?",
+                    "answer": [
+                        "argc is the number of command line arguments (including the program name). argv is an array of C strings; argv[0] is the program name and argv[argc] is nullptr.",
+                        "Always check argc before reading argv[1], otherwise you read out of bounds.",
+                        "Build and run: g++ MyProgram.cpp -o MyProgram.o ; ./MyProgram.o shilwant",
+                        "Output: Number of parameters: 2 / First Parameter: ./MyProgram.o / Second Parameter: shilwant"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    cout << \"Number of parameters: \" << argc << endl;   // 2\n    cout << \"First Parameter: \" << argv[0] << endl;     // ./MyProgram.o\n    if (argc > 1)\n        cout << \"Second Parameter: \" << argv[1] << endl; // shilwant\n    return 0;\n}"
+                },
+                {
+                    "question": "What is big endian and little endian?",
+                    "answer": [
+                        "Endianness is the order in which the bytes of a multi-byte value are stored in memory.",
+                        "Big endian: the most significant byte (MSB) is stored at the smallest address. Little endian: the least significant byte (LSB) is stored at the smallest address. x86/x64 and most ARM systems are little endian; network byte order is big endian.",
+                        "E.g. 0x0A0B0C0D: 0A is the MSB and 0D is the LSB. Big endian memory: 0A 0B 0C 0D. Little endian memory: 0D 0C 0B 0A.",
+                        "In the binary value 10101010 the leftmost bit is the MSB (value 128) and the rightmost bit is the LSB (value 1)."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    unsigned int x = 0x0A0B0C0D;\n    unsigned char* p = reinterpret_cast<unsigned char*>(&x);   // first byte in memory\n    if (*p == 0x0D) std::cout << \"Little endian\" << std::endl;\n    else            std::cout << \"Big endian\" << std::endl;\n}"
+                },
+                {
+                    "question": "What is 32 bit architecture and 64 bit architecture?",
+                    "answer": [
+                        "A 32-bit system uses 32-bit addresses, so it can address 2^32 bytes = 4 GB of memory (PAE can extend physical memory on some systems).",
+                        "A 64-bit system uses 64-bit addresses: 2^64 bytes (about 18 quintillion bytes) in theory. In practice CPUs and operating systems implement fewer address bits, but far more than 4 GB.",
+                        "Pointer size is 4 bytes on a 32-bit build and 8 bytes on a 64-bit build, which also changes the size of classes that contain pointers or virtual pointers."
+                    ]
+                },
+                {
+                    "question": "How does data get stored in memory?",
+                    "answer": [
+                        "Everything is stored as bits (0 and 1). Memory is a huge array of bytes; each byte (8 bits) has its own address. One address = 1 byte.",
+                        "The data type decides how many bytes are used and how they are interpreted: char = 1 byte, int is usually 4 bytes (32 bits).",
+                        "int x = 5; is stored as 00000000 00000000 00000000 00000101. On a little endian machine the bytes at increasing addresses are 05 00 00 00.",
+                        "char c = 'A'; is stored as its ASCII code 65 = 01000001.",
+                        "Physically, each bit in RAM is a tiny circuit (transistor + capacitor in DRAM): charge present = 1, no charge = 0. The OS gives the program a memory location and the CPU writes the bits there.",
+                        "Remember: 1 address = 8 bits, and each bit is stored as an electrical charge level."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int x = 5;\n    char c = 'A';\n    unsigned char* p = reinterpret_cast<unsigned char*>(&x);\n    for (int i = 0; i < (int)sizeof(x); ++i)\n        std::cout << (int)p[i] << \" \";            // 5 0 0 0 on little endian\n    std::cout << \"\\n\" << (int)c << std::endl;      // 65\n}"
+                },
+                {
+                    "question": "How will you write platform independent code?",
+                    "answer": [
+                        "Use the standard library and standard C++ features first. For the unavoidable OS specific parts use conditional compilation with the preprocessor (#ifdef / #else / #endif).",
+                        "The macros are predefined by the compiler according to the target platform, e.g. _WIN32 is defined when compiling for 32-bit and 64-bit Windows (MSVC, MinGW), __linux__ for Linux, __APPLE__ for macOS. They can also be defined on the command line with -DNAME.",
+                        "Example 1: list the files of a directory on different operating systems ('dir' on Windows, 'ls' on Linux)."
+                    ],
+                    "code": "#include <cstdlib>\n\nint main() {\n#ifdef _WIN32\n    std::system(\"dir\");\n#else\n    std::system(\"ls\");\n#endif\n    return 0;\n}"
+                },
+                {
+                    "question": "How does the program know which macro is defined, and where do we define it?",
+                    "answer": [
+                        "The compiler predefines platform macros. In the next program #ifdef _WIN32 checks whether the code is being compiled for Windows and #else provides the code for Linux and other systems.",
+                        "The program prints which operating system it is running on and sleeps for one second in a platform specific way (Sleep takes milliseconds, sleep takes seconds).",
+                        "You can also define your own macros with #define in a header or with the compiler flag, e.g. g++ -DDEBUG main.cpp."
+                    ],
+                    "code": "#include <iostream>\n#ifdef _WIN32\n#include <windows.h>\n#else\n#include <unistd.h>\n#endif\n\nint main() {\n    std::cout << \"Running on \";\n#ifdef _WIN32\n    std::cout << \"Windows!\" << std::endl;\n    Sleep(1000);      // milliseconds\n#else\n    std::cout << \"Linux!\" << std::endl;\n    sleep(1);         // seconds\n#endif\n    return 0;\n}"
+                },
+                {
+                    "question": "What is a volatile variable?",
+                    "answer": [
+                        "volatile tells the compiler that the value of the variable can change at any time outside the normal program flow (hardware register, memory mapped I/O, signal handler), so it must not cache it in a register or optimise the reads and writes away.",
+                        "Without volatile the compiler may optimise a loop such as while(flag == 0) into an infinite loop because it thinks nothing changes flag.",
+                        "volatile does NOT make operations atomic and is not a replacement for std::atomic or mutexes in multithreaded code."
+                    ],
+                    "code": "#include <csignal>\n#include <iostream>\n\nvolatile std::sig_atomic_t stop = 0;      // changed by a signal handler\nvoid handler(int) { stop = 1; }\n\nint main() {\n    std::signal(SIGINT, handler);\n    volatile int a = 10;                   // every access really reads memory\n    std::cout << a << std::endl;           // 10\n    std::raise(SIGINT);                    // handler sets stop\n    std::cout << stop << std::endl;        // 1\n}"
+                },
+                {
+                    "question": "What is memset and can we use it?",
+                    "answer": [
+                        "memset() fills a block of memory with a particular byte value. Declared in <cstring>:",
+                        "void* memset(void* ptr, int x, size_t n); ptr = start address, x = value to be filled (as unsigned char), n = number of bytes to fill.",
+                        "ptr is a void pointer so any pointer type can be passed. It works byte-wise, so for an int array only 0 (or -1) gives a meaningful value.",
+                        "Use it for plain data (POD, char buffers, arrays). Do not use it on objects with constructors, virtual functions or std::string members because it overwrites their internal state; use value initialisation or std::fill instead."
+                    ],
+                    "code": "#include <cstring>\n#include <iostream>\n\nint main() {\n    char str[50] = \"shilwant\";\n    // Fill 4 characters starting from str[4] with '.'\n    memset(str + 4, '.', 4 * sizeof(char));\n    std::cout << str << std::endl;      // shil....\n\n    int arr[5];\n    memset(arr, 0, sizeof(arr));        // all zero\n}"
+                },
+                {
+                    "question": "What is assert?",
+                    "answer": [
+                        "assert (from <cassert>) is a macro that tests a condition. If the condition is true the program continues normally; if it is false the program prints an error message (file, line, expression) and terminates with abort().",
+                        "It is meant for catching programmer errors during development. When the macro NDEBUG is defined (release builds) every assert is removed, so never put code with side effects inside it.",
+                        "static_assert (C++11) does the same check at compile time."
+                    ],
+                    "code": "#include <cassert>\n#include <iostream>\n\nint main() {\n    int number = 5;\n    assert(number > 0);                 // passes\n    static_assert(sizeof(int) >= 4, \"int must be at least 4 bytes\");\n    number = -1;\n    assert(number > 0);                 // program aborts here (unless NDEBUG)\n    std::cout << \"not reached\" << std::endl;\n}"
+                },
+                {
+                    "question": "What is the size of derived class D below?",
+                    "answer": [
+                        "The size of a derived class includes the size of its base class sub-object.",
+                        "sizeof(B) = 8 bytes (two ints). sizeof(D) = 8 + 4 = 12 bytes (base part + iMem)."
+                    ],
+                    "code": "#include <iostream>\n\nclass B { int iMem1; int iMem2; };\nclass D : public B { int iMem; };\n\nint main() {\n    std::cout << sizeof(B) << \" \" << sizeof(D) << std::endl;   // 8 12\n}"
+                }
+            ]
+        },
+        {
+            "id": "functions",
+            "title": "Functions",
+            "description": "Reusable blocks of code.",
+            "questions": [
+                {
+                    "question": "What is function overloading?",
+                    "answer": [
+                        "Multiple functions can share a name if their parameter lists differ. Return type alone cannot distinguish overloads."
+                    ],
+                    "code": "int add(int a, int b) { return a + b; }\ndouble add(double a, double b) { return a + b; }"
+                },
+                {
+                    "question": "How to write a function pointer?",
+                    "answer": [
+                        "A function pointer stores the address of a function. Syntax: returnType (*name)(parameterTypes);",
+                        "The parentheses around *name matter: void *ptr() declares a function returning void*, while void (*ptr)() declares a pointer to a function.",
+                        "The address-of operator is optional: ptr = Display; and ptr = &Display; are the same. Call it as ptr(); or (*ptr)();"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nvoid Display() {\n    cout << \"Hello\" << endl;\n}\n\nint main() {\n    void (*ptr)();      // pointer to function taking nothing, returning void\n    ptr = &Display;\n    ptr();              // Hello\n    return 0;\n}"
+                },
+                {
+                    "question": "What is a variadic function? (C-style)",
+                    "answer": [
+                        "A variadic function takes a variable number of arguments. The '...' syntax comes from C and is supported in C++ for backward compatibility, using <cstdarg>: va_list, va_start, va_arg, va_end.",
+                        "It is not type safe: the programmer must know the number and types of the arguments (here passed as the 'count' parameter)."
+                    ],
+                    "code": "#include <iostream>\n#include <cstdarg>   // required for variadic functions\n\n// Variadic function that sums integers\nint sum(int count, ...) {\n    int total = 0;\n    va_list args;\n    va_start(args, count);              // initialise with the last fixed argument\n    for (int i = 0; i < count; ++i)\n        total += va_arg(args, int);     // next argument (of type int)\n    va_end(args);                       // clean up\n    return total;\n}\n\nint main() {\n    std::cout << \"Sum: \" << sum(3, 10, 20, 30) << std::endl;   // Sum: 60\n    return 0;\n}"
+                },
+                {
+                    "question": "What are C++11 variadic templates?",
+                    "answer": [
+                        "Variadic templates are the type-safe way to handle a variable number of arguments. The compiler deduces and checks every argument type.",
+                        "A fold expression (C++17) such as (args + ...) applies an operator across the whole parameter pack.",
+                        "Output: Sum: 60 and Sum: 7 (1.5 + 2.5 + 3.0 = 7, printed as 7)."
+                    ],
+                    "code": "#include <iostream>\n\n// Variadic template function to sum all arguments\ntemplate <typename... Args>\nauto sum(Args... args) {\n    return (args + ...);               // fold expression (C++17)\n}\n\nint main() {\n    std::cout << \"Sum: \" << sum(10, 20, 30) << std::endl;      // 60\n    std::cout << \"Sum: \" << sum(1.5, 2.5, 3.0) << std::endl;   // 7\n    return 0;\n}"
+                },
+                {
+                    "question": "How to print all arguments with a variadic template?",
+                    "answer": [
+                        "Use a fold expression over the << operator (C++17). Arguments of different types can be mixed.",
+                        "Output: 12.5HelloA"
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename... Args>\nvoid printAll(Args... args) {\n    (std::cout << ... << args) << std::endl;   // fold expression (C++17)\n}\n\nint main() {\n    printAll(1, 2.5, \"Hello\", 'A');            // 12.5HelloA\n    return 0;\n}"
+                },
+                {
+                    "question": "What is the difference between C-style variadic functions and variadic templates?",
+                    "answer": [
+                        "Type safety: C-style '...' is not type safe, it relies on the programmer knowing the argument types. Variadic templates are type safe because the compiler deduces and checks the types.",
+                        "Ease of use: variadic templates are easier to write and maintain, especially with fold expressions (C++17).",
+                        "Flexibility: variadic templates handle any type and any mix of arguments; C-style functions often need manual handling and casting.",
+                        "When to use: use variadic templates in modern C++. Use C-style '...' only for legacy code or when integrating with C libraries (printf-like APIs)."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "casting-operators",
+            "title": "Casting Operators",
+            "description": "static_cast, dynamic_cast, const_cast, reinterpret_cast and when to use each.",
+            "questions": [
+                {
+                    "question": "What are the different cast operators in C++?",
+                    "answer": [
+                        "static_cast, dynamic_cast, const_cast and reinterpret_cast. They are preferred over the old C-style cast because each one states its intent and is easy to search for."
+                    ]
+                },
+                {
+                    "question": "What is static_cast?",
+                    "answer": [
+                        "It tells the compiler 'trust me'. It is a compile time cast; there is no runtime check.",
+                        "Used for normal type conversions, conversions between related classes (upcasting, and downcasting when you are sure of the real type) and explicit conversions. It is checked by the compiler, so unrelated types are rejected.",
+                        "Example: double to int gives 3 (the fraction is truncated). Upcasting a Derived* to Base* is safe."
+                    ],
+                    "code": "#include <iostream>\n\nclass Base {};\nclass Derived : public Base {};\n\nint main() {\n    double d = 3.14;\n    int x = static_cast<int>(d);\n    std::cout << x << std::endl;                // 3\n\n    Derived dobj;\n    Base* b = static_cast<Base*>(&dobj);        // upcast, safe for inheritance relationships\n    (void)b;\n}"
+                },
+                {
+                    "question": "Can we convert one class object to another unrelated class using static_cast?",
+                    "answer": [
+                        "No. static_cast only works between related types. For unrelated classes A and B the compiler reports: invalid static_cast from type 'A*' to type 'B*' (MSVC: cannot convert from 'A *' to 'B *').",
+                        "Note: pass the pointer itself (a1), not its address (&a1, which would be A**). Even then it does not compile, which is the expected answer."
+                    ],
+                    "code": "class A {};\nclass B {};\n\nint main() {\n    A* a1 = new A();\n    // B* b1 = static_cast<B*>(a1);   // ERROR: A and B are unrelated, does not compile\n    delete a1;\n}"
+                },
+                {
+                    "question": "What is dynamic_cast?",
+                    "answer": [
+                        "It is used for safe downcasting and runtime type checking with polymorphic classes. It requires at least one virtual function in the source class (the class must be polymorphic) because the runtime type information (RTTI) is stored with the vtable.",
+                        "For pointers: if the cast is not valid the result is nullptr; for references it throws std::bad_cast. If the source class has no virtual function the code does not compile.",
+                        "Why is it important? Unsafe casts (static_cast) of a wrong downcast cause undefined behaviour and may crash; dynamic_cast fails safely.",
+                        "Output of the program: Success, then failed cast gives nullptr."
+                    ],
+                    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual ~Base() {}          // at least one virtual function\n};\nclass Derived : public Base {};\n\nint main() {\n    Base* b = new Derived();\n    Derived* d = dynamic_cast<Derived*>(b);\n    if (d) std::cout << \"Success\" << std::endl;       // Success\n\n    Base* b2 = new Base();\n    Derived* d2 = dynamic_cast<Derived*>(b2);         // failed cast\n    if (!d2) std::cout << \"nullptr: safe failure\" << std::endl;\n\n    delete b;\n    delete b2;\n}"
+                },
+                {
+                    "question": "What does dynamic_cast return when the cast is correct and when it is not (program)?",
+                    "answer": [
+                        "Virtual functions carry the run-time type information. dynamic_cast returns the object pointer if the cast is valid, otherwise nullptr.",
+                        "Output: not null. (Correction: if the base class has no virtual function a downcast with dynamic_cast gives a compile error, it does not return null.)"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Base {\npublic:\n    virtual void print() { cout << \"Base\" << endl; }\n    virtual ~Base() {}\n};\nclass Derived1 : public Base {\npublic:\n    void print() override { cout << \"Derived1\" << endl; }\n};\nclass Derived2 : public Base {\npublic:\n    void print() override { cout << \"Derived2\" << endl; }\n};\n\nint main() {\n    Derived1 d1;\n    Base* bp = &d1;                                  // upcast, implicit\n    Derived1* dp1 = dynamic_cast<Derived1*>(bp);     // downcast, succeeds\n    Derived2* dp2 = dynamic_cast<Derived2*>(bp);     // downcast, fails\n    cout << (dp1 == nullptr ? \"null\" : \"not null\") << endl;   // not null\n    cout << (dp2 == nullptr ? \"null\" : \"not null\") << endl;   // null\n    return 0;\n}"
+                },
+                {
+                    "question": "What is const_cast?",
+                    "answer": [
+                        "It adds or removes const (or volatile) from a pointer or reference.",
+                        "Danger: modifying an object that was originally defined const through the casted pointer is undefined behaviour. It is safe only when the object was not really const.",
+                        "Real use case: calling old APIs that take a non-const pointer but do not modify the data."
+                    ],
+                    "code": "#include <iostream>\n\nvoid oldFunction(char* str) { std::cout << str << std::endl; }   // does not modify\n\nint main() {\n    const int x = 10;\n    int* p = const_cast<int*>(&x);\n    // *p = 20;               // BAD: undefined behaviour, x is truly const\n    (void)p;\n\n    const char* s = \"Hello\";\n    oldFunction(const_cast<char*>(s));    // OK as long as oldFunction does not write\n}"
+                },
+                {
+                    "question": "What is reinterpret_cast?",
+                    "answer": [
+                        "The most dangerous cast. It reinterprets the bits of a value as another type and is used for low-level memory manipulation and converting unrelated pointer types, or a pointer to an integer (uintptr_t).",
+                        "It is used in embedded systems, OS code, networking and drivers. It makes the code non-portable, so avoid it in normal application code.",
+                        "Remember: to reinterpret what a pointer points to, cast the pointer itself, not the address of the pointer variable (&a1 would be a pointer to a pointer)."
+                    ],
+                    "code": "#include <cstdint>\n#include <iostream>\n\nint main() {\n    int x = 65;\n    char* p = reinterpret_cast<char*>(&x);       // look at x byte by byte\n    std::cout << (int)*p << std::endl;           // 65 on little endian\n\n    std::uintptr_t addr = reinterpret_cast<std::uintptr_t>(p);   // pointer to integer\n    std::cout << (addr != 0) << std::endl;\n}"
+                },
+                {
+                    "question": "Give a comparison of the four cast operators.",
+                    "answer": [
+                        "static_cast: normal and related-class conversions, checked at compile time. Safety: mostly safe.",
+                        "dynamic_cast: safe downcast with a runtime check, needs virtual functions. Safety: safest (returns nullptr / throws bad_cast on failure).",
+                        "const_cast: add or remove const. Safety: dangerous if the object is really const.",
+                        "reinterpret_cast: reinterpret bit patterns / unrelated pointers. Safety: very dangerous and non-portable."
+                    ]
+                },
+                {
+                    "question": "What is a C-style cast and why avoid it?",
+                    "answer": [
+                        "Old style: int x = (int)3.14; The compiler may internally apply static_cast, const_cast or reinterpret_cast (or a combination), and it is hard to know which one.",
+                        "Modern C++ prefers explicit named casts because they show intent, are easy to search and make mistakes visible."
+                    ],
+                    "code": "int main() {\n    int x = (int)3.14;               // C-style, avoid\n    int y = static_cast<int>(3.14);  // preferred\n    return x - y;\n}"
+                },
+                {
+                    "question": "Explain upcasting and downcasting (common interview question).",
+                    "answer": [
+                        "Upcasting: converting a Derived pointer/reference to a Base pointer/reference. It is automatic and safe.",
+                        "Downcasting: converting a Base pointer/reference to a Derived one. It needs an explicit cast and a runtime check (dynamic_cast) because the base pointer may not really point to a Derived object."
+                    ],
+                    "code": "class Base { public: virtual ~Base() {} };\nclass Derived : public Base {};\n\nint main() {\n    Derived d;\n    Base* b = &d;                                  // upcasting: automatic and safe\n\n    Base* b2 = new Derived();\n    Derived* d2 = dynamic_cast<Derived*>(b2);      // downcasting: needs runtime check\n    delete b2;\n    (void)b; (void)d2;\n}"
+                }
+            ]
+        },
+        {
+            "id": "constants",
+            "title": "All About Constant",
+            "description": "const objects, const member functions, mutable and explicit.",
+            "questions": [
+                {
+                    "question": "Can a const object call non-const member functions?",
+                    "answer": [
+                        "No. A const object can only call const member functions (functions declared with const after the parameter list). Such functions promise not to modify the object.",
+                        "Calling a non-const function on a const object is a compilation error."
+                    ],
+                    "code": "class MyClass {\npublic:\n    void nonConstFunction() { /* modifies object */ }\n    void constFunction() const { /* does not modify object */ }\n};\n\nint main() {\n    const MyClass constObj{};\n    constObj.constFunction();         // allowed\n    // constObj.nonConstFunction();   // compilation error\n    return 0;\n}"
+                },
+                {
+                    "question": "Why can we change the value of a mutable variable inside a const function?",
+                    "answer": [
+                        "mutable is a storage class specifier for data members. A mutable member can be modified even inside a const member function or through a const object, because it is not part of the logical state (cache, counters, mutex)."
+                    ],
+                    "code": "#include <iostream>\n\nclass Counter {\n    mutable int reads = 0;       // may change in const functions\n    int value = 42;\npublic:\n    int get() const { ++reads; return value; }\n    int readCount() const { return reads; }\n};\n\nint main() {\n    const Counter c;\n    c.get(); c.get();\n    std::cout << c.readCount() << std::endl;   // 2\n}"
+                },
+                {
+                    "question": "What is an explicit constructor?",
+                    "answer": [
+                        "A constructor declared with the explicit keyword. It stops the compiler from using it for implicit conversions and copy-initialisation with '=' (Complex c = 100;). You must write Complex c(100); or Complex c{100};",
+                        "Use it for single-argument constructors so that surprising implicit conversions do not happen."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Complex {\n    int number;\npublic:\n    explicit Complex(int num1) : number(num1) {}\n    void Display() { cout << number << endl; }\n};\n\nint main() {\n    // Complex C1 = 100;    // error: explicit constructor, will not work\n    Complex C1(100);        // OK\n    C1.Display();           // 100\n    return 0;\n}"
+                }
+            ]
+        },
+        {
+            "id": "new-delete",
+            "title": "New and Delete",
+            "description": "Dynamic memory allocation, memory leaks, dangling pointers and overloading new/delete.",
+            "questions": [
+                {
+                    "question": "What are new and delete?",
+                    "answer": [
+                        "They are operators used for dynamic memory allocation on the heap.",
+                        "new: 1) allocates memory from the heap (calls operator new), 2) calls the constructor if it is a class object, 3) returns a typed pointer. It does not need a cast, unlike malloc.",
+                        "delete: calls the destructor and then releases the memory. Use delete for new and delete[] for new[]."
+                    ],
+                    "code": "#include <iostream>\n\nclass Test {\npublic:\n    Test()  { std::cout << \"Constructor\\n\"; }\n    ~Test() { std::cout << \"Destructor\\n\"; }\n};\n\nint main() {\n    Test* t = new Test();   // Constructor\n    delete t;               // Destructor\n\n    int* arr = new int[5];  // array allocation\n    delete[] arr;\n}"
+                },
+                {
+                    "question": "Why use dynamic memory?",
+                    "answer": [
+                        "When the size or lifetime of the data is not known at compile time, or the data must outlive the function that created it. Stack memory cannot do this easily."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    int* arr = new int[n];     // size known only at runtime\n    for (int i = 0; i < n; ++i) arr[i] = i;\n    delete[] arr;\n}"
+                },
+                {
+                    "question": "What is the difference between stack and heap memory?",
+                    "answer": [
+                        "Stack: automatic cleanup when the variable goes out of scope, fast, limited size, managed by the compiler.",
+                        "Heap: manual cleanup (delete / smart pointers), slower, large size, managed manually by the programmer."
+                    ]
+                },
+                {
+                    "question": "What happens if new fails? How do you handle it?",
+                    "answer": [
+                        "new does not return NULL on failure; it throws std::bad_alloc. So allocate inside a try/catch block.",
+                        "The alternative is the nothrow version, which simply returns nullptr on failure."
+                    ],
+                    "code": "#include <iostream>\n#include <new>\n\nint main() {\n    try {\n        int* p = new int[100000000000L];     // far too large\n        delete[] p;\n    } catch (const std::bad_alloc&) {\n        std::cout << \"Allocation failed\" << std::endl;\n    }\n\n    char* c = new (std::nothrow) char[100];  // returns nullptr on failure\n    if (!c) { /* handle error */ }\n    delete[] c;\n}"
+                },
+                {
+                    "question": "What happens internally in new?",
+                    "answer": [
+                        "Simplified: 1) operator new is called and allocates raw memory, 2) the constructor is called on that memory, 3) a pointer to the object is returned. delete does the reverse: destructor first, then operator delete frees the memory."
+                    ]
+                },
+                {
+                    "question": "What if delete is forgotten?",
+                    "answer": [
+                        "A memory leak: the memory stays occupied until the program ends. This is a serious issue in servers and long-running applications."
+                    ],
+                    "code": "void leak() {\n    int* p = new int(10);\n    // no delete p;  -> memory leak every time leak() is called\n}"
+                },
+                {
+                    "question": "What is a dangling pointer?",
+                    "answer": [
+                        "A pointer that refers to an invalid location, for example memory that has already been freed or a local variable that went out of scope. Dereferencing it is undefined behaviour.",
+                        "Note: a pointer that is declared but never initialised (int* a;) is called a wild (uninitialised) pointer; it also holds a random address.",
+                        "Better: set the pointer to nullptr after delete, or use smart pointers."
+                    ],
+                    "code": "#include <iostream>\n\nint* bad() {\n    int local = 5;\n    return &local;               // dangling: local is destroyed after return\n}\n\nint main() {\n    int* p = new int(10);\n    delete p;\n    // *p = 5;                   // BAD: p is now dangling\n    p = nullptr;                 // better: p is safe to check/delete\n\n    int* w;                      // wild pointer (uninitialised), do not use it\n    (void)w;\n    (void)bad;\n}"
+                },
+                {
+                    "question": "What is the difference between new[]/delete[] and new/delete?",
+                    "answer": [
+                        "new must be paired with delete and new[] must be paired with delete[]. A wrong combination is undefined behaviour (only the first element's destructor may run, or the heap may be corrupted)."
+                    ],
+                    "code": "int main() {\n    int* a = new int(5);\n    delete a;            // new    -> delete\n\n    int* b = new int[5];\n    delete[] b;          // new[]  -> delete[]\n    // delete b;         // WRONG: undefined behaviour\n}"
+                },
+                {
+                    "question": "What happens when delete is used on a NULL pointer?",
+                    "answer": [
+                        "No effect. It is always safe to delete a null pointer."
+                    ],
+                    "code": "int main() {\n    int* ptr = nullptr;\n    delete ptr;          // no effect\n}"
+                },
+                {
+                    "question": "Is it fine to call delete twice on a pointer?",
+                    "answer": [
+                        "No. Deleting the same memory twice is undefined behaviour: the program may crash, corrupt the heap or appear to work. Set the pointer to nullptr after delete so a second delete is harmless."
+                    ],
+                    "code": "int main() {\n    int* ptr = new int;\n    delete ptr;\n    ptr = nullptr;       // now a second delete ptr; is a harmless no-op\n    delete ptr;\n}"
+                },
+                {
+                    "question": "What is the modern C++ recommendation about raw new/delete?",
+                    "answer": [
+                        "Avoid raw new/delete when possible. Use smart pointers (std::make_unique, std::make_shared) or containers (std::vector). They give automatic cleanup, are exception safe and avoid leaks.",
+                        "Heap allocation is slower, may fragment memory and is bad for low latency systems; that is why finance/trading systems avoid excessive new/delete."
+                    ],
+                    "code": "#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(10);   // freed automatically\n}"
+                },
+                {
+                    "question": "Why and how to overload new and delete?",
+                    "answer": [
+                        "To customise memory allocation: count allocations, use a pool, log, or align memory. The overloaded new operator can accept extra arguments, so a class can have multiple overloaded new functions.",
+                        "Yes, new and delete can be overloaded globally or per class. Signatures: void* operator new(size_t size); void operator delete(void*) noexcept; (and the [] versions for arrays)."
+                    ],
+                    "code": "#include <cstdlib>\n#include <iostream>\n#include <new>\n\nstatic int alloc = 0, dealloc = 0;\n\nvoid* operator new(std::size_t sz) {\n    ++alloc;\n    if (void* p = std::malloc(sz)) return p;\n    throw std::bad_alloc();\n}\nvoid operator delete(void* ptr) noexcept {\n    ++dealloc;\n    std::free(ptr);\n}\n\nint main() {\n    int* myInt = new int(1998);\n    delete myInt;\n    std::cout << alloc << \" \" << dealloc << std::endl;   // 1 1\n}"
+                },
+                {
+                    "question": "How to call a destructor explicitly for a stack object?",
+                    "answer": [
+                        "A destructor can be called explicitly with obj.~Test(), but for a stack object the compiler calls it again when the object goes out of scope, so the destructor runs twice. Destroying an object twice is undefined behaviour, so do not do this for normal objects.",
+                        "Output of the program: Constructor is executed / Destructor is executed / Destructor is executed.",
+                        "Why two times? First we called it explicitly. Second, for objects created on the stack the compiler calls the destructor as soon as the object goes out of scope."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Test {\npublic:\n    Test()  { cout << \"Constructor is executed\\n\"; }\n    ~Test() { cout << \"Destructor is executed\\n\"; }\n};\n\nint main() {\n    Test t;        // local object\n    t.~Test();     // explicit call to destructor (not recommended)\n    return 0;      // destructor is called again automatically\n}"
+                },
+                {
+                    "question": "How to call a destructor for a heap object?",
+                    "answer": [
+                        "For an object created with new, the user is responsible for destroying it. Use delete, which calls the destructor and frees the memory. Calling t->~Test() only runs the destructor and leaves the memory allocated (leak), so prefer delete t;.",
+                        "Output: Constructor is executed / Destructor is executed."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Test {\npublic:\n    Test()  { cout << \"Constructor is executed\\n\"; }\n    ~Test() { cout << \"Destructor is executed\\n\"; }\n};\n\nint main() {\n    Test* t = new Test;\n    delete t;      // calls the destructor and frees memory\n    return 0;\n}"
+                }
+            ]
+        },
+        {
+            "id": "classes",
+            "title": "Classes",
+            "description": "Access specifiers, initializer lists, friend functions and static members.",
+            "questions": [
+                {
+                    "question": "What is the use of protected?",
+                    "answer": [
+                        "protected is similar to private: the members are inaccessible outside the class, but they can be accessed by any derived class of that class.",
+                        "Public members are accessible everywhere; private members only inside the class (and friends)."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Parent {\npublic:\n    int id_public;\nprotected:\n    int id_protected;\n};\n\nclass Child : public Parent {\npublic:\n    void setId(int id) { id_protected = id; }      // derived class can access\n    void displayId()   { cout << \"id_protected is: \" << id_protected << endl; }\n};\n\nint main() {\n    Parent P1;\n    P1.id_public = 100;\n    // P1.id_protected = 100;   // not allowed\n    Child C1;\n    C1.setId(200);\n    C1.displayId();             // id_protected is: 200\n    return 0;\n}"
+                },
+                {
+                    "question": "What is the syntax of a copy constructor?",
+                    "answer": [
+                        "className(const className& objectName). E.g. Employee(const Employee& empObj)."
+                    ],
+                    "code": "class Employee {\n    int id;\npublic:\n    Employee(int i) : id(i) {}\n    Employee(const Employee& empObj) : id(empObj.id) {}   // copy constructor\n};"
+                },
+                {
+                    "question": "Why is there '&' in the copy constructor parameter?",
+                    "answer": [
+                        "A copy constructor is called when an object is passed by value. The copy constructor is itself a function, so if its parameter were passed by value, a call to the copy constructor would be needed to call the copy constructor, which becomes a non-terminating chain of calls. Therefore the compiler does not allow the parameter to be passed by value.",
+                        "The copy constructor is called: 1) when a new object is initialised from an existing object (A b = a; A b(a);), 2) when an object is passed to a function by value, 3) when an object is returned by value (unless the compiler elides the copy)."
+                    ]
+                },
+                {
+                    "question": "What is a friend function?",
+                    "answer": [
+                        "A friend function is a non-member function (or a function of another class) that is granted access to the private and protected members of a class. It is declared inside the class with the friend keyword.",
+                        "It is not a member, has no this pointer and is not inherited. Friendship is not mutual and not transitive. Typical use: overloading operators such as << and >> for streams."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Box {\n    int width;\npublic:\n    Box(int w) : width(w) {}\n    friend void printWidth(const Box& b);     // friend declaration\n};\n\nvoid printWidth(const Box& b) {\n    cout << \"Width: \" << b.width << endl;     // can access private member\n}\n\nint main() {\n    Box b(10);\n    printWidth(b);       // Width: 10\n}"
+                },
+                {
+                    "question": "What is an initializer list?",
+                    "answer": [
+                        "A member initializer list initialises the data members before the constructor body runs.",
+                        "Assigning inside the body (x = val;) is NOT true initialisation: x is first default initialised and then assigned, which is extra work.",
+                        "Members are initialised in the order of their declaration in the class, not in the order written in the list.",
+                        "The initializer list must be used: 1) for non-static const data members, 2) for reference members, 3) for member objects that do not have a default constructor, 4) for initialisation of base class members, 5) when the constructor's parameter name is the same as the data member (or use this->), 6) for performance: initialise all members in the list instead of assigning in the body."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Point {\nprivate:\n    int x;\n    int y;\npublic:\n    Point(int i = 0, int j = 0) : x(i), y(j) {   // no need for x = i; y = j;\n    }\n    void print() const { cout << x << \",\" << y << endl; }\n};\n\nint main() {\n    Point p(3, 4);\n    p.print();           // 3,4\n}"
+                },
+                {
+                    "question": "What is a static member function?",
+                    "answer": [
+                        "A static member function is independent of any particular object. It can be called even if no object exists, using the class name and the scope resolution operator ::.",
+                        "It has class scope and no this pointer. It can only access static data members and other static member functions (and functions outside the class).",
+                        "You could use a static member function to find out whether some objects of the class have been created.",
+                        "Remember: static functions can only access static members. But non-static functions CAN access static members."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Student {\n    static int count;          // shared by all objects\npublic:\n    Student()  { ++count; }\n    ~Student() { --count; }\n    static int getCount() { return count; }     // can use only static members\n};\nint Student::count = 0;        // definition outside the class\n\nint main() {\n    cout << Student::getCount() << endl;        // 0 (no object exists)\n    Student s1, s2;\n    cout << Student::getCount() << endl;        // 2\n}"
+                },
+                {
+                    "question": "Have you used a singleton class in your project?",
+                    "answer": [
+                        "Yes. Typical uses: Logger, streaming/connection manager, configuration.",
+                        "A singleton allows only one instance: make the constructor private, delete the copy operations and return a single static instance from a static function. Since C++11 a function-local static is initialised thread-safely (Meyers singleton)."
+                    ],
+                    "code": "#include <iostream>\n\nclass Logger {\n    Logger() {}                                    // private constructor\npublic:\n    Logger(const Logger&) = delete;\n    Logger& operator=(const Logger&) = delete;\n\n    static Logger& getInstance() {\n        static Logger instance;                    // created once, thread-safe in C++11\n        return instance;\n    }\n    void log(const char* msg) { std::cout << msg << std::endl; }\n};\n\nint main() {\n    Logger::getInstance().log(\"Hello\");\n    std::cout << (&Logger::getInstance() == &Logger::getInstance()) << std::endl;   // 1\n}"
+                }
+            ]
+        },
+        {
+            "id": "copy-constructor-assignment",
+            "title": "Copy Constructor and Assignment Operator",
+            "description": "Copy vs assignment, shallow vs deep copy, rule of three.",
+            "questions": [
+                {
+                    "question": "What is the difference between copy constructor and assignment operator?",
+                    "answer": [
+                        "Copy constructor: creates a NEW object as a copy of an existing object (Test t3 = t1;). It has no return value and no self-check is needed.",
+                        "Assignment operator: used when both objects already exist (t2 = t1;). It returns a reference to the object (*this), must check for self assignment and must release the old resources before taking the new ones (the old memory is deleted and new memory allocated).",
+                        "Default versions do a member-wise (shallow) copy, which is wrong for classes that own raw pointers."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Test {\npublic:\n    Test() {}\n    Test(const Test& t) { cout << \"Copy constructor called\" << endl; }\n    Test& operator=(const Test& t) {\n        cout << \"Assignment operator called\" << endl;\n        return *this;\n    }\n};\n\nint main() {\n    Test t1, t2;\n    t2 = t1;        // assignment operator called\n    Test t3 = t1;   // copy constructor called\n}"
+                },
+                {
+                    "question": "What is the syntax of the assignment operator?",
+                    "answer": [
+                        "A& operator=(const A& other). Check for self assignment, release old resources, copy the data and return *this."
+                    ],
+                    "code": "#include <cstring>\n\nclass A {\n    char* name;\npublic:\n    A(const char* n = \"\") : name(new char[std::strlen(n) + 1]) { std::strcpy(name, n); }\n    A(const A& o) : name(new char[std::strlen(o.name) + 1]) { std::strcpy(name, o.name); }\n    A& operator=(const A& other) {\n        if (this != &other) {                          // self assignment check\n            delete[] name;                             // free old memory\n            name = new char[std::strlen(other.name) + 1];\n            std::strcpy(name, other.name);\n        }\n        return *this;\n    }\n    ~A() { delete[] name; }\n};\n\nint main() {\n    A obj1(\"one\");\n    A obj2(\"two\");\n    obj1 = obj2;       // assignment operator\n}"
+                },
+                {
+                    "question": "What is shallow copy and deep copy?",
+                    "answer": [
+                        "Shallow copy copies the members as they are, bit by bit. If the class holds a pointer, both objects then point to the same memory, so changing one changes the other and both destructors delete the same memory (double free).",
+                        "Deep copy allocates new memory for the pointer member and copies the pointed-to data. It is needed whenever the class has a pointer member that owns memory, and requires a user-defined copy constructor, assignment operator and destructor (rule of three).",
+                        "In the program: Santa uses std::string, which copies its own data, so the default copy is already safe. Panda owns a raw char* and relies on the default copy (problem: P2 changes when P1 changes). Bhalu defines a copy constructor and assignment operator (deep copy).",
+                        "Output highlights: Panda: Object2 prints 'House' after Object1 changed (should be 'Panda'). Bhalu: Object2 stays 'Bhalu' and, after assignment, stays 'Google' while Object1 becomes 'Little Bhalu'."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <cstring>\nusing namespace std;\n\nclass Santa {                       // std::string member: default copy is safe\n    string name;\npublic:\n    Santa(string _name) : name(_name) {}\n    void SetData(string _name) { name = _name; }\n    void ShowData() { cout << name << endl; }\n};\n\nclass Panda {                       // raw pointer + default copy = shallow copy (BUG)\n    char* name;\npublic:\n    Panda(const char* _name) { name = new char[30]; strcpy(name, _name); }\n    void SetData(const char* _name) { strcpy(name, _name); }\n    void ShowData() { cout << name << endl; }\n    // no destructor / copy: Panda P2 = P1 shares the same buffer\n};\n\nclass Bhalu {                       // deep copy\n    char* name;\npublic:\n    Bhalu(const char* _name) { name = new char[30]; strcpy(name, _name); }\n    Bhalu(const Bhalu& other) {\n        cout << \"In Copy Constructor\" << endl;\n        name = new char[30];\n        strcpy(name, other.name);\n    }\n    Bhalu& operator=(const Bhalu& other) {\n        if (this != &other) {\n            cout << \"In Assignment operator\" << endl;\n            strcpy(name, other.name);\n        }\n        return *this;\n    }\n    ~Bhalu() { delete[] name; }\n    void SetData(const char* _name) { strcpy(name, _name); }\n    void ShowData() { cout << name << endl; }\n};\n\nint main() {\n    {\n        cout << \"------------------std::string member------------------\" << endl;\n        Santa S1(\"Santa\");\n        Santa S2 = S1;\n        S1.SetData(\"ShareMarket\");\n        S1.ShowData();                  // ShareMarket\n        S2.ShowData();                  // Santa\n    }\n    {\n        cout << \"------------------Problem with shallow copy------------------\" << endl;\n        Panda P1(\"Panda\");\n        Panda P2 = P1;                  // pointer copied, buffer shared\n        P1.SetData(\"House\");\n        P1.ShowData();                  // House\n        P2.ShowData();                  // House (ideally \"Panda\")\n    }\n    {\n        cout << \"------------------Deep copy------------------\" << endl;\n        Bhalu B1(\"Bhalu\");\n        Bhalu B2 = B1;                  // In Copy Constructor\n        B1.SetData(\"Google\");\n        B1.ShowData();                  // Google\n        B2.ShowData();                  // Bhalu\n        B2 = B1;                        // In Assignment operator\n        B1.SetData(\"Little Bhalu\");\n        B1.ShowData();                  // Little Bhalu\n        B2.ShowData();                  // Google (without an assignment operator it would share memory)\n    }\n    return 0;\n}"
+                },
+                {
+                    "question": "What is the correct way to write a copy constructor?",
+                    "answer": [
+                        "Allocate new space, copy the size and copy each element from the source object (deep copy). Use the member array directly (obj.ptr[i]) and add a destructor that releases the memory.",
+                        "Rule of three: if a class needs a user-defined destructor, copy constructor or copy assignment operator, it usually needs all three (rule of five adds the move constructor and move assignment)."
+                    ],
+                    "code": "#include <iostream>\n\nclass Array {\nprivate:\n    int* ptr;\n    int size;\npublic:\n    Array(int n) : ptr(new int[n]()), size(n) {}\n    Array(const Array& obj) {\n        ptr = new int[obj.size];             // allocate new space\n        size = obj.size;\n        for (int i = 0; i < obj.size; ++i)   // copy values\n            ptr[i] = obj.ptr[i];\n    }\n    ~Array() { delete[] ptr; }\n};\n\nint main() {\n    Array a(5);\n    Array b = a;     // deep copy\n}"
+                },
+                {
+                    "question": "What is the correct way to write an assignment operator?",
+                    "answer": [
+                        "Check for self assignment, deallocate the old memory, allocate new space, copy the values and return *this.",
+                        "A safer alternative is the copy-and-swap idiom, which is also exception safe."
+                    ],
+                    "code": "class Array {\nprivate:\n    int* ptr;\n    int size;\npublic:\n    Array(int n = 0) : ptr(new int[n]()), size(n) {}\n    Array(const Array& o) : ptr(new int[o.size]), size(o.size) {\n        for (int i = 0; i < size; ++i) ptr[i] = o.ptr[i];\n    }\n    ~Array() { delete[] ptr; }\n    Array& operator=(const Array& rhs);\n};\n\nArray& Array::operator=(const Array& rhs) {\n    /* SELF ASSIGNMENT CHECK */\n    if (this != &rhs) {\n        delete[] ptr;                 // deallocate old memory\n        ptr = new int[rhs.size];      // allocate new space\n        size = rhs.size;\n        for (int i = 0; i < size; i++)  // copy values\n            ptr[i] = rhs.ptr[i];\n    }\n    return *this;\n}\n\nint main() {\n    Array a(3), b(5);\n    b = a;\n}"
+                }
+            ]
+        },
+        {
+            "id": "operator-overloading",
+            "title": "Operator Overloading",
+            "description": "Which operators can and cannot be overloaded and how.",
+            "questions": [
+                {
+                    "question": "Which operators cannot be overloaded?",
+                    "answer": [
+                        "Class member access operator (. and .*), scope resolution operator (::), sizeof operator and the conditional operator (?:). (typeid is also not overloadable.)",
+                        "They control how the compiler understands the program itself (scope lookup, object layout, compile time semantics, evaluation rules) rather than just performing an operation on objects, so C++ keeps their behaviour fixed.",
+                        ". and .*  : direct and pointer-to-member access. If . could be overloaded the compiler could not tell whether a.x is a real member access or a custom operation. (Note: -> CAN be overloaded with operator->().)",
+                        ":: : tells the compiler which scope a name belongs to (ClassName::function()). The scope must be known before any overloaded behaviour could be resolved.",
+                        "sizeof : the compiler needs the real size of types for memory allocation, object layout, arrays, alignment and ABI compatibility. sizeof(MyClass) must be the real size, not a custom value.",
+                        "?: : only one of the two result expressions is evaluated and it has special type conversion rules. An overloaded function call would evaluate both arguments and lose these built-in rules.",
+                        "Easy way to remember: . / .* / :: / sizeof / ?: are language-structure operators.",
+                        "Not every non-overloadable operator is forbidden because of 'ambiguity'; the real reason varies (scope lookup, object layout, compile time semantics or evaluation rules)."
+                    ]
+                },
+                {
+                    "question": "Which operators cannot be overloaded using a friend function?",
+                    "answer": [
+                        "These can only be overloaded as member functions: assignment =, function call (), subscript [] and class member access ->."
+                    ]
+                },
+                {
+                    "question": "How many parameters do unary and binary operators take when overloaded?",
+                    "answer": [
+                        "As member functions: unary takes 0 parameters, binary takes 1 (the left operand is *this).",
+                        "As friend (non-member) functions: unary takes 1 parameter, binary takes 2."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass School {\n    int x = 0;\npublic:\n    void SetData(int v) { x = v; }\n    void operator-() { x = -x; }          // unary member: 0 parameters\n    void Show() { cout << x << endl; }\n};\n\nclass Complex {\npublic:\n    int num = 0;\n    Complex operator+(const Complex& c) { // binary member: 1 parameter\n        Complex temp;\n        temp.num = this->num + c.num;\n        return temp;\n    }\n};\n\nclass Money {\n    int amt;\npublic:\n    Money(int a = 0) : amt(a) {}\n    friend Money operator+(const Money& a, const Money& b);   // friend binary: 2 parameters\n    friend Money operator-(const Money& a);                   // friend unary: 1 parameter\n    void Show() { cout << amt << endl; }\n};\nMoney operator+(const Money& a, const Money& b) { return Money(a.amt + b.amt); }\nMoney operator-(const Money& a) { return Money(-a.amt); }\n\nint main() {\n    School s1;\n    s1.SetData(20);\n    -s1;\n    s1.Show();                      // -20\n\n    Complex c1, c2, c3;\n    c1.num = 1; c2.num = 2;\n    c3 = c1 + c2;                   // c3 = c1.operator+(c2);\n    cout << c3.num << endl;         // 3\n\n    Money m = Money(5) + Money(6);\n    m.Show();                       // 11\n    (-m).Show();                    // -11\n}"
+                },
+                {
+                    "question": "How to overload the stream insertion operator (<<) and the prefix/postfix ++ operators?",
+                    "answer": [
+                        "operator<< must be a non-member (often a friend) because the left operand is the stream. For ++, the postfix version takes a dummy int parameter to distinguish it from prefix; postfix returns the old value (copy), prefix returns a reference to the updated object."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Counter {\n    int v;\npublic:\n    Counter(int x = 0) : v(x) {}\n    Counter& operator++() { ++v; return *this; }                 // prefix\n    Counter operator++(int) { Counter old = *this; ++v; return old; }   // postfix\n    friend ostream& operator<<(ostream& os, const Counter& c) { return os << c.v; }\n};\n\nint main() {\n    Counter c(5);\n    cout << ++c << endl;   // 6\n    cout << c++ << endl;   // 6\n    cout << c << endl;     // 7\n}"
                 }
             ]
         },
@@ -34,22 +670,467 @@
                 {
                     "question": "What are public, protected and private inheritance?",
                     "answer": [
-                        "Public inheritance preserves public and protected accessibility. Protected inheritance makes inherited public and protected members protected. Private inheritance makes them private in the derived class."
+                        "Public inheritance preserves public and protected accessibility. Protected inheritance makes inherited public and protected members protected. Private inheritance makes them private in the derived class. Private members of the base are never accessible in the derived class."
                     ]
+                },
+                {
+                    "question": "In inheritance, in what order are constructors and destructors called? How do you choose which base constructor runs?",
+                    "answer": [
+                        "The base class constructor always runs first, then the derived class constructor; destructors run in the reverse order (derived first, then base). The compiler does this automatically.",
+                        "To pass arguments to a particular base class constructor use the member initializer list of the derived constructor (Derived(int x) : Base(x)). The scope resolution operator is not used for this; it is used to call a base class function, e.g. Base::show()."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Base {\npublic:\n    Base(int x) { cout << \"Base(\" << x << \")\" << endl; }\n    ~Base() { cout << \"~Base\" << endl; }\n};\nclass Derived : public Base {\npublic:\n    Derived(int x) : Base(x) { cout << \"Derived\" << endl; }   // choose base constructor\n    ~Derived() { cout << \"~Derived\" << endl; }\n};\n\nint main() {\n    Derived d(10);\n}\n// Output: Base(10) / Derived / ~Derived / ~Base"
+                },
+                {
+                    "question": "How to call a base class function using a derived class object?",
+                    "answer": [
+                        "A public base class function is inherited, so call it directly with the derived object. If the derived class hides it with a function of the same name, use the scope resolution operator: d.Base::show().",
+                        "Output: Base / Derived"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Base {\npublic:\n    void dispBase() { cout << \"Base\" << endl; }\n    void show()     { cout << \"Base show\" << endl; }\n};\n\nclass Derived : public Base {\npublic:\n    void dispDerived() { cout << \"Derived\" << endl; }\n    void show()        { cout << \"Derived show\" << endl; }   // hides Base::show\n};\n\nint main() {\n    Derived d1;\n    d1.dispBase();       // Base\n    d1.dispDerived();    // Derived\n    d1.show();           // Derived show\n    d1.Base::show();     // Base show\n    return 0;\n}"
+                },
+                {
+                    "question": "What is multiple inheritance and the diamond problem?",
+                    "answer": [
+                        "A class can inherit from more than one base class. If two bases share a common base, the most derived class gets two copies of it (ambiguity). Virtual inheritance (class B : virtual public A) makes the common base shared, so only one copy exists."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nstruct A { int a = 1; };\nstruct B : virtual A {};\nstruct C : virtual A {};\nstruct D : B, C {};\n\nint main() {\n    D d;\n    cout << d.a << endl;   // 1, no ambiguity because A is a virtual base\n}"
                 }
             ]
         },
         {
-            "id": "functions",
-            "title": "Functions",
-            "description": "Reusable blocks of code.",
+            "id": "polymorphism",
+            "title": "Polymorphism",
+            "description": "Compile time and run time polymorphism.",
             "questions": [
                 {
-                    "question": "What is function overloading?",
+                    "question": "What is polymorphism?",
                     "answer": [
-                        "Multiple functions can share a name if their parameter lists differ. Return type alone cannot distinguish overloads."
+                        "The exact meaning is the ability to take different forms: one interface, many implementations."
+                    ]
+                },
+                {
+                    "question": "What are the types of polymorphism?",
+                    "answer": [
+                        "Compile time (static): function overloading and operator overloading (also templates).",
+                        "Run time (dynamic): function overriding using virtual functions in the base class."
+                    ]
+                },
+                {
+                    "question": "How is runtime polymorphism achieved?",
+                    "answer": [
+                        "Runtime polymorphism is achieved when a virtual function is called through a pointer or reference of the base class; the function that runs depends on the actual object type."
                     ],
-                    "code": "int add(int a, int b) { return a + b; }\ndouble add(double a, double b) { return a + b; }"
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Shape {\npublic:\n    virtual void draw() { cout << \"Shape\" << endl; }\n    virtual ~Shape() {}\n};\nclass Circle : public Shape {\npublic:\n    void draw() override { cout << \"Circle\" << endl; }\n};\n\nint main() {\n    Shape* s = new Circle();\n    s->draw();       // Circle (decided at run time)\n    delete s;\n}"
+                }
+            ]
+        },
+        {
+            "id": "virtual-things",
+            "title": "Virtual Functions, Vtable and Vptr",
+            "description": "Virtual functions, abstract classes, vtable and vpointer.",
+            "questions": [
+                {
+                    "question": "What is a virtual function?",
+                    "answer": [
+                        "A virtual function is used to achieve runtime polymorphism. When a function is declared virtual in the base class, the derived class may or may not override it.",
+                        "The actual use is to call a function according to the object type, not the pointer type. Use the override keyword (C++11) in the derived class so the compiler checks the signature, and give the base class a virtual destructor.",
+                        "Output: Child"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Base {\npublic:\n    virtual void display() { cout << \"Base\" << endl; }\n    virtual ~Base() {}\n};\n\nclass Child : public Base {\npublic:\n    void display() override { cout << \"Child\" << endl; }\n};\n\nint main() {\n    Base* B1 = new Child();\n    B1->display();       // Child\n    delete B1;\n}"
+                },
+                {
+                    "question": "What is a pure virtual function and an abstract class?",
+                    "answer": [
+                        "A virtual function assigned 0 is a pure virtual function (= 0). Derived classes must override it, otherwise they are also abstract.",
+                        "A class containing at least one pure virtual function is an abstract class; you cannot create an object of it (but you can have pointers/references to it).",
+                        "A pure virtual function normally has no body, but it can optionally have a definition outside the class that derived classes can call."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Account {\npublic:\n    virtual double InterestRate() = 0;       // pure virtual\n    virtual ~Account() {}\n};\n\nclass Savings : public Account {\npublic:\n    double InterestRate() override { return 3.5; }\n};\n\nint main() {\n    // Account a;                            // error: abstract class\n    Account* a = new Savings();\n    cout << a->InterestRate() << endl;       // 3.5\n    delete a;\n}"
+                },
+                {
+                    "question": "What is an interface in C++?",
+                    "answer": [
+                        "C++ has no interface keyword. By convention an interface is a class that has only pure virtual functions (and usually a virtual destructor) and no data members."
+                    ],
+                    "code": "class IPrintable {\npublic:\n    virtual void print() const = 0;\n    virtual ~IPrintable() = default;\n};"
+                },
+                {
+                    "question": "Why should a base class destructor be virtual?",
+                    "answer": [
+                        "If you delete a derived object through a base class pointer and the base destructor is not virtual, only the base destructor runs (undefined behaviour), so the derived part leaks. A virtual destructor makes the derived destructor run first, then the base."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Base {\npublic:\n    virtual ~Base() { cout << \"~Base\" << endl; }\n};\nclass Derived : public Base {\npublic:\n    ~Derived() { cout << \"~Derived\" << endl; }\n};\n\nint main() {\n    Base* p = new Derived();\n    delete p;       // ~Derived then ~Base\n}"
+                },
+                {
+                    "question": "What is vtable and vpointer?",
+                    "answer": [
+                        "Virtual table (vtable): a table created at compile time for every class that has virtual functions. It holds the addresses of the most derived versions of the virtual functions. There is one vtable per class (not per object); it is stored in the program's read-only data in the process address space.",
+                        "Virtual pointer (vptr): a hidden data member silently inserted by the compiler into each object of such a class. It is initialised in the constructor to point to the class's vtable, so each object has its own vptr."
+                    ]
+                },
+                {
+                    "question": "How do vtable and vpointer work?",
+                    "answer": [
+                        "When you call a virtual function through a base pointer, the compiler generates code that reads the vptr of the object, looks up the function address in the vtable by index and calls it. Therefore the function that runs depends on the real object type.",
+                        "Because the vptr is set by each constructor in turn, calling a virtual function inside a constructor or destructor calls the version of the class being constructed, not the derived override."
+                    ]
+                },
+                {
+                    "question": "How to print the vptr address?",
+                    "answer": [
+                        "The standard does not expose the vptr. On common compilers (GCC/Clang/MSVC on 64-bit) the vptr is the first pointer-size bytes of the object, so you can read it by reinterpreting the object address. This is implementation specific and for learning only."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass A {\npublic:\n    virtual void f() {}\n};\n\nint main() {\n    A a1, a2;\n    cout << \"vptr of a1: \" << *(void**)&a1 << endl;\n    cout << \"vptr of a2: \" << *(void**)&a2 << endl;   // same address: same class, same vtable\n}"
+                },
+                {
+                    "question": "What is the size of a class having a virtual function?",
+                    "answer": [
+                        "When a class has a virtual function its size increases by the size of a pointer (8 bytes on a 64-bit build, 4 on a 32-bit build) because the compiler adds the vptr. Also padding may be added for alignment.",
+                        "For classes with virtual inheritance there is a virtual base pointer in each class that has a virtual base. On a typical 64-bit compiler: ABase = 4; BBase = 16 (8 byte pointer + 4 bMem + 4 shared ABase); CBase = 16 (8 + 4 cMem + 4 ABase when separate); ABCDerived = 40 (BBase part 12 + padding, CBase part 12, abcMem 4, and one shared ABase 4 at the end, with alignment padding).",
+                        "Correction: the original explanation counted ABase twice and mixed up aMem/cMem; with virtual inheritance there is only one copy of ABase in ABCDerived."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass ABase { int aMem; };\nclass BBase : public virtual ABase { int bMem; };\nclass CBase : public virtual ABase { int cMem; };\nclass ABCDerived : public BBase, public CBase { int abcMem; };\n\nclass V1 { virtual void f() {} };            // only a vptr\nclass V2 { virtual void f() {} int x; };     // vptr + int (padded)\n\nint main() {\n    // typical 64-bit output\n    cout << sizeof(ABase) << endl;       // 4\n    cout << sizeof(BBase) << endl;       // 16\n    cout << sizeof(CBase) << endl;       // 16\n    cout << sizeof(ABCDerived) << endl;  // 40\n    cout << sizeof(V1) << endl;          // 8\n    cout << sizeof(V2) << endl;          // 16\n}"
+                }
+            ]
+        },
+        {
+            "id": "file-handling",
+            "title": "File Handling",
+            "description": "Opening, reading, writing and closing files with streams.",
+            "questions": [
+                {
+                    "question": "How to open and close a file?",
+                    "answer": [
+                        "Include <fstream>. A file can be opened by passing the name to the constructor, or by calling the open() function. Always check that the file opened successfully. The destructor also closes the file automatically (RAII)."
+                    ],
+                    "code": "#include <fstream>\n#include <iostream>\nusing namespace std;\n\nint main() {\n    ofstream outf(\"MyFile.txt\");         // using constructor\n    outf << \"hello\" << endl;\n    outf.close();\n\n    ofstream outf2;\n    outf2.open(\"MyFile2.txt\");           // using open()\n    if (!outf2.is_open()) { cerr << \"cannot open\" << endl; return 1; }\n    outf2.close();\n}"
+                },
+                {
+                    "question": "How to detect the end of a file?",
+                    "answer": [
+                        "Do not loop on eof() alone. Put the read operation itself in the loop condition; the stream converts to false when a read fails or the end is reached. eof() becomes true only after a read has tried to go past the end."
+                    ],
+                    "code": "#include <fstream>\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    ifstream fin(\"input.txt\");\n    string line;\n    while (getline(fin, line)) {          // stops at end of file\n        cout << line << endl;\n    }\n    if (fin.eof()) cout << \"reached end of file\" << endl;\n}"
+                },
+                {
+                    "question": "What are the functions to manipulate the file pointers?",
+                    "answer": [
+                        "seekg(pos): moves the get (read) pointer to the specified location.",
+                        "seekp(pos): moves the put (write) pointer to the specified location.",
+                        "tellg(): returns the current position of the get pointer.",
+                        "tellp(): returns the current position of the put pointer.",
+                        "Opening with ios::app moves every write to the end of the file. After writing, tellp() gives the end position, i.e. the number of bytes in the file."
+                    ],
+                    "code": "#include <fstream>\n#include <iostream>\nusing namespace std;\n\nint main() {\n    ofstream fileout(\"myfile.txt\", ios::app);   // writes go to the end\n    fileout << \"abc\";\n    int p = fileout.tellp();                    // current put position\n    cout << p << endl;\n    fileout.close();\n\n    ifstream infile(\"myfile.txt\");\n    infile.seekg(2);                            // move get pointer to offset 2\n    cout << infile.tellg() << endl;             // 2\n}"
+                },
+                {
+                    "question": "How to read and write binary data into a file?",
+                    "answer": [
+                        "Open the file in ios::binary mode and use write() and read() with a char* cast and the size of the object. This is safe only for trivially copyable (plain data) objects; objects with pointers or std::string members need explicit serialisation."
+                    ],
+                    "code": "#include <fstream>\n#include <iostream>\nusing namespace std;\n\nstruct A {\n    int id;\n    double salary;\n};\n\nint main() {\n    A obj1{1, 1000.5};\n    {\n        ofstream out(\"MyFile.DAT\", ios::binary);\n        out.write(reinterpret_cast<const char*>(&obj1), sizeof(obj1));\n    }                                            // file closed here\n    A obj2{};\n    ifstream in(\"MyFile.DAT\", ios::binary);\n    in.read(reinterpret_cast<char*>(&obj2), sizeof(obj2));\n    cout << obj2.id << \" \" << obj2.salary << endl;   // 1 1000.5\n}"
+                },
+                {
+                    "question": "How to close a file with an fstream object?",
+                    "answer": [
+                        "Call close() on the stream object (fptr.close()). If you forget, the destructor closes the file when the object goes out of scope."
+                    ],
+                    "code": "#include <fstream>\n\nint main() {\n    std::fstream fptr(\"data.txt\", std::ios::out);\n    fptr.close();\n}"
+                },
+                {
+                    "question": "Do we need to use exception handling for fstream?",
+                    "answer": [
+                        "By default streams do not throw exceptions; they set state flags (failbit, badbit, eofbit). So you normally check is_open(), good()/fail() after each operation.",
+                        "If you prefer exceptions, enable them with stream.exceptions(...), and then wrap the file code in try/catch (std::ios_base::failure)."
+                    ],
+                    "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    std::ifstream fin;\n    fin.exceptions(std::ifstream::failbit | std::ifstream::badbit);\n    try {\n        fin.open(\"does_not_exist.txt\");\n    } catch (const std::ios_base::failure& e) {\n        std::cout << \"File error\" << std::endl;\n    }\n}"
+                },
+                {
+                    "question": "How to read a complete line?",
+                    "answer": [
+                        "Use cin.getline(buffer, size) for a char array, or std::getline(stream, string) for a std::string. Both stop at the newline and discard it."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    char name[20];\n    cin.getline(name, 20);          // up to 19 characters\n\n    string line;\n    getline(cin, line);             // any length\n}"
+                }
+            ]
+        },
+        {
+            "id": "exception-handling",
+            "title": "Exception Handling",
+            "description": "try, catch, throw, rethrow and noexcept.",
+            "questions": [
+                {
+                    "question": "How to use exception handling?",
+                    "answer": [
+                        "Put code that may fail in a try block, throw an exception object when a problem occurs, and handle it in a matching catch block. Catch by const reference, and throw objects derived from std::exception.",
+                        "When an exception is thrown the stack is unwound: local objects are destroyed (destructors run) until a matching handler is found."
+                    ],
+                    "code": "#include <iostream>\n#include <stdexcept>\n\ndouble divide(int a, int b) {\n    if (b == 0) throw std::runtime_error(\"divide by zero\");\n    return static_cast<double>(a) / b;\n}\n\nint main() {\n    try {\n        divide(1, 0);\n    } catch (const std::exception& e) {\n        std::cout << e.what() << std::endl;   // divide by zero\n    }\n}"
+                },
+                {
+                    "question": "What is rethrow and how to do it?",
+                    "answer": [
+                        "A catch block can throw the exception again without processing it fully, by using throw; with no operand. The same exception object is rethrown.",
+                        "Remember: a rethrown exception is not caught by the other catch blocks of the same try statement, but by an outer try/catch.",
+                        "Output: catched 1 / catched 3"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nvoid check(int i) {\n    try {\n        if (i == 10) throw i;\n    }\n    catch (int) {\n        cout << \"catched 1\" << endl;\n        throw;                           // rethrow to the outer handler\n    }\n    catch (...) {\n        cout << \"catched 2\" << endl;     // not reached for the rethrown exception\n    }\n}\n\nint main() {\n    try {\n        check(10);\n    }\n    catch (int) {\n        cout << \"catched 3\" << endl;\n    }\n    return 0;\n}"
+                },
+                {
+                    "question": "How to catch all types of exceptions?",
+                    "answer": [
+                        "Use catch(...). Always put it at the end of all other catch statements, because handlers are checked in order."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    try {\n        throw 3.5;\n    }\n    catch (int) { std::cout << \"int\" << std::endl; }\n    catch (...) { std::cout << \"something else\" << std::endl; }   // last\n}"
+                },
+                {
+                    "question": "How to restrict a function to throw particular exceptions or none at all?",
+                    "answer": [
+                        "Old dynamic exception specifications, throw(int, double) and throw(), are deprecated in C++11 and removed in C++17 (throw() was kept as an alias of noexcept). Modern code uses noexcept.",
+                        "noexcept (or noexcept(true)) promises the function will not throw. If an exception escapes a noexcept function, std::terminate() is called.",
+                        "In the old style, void Test() throw(int, double) allowed only int or double; anything else called unexpected() (removed in C++17)."
+                    ],
+                    "code": "void Test() noexcept {      // cannot throw; if it does, std::terminate is called\n}\n\n// Pre-C++17 style (removed): void Test() throw(int, double) { }\n\nint main() {\n    Test();\n}"
+                },
+                {
+                    "question": "What happens if an exception is not caught? When does the program crash?",
+                    "answer": [
+                        "If an exception is thrown and no handler matches, std::terminate() is called, which calls abort() by default (the stack may not even be unwound).",
+                        "In pre-C++17 code, an exception that violated an exception specification called unexpected(), which by default called terminate(). unexpected() was removed in C++17.",
+                        "You can install your own handler with std::set_terminate()."
+                    ]
+                },
+                {
+                    "question": "Should destructors throw exceptions?",
+                    "answer": [
+                        "No. If a destructor is invoked during stack unwinding caused by another exception and it throws, std::terminate() is called and the program ends. Since C++11 destructors are implicitly noexcept, so an escaping exception terminates the program. Catch and handle errors inside the destructor."
+                    ]
+                },
+                {
+                    "question": "How to create a custom exception class?",
+                    "answer": [
+                        "Derive from std::exception (or one of its subclasses) and override what()."
+                    ],
+                    "code": "#include <exception>\n#include <iostream>\n\nclass MyError : public std::exception {\npublic:\n    const char* what() const noexcept override { return \"my custom error\"; }\n};\n\nint main() {\n    try {\n        throw MyError();\n    } catch (const MyError& e) {\n        std::cout << e.what() << std::endl;\n    }\n}"
+                }
+            ]
+        },
+        {
+            "id": "pointers",
+            "title": "Pointers",
+            "description": "Null pointer, void pointer and the this pointer.",
+            "questions": [
+                {
+                    "question": "What is a void pointer and a null pointer?",
+                    "answer": [
+                        "A null pointer is a value; a void pointer is a type. They are different concepts and not directly comparable.",
+                        "Null pointer: a pointer that is assigned the null value and points to nothing, e.g. int* ptr = nullptr; (use nullptr in modern C++ instead of NULL or 0).",
+                        "Void pointer (void*): a pointer that can hold the address of any data type. The type of the data it points to is unknown."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int* ptr = nullptr;      // null pointer\n    int x = 5;\n    void* vp = &x;           // void pointer can hold any address\n    std::cout << *static_cast<int*>(vp) << std::endl;   // 5, cast needed\n    (void)ptr;\n}"
+                },
+                {
+                    "question": "Can we dereference a void pointer without knowing its type?",
+                    "answer": [
+                        "No. The compiler does not know how many bytes to read or how to interpret them, so you must cast it to the right pointer type first. Pointer arithmetic on void* is also not allowed in standard C++."
+                    ]
+                },
+                {
+                    "question": "What is the this pointer?",
+                    "answer": [
+                        "this is a hidden pointer available inside every non-static member function. It holds the address of the object on which the function was called.",
+                        "Uses: distinguish a member from a parameter with the same name (this->x = x), return the current object (return *this; for chaining and operator=), and pass the current object to other functions. static member functions do not have this."
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass Point {\n    int x;\npublic:\n    Point& setX(int x) { this->x = x; return *this; }   // chaining\n    void print() const { cout << x << endl; }\n};\n\nint main() {\n    Point p;\n    p.setX(5).print();    // 5\n}"
+                }
+            ]
+        },
+        {
+            "id": "smart-pointers",
+            "title": "Smart Pointers",
+            "description": "unique_ptr, shared_ptr and weak_ptr.",
+            "questions": [
+                {
+                    "question": "What is a smart pointer and a generic smart pointer?",
+                    "answer": [
+                        "A smart pointer is a class that wraps a raw pointer and manages the lifetime of the object it points to using RAII: the destructor deletes the object automatically, even when an exception is thrown.",
+                        "It is 'generic' because it is a class template, so one implementation works for any type T. It overloads operator* and operator-> so it is used like a normal pointer.",
+                        "Standard smart pointers (in <memory>): unique_ptr, shared_ptr, weak_ptr."
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename T>\nclass SmartPtr {\n    T* ptr;\npublic:\n    explicit SmartPtr(T* p = nullptr) : ptr(p) {}\n    ~SmartPtr() { delete ptr; }                    // automatic cleanup\n    SmartPtr(const SmartPtr&) = delete;            // no copying\n    SmartPtr& operator=(const SmartPtr&) = delete;\n    T& operator*() { return *ptr; }\n    T* operator->() { return ptr; }\n};\n\nint main() {\n    SmartPtr<int> p(new int(42));\n    std::cout << *p << std::endl;   // 42, memory freed automatically\n}"
+                },
+                {
+                    "question": "What is auto_ptr?",
+                    "answer": [
+                        "auto_ptr was the old smart pointer. It was deprecated in C++11 and removed in C++17 because copying it silently transferred ownership. Use unique_ptr instead."
+                    ]
+                },
+                {
+                    "question": "How many smart pointers are present?",
+                    "answer": [
+                        "Three: unique_ptr, shared_ptr and weak_ptr (all from the <memory> header)."
+                    ]
+                },
+                {
+                    "question": "What is unique_ptr?",
+                    "answer": [
+                        "unique_ptr allows exactly one owner of the underlying pointer: there can only be one unique_ptr to any resource. It cannot be copied, only moved (std::move). The object is deleted when the unique_ptr is destroyed. Create it with std::make_unique (C++14)."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\nusing namespace std;\n\nclass A { public: void hi() { cout << \"hi\" << endl; } };\n\nint main() {\n    unique_ptr<A> ptr1(new A);\n    // unique_ptr<A> ptr2 = ptr1;           // Error: cannot copy unique_ptr\n    unique_ptr<A> ptr2 = std::move(ptr1);   // ownership moved, ptr1 is now empty\n    ptr2->hi();\n    cout << (ptr1 == nullptr) << endl;      // 1\n}"
+                },
+                {
+                    "question": "What is shared_ptr?",
+                    "answer": [
+                        "shared_ptr is used to share ownership of a resource. A reference count tracks how many shared_ptrs own the object; the object is deleted when the count reaches zero. Create it with std::make_shared."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\nusing namespace std;\n\nclass A {};\n\nint main() {\n    shared_ptr<A> ptr1 = make_shared<A>();\n    shared_ptr<A> ptr2(ptr1);               // ptr2 also owns the object\n    cout << ptr1.use_count() << endl;       // 2\n}"
+                },
+                {
+                    "question": "What is weak_ptr and why is it needed?",
+                    "answer": [
+                        "A weak_ptr is a smart pointer that does not take ownership of an object but acts as an observer. It does not take part in reference counting and does not extend the object's lifetime.",
+                        "The main reason weak pointers exist is to break the circular dependency that shared pointers create. With two shared_ptr pointing to each other the reference counts never reach zero, so the destructors are not called and memory leaks.",
+                        "Fix: make one side a weak_ptr (Person holds weak_ptr<Team>). To use the object call lock(), which returns a shared_ptr that is empty if the object is gone.",
+                        "Output: Team destructed. / Person destructed. (both destructors run; without weak_ptr neither runs)"
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\nusing namespace std;\n\nstruct Person;\nstruct Team {\n    shared_ptr<Person> goalKeeper;\n    ~Team() { cout << \"Team destructed.\" << endl; }\n};\nstruct Person {\n    weak_ptr<Team> team;                  // shared_ptr here would create a cycle and leak\n    ~Person() { cout << \"Person destructed.\" << endl; }\n};\n\nint main() {\n    auto Barca = make_shared<Team>();\n    auto Valdes = make_shared<Person>();\n    Barca->goalKeeper = Valdes;\n    Valdes->team = Barca;\n    return 0;\n}"
+                },
+                {
+                    "question": "How do you use weak_ptr::lock()?",
+                    "answer": [
+                        "lock() returns a shared_ptr to the object if it still exists, or an empty shared_ptr if it has been destroyed, so always check the result."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::shared_ptr<int> p1 = std::make_shared<int>(5);\n    std::weak_ptr<int> wp1{p1};                  // p1 owns the memory\n\n    {\n        std::shared_ptr<int> p2 = wp1.lock();    // now p1 and p2 own the memory\n        if (p2) std::cout << *p2 << std::endl;   // 5\n    }                                            // p2 destroyed, memory owned by p1\n\n    p1.reset();                                  // free the memory\n    std::shared_ptr<int> p3 = wp1.lock();        // memory is gone: empty shared_ptr\n    if (!p3) std::cout << \"expired\" << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp11",
+            "title": "C++11",
+            "description": "The major modern C++ features introduced in C++11.",
+            "questions": [
+                {
+                    "question": "What are the C++11 features?",
+                    "answer": [
+                        "auto, nullptr, range-based for loops, override and final, strongly-typed enums (enum class), smart pointers, lambdas, non-member begin() and end(), static_assert and type traits, move semantics (rvalue references). Others: constexpr, initializer lists, delegating constructors, = default / = delete, variadic templates, std::thread, unordered containers."
+                    ]
+                },
+                {
+                    "question": "What is auto?",
+                    "answer": [
+                        "auto lets the compiler deduce the type of a variable from its initialiser. It is useful for long iterator and template types."
+                    ],
+                    "code": "#include <map>\n#include <string>\n\nint main() {\n    auto i = 10;                       // int\n    auto d = 3.5;                      // double\n    std::map<std::string, int> m{{\"a\", 1}};\n    for (auto it = m.begin(); it != m.end(); ++it) {}\n    (void)i; (void)d;\n}"
+                },
+                {
+                    "question": "What is nullptr?",
+                    "answer": [
+                        "nullptr is a typed null pointer literal (type std::nullptr_t). It replaces NULL/0, which is an integer and causes wrong overload resolution. 0 is still valid but ambiguous."
+                    ],
+                    "code": "#include <iostream>\n\nvoid f(int)   { std::cout << \"int\" << std::endl; }\nvoid f(char*) { std::cout << \"pointer\" << std::endl; }\n\nint main() {\n    f(0);          // int\n    f(nullptr);    // pointer\n}"
+                },
+                {
+                    "question": "What are range-based for loops?",
+                    "answer": [
+                        "Syntax: for (range_declaration : range_expression) loop_statement. It iterates over every element of an array or container. Use const auto& to avoid copies."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> myMap{{\"a\", 1}, {\"b\", 2}};\n    for (const auto& kv : myMap) {\n        std::cout << kv.first << \" has value \" << kv.second << std::endl;\n    }\n}"
+                },
+                {
+                    "question": "What are override and final?",
+                    "answer": [
+                        "override ensures that a virtual function in a derived class really overrides a base class virtual function with the same signature; a mismatch is a compile error.",
+                        "final on a virtual function blocks further overriding; final on a class blocks further derivation."
+                    ],
+                    "code": "class Base {\npublic:\n    virtual void f() {}\n    virtual void g() {}\n    virtual ~Base() {}\n};\nclass Derived : public Base {\npublic:\n    void f() override {}            // checked against Base::f\n    void g() override final {}      // cannot be overridden again\n};\n\nclass TaskManager final {};\n// class PrioritizedTaskManager : public TaskManager {};  // error: base class TaskManager is final\n\nint main() {}"
+                },
+                {
+                    "question": "What are strongly-typed enums?",
+                    "answer": [
+                        "enum class has its own scope and does not implicitly convert to int, so names do not leak into the surrounding scope and cannot clash."
+                    ],
+                    "code": "#include <iostream>\n\nenum class Color { Red, Green };\n\nint main() {\n    Color c = Color::Red;\n    // int x = c;                       // error: no implicit conversion\n    int x = static_cast<int>(c);\n    std::cout << x << std::endl;        // 0\n}"
+                },
+                {
+                    "question": "What are non-member begin() and end(), and static_assert?",
+                    "answer": [
+                        "std::begin(x) and std::end(x) work for containers and plain arrays, which makes generic code easier.",
+                        "static_assert(condition, message) checks a condition at compile time; type traits (<type_traits>) provide the conditions, e.g. std::is_integral."
+                    ],
+                    "code": "#include <iostream>\n#include <iterator>\n#include <type_traits>\n\ntemplate <typename T>\nT twice(T x) {\n    static_assert(std::is_integral<T>::value, \"T must be an integer type\");\n    return x * 2;\n}\n\nint main() {\n    int arr[] = {1, 2, 3};\n    for (auto it = std::begin(arr); it != std::end(arr); ++it)\n        std::cout << *it << \" \";\n    std::cout << twice(4) << std::endl;\n}"
+                },
+                {
+                    "question": "What is move semantics?",
+                    "answer": [
+                        "Move semantics lets an object transfer (steal) the resources of a temporary or expiring object instead of copying them. It uses rvalue references (T&&), a move constructor, a move assignment operator and std::move. Moved-from objects remain valid but unspecified.",
+                        "It makes returning and passing large objects (vectors, strings) cheap."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <utility>\n#include <vector>\n\nint main() {\n    std::string a = \"a long string that would be expensive to copy\";\n    std::string b = std::move(a);            // b steals a's buffer\n    std::cout << b << std::endl;\n\n    std::vector<int> v1(1000, 1);\n    std::vector<int> v2 = std::move(v1);     // no element copy\n    std::cout << v2.size() << std::endl;     // 1000\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp14",
+            "title": "C++14",
+            "description": "Features added in C++14.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++14?",
+                    "answer": [
+                        "New language features: function return type deduction, alternate type deduction on declaration (decltype(auto)), relaxed constexpr restrictions, variable templates, aggregate member initialisation, binary literals, digit separators, generic lambdas, lambda capture expressions (init-capture) and the [[deprecated]] attribute.",
+                        "New library features: shared mutexes and locking (std::shared_timed_mutex), heterogeneous lookup in associative containers, standard user-defined literals, tuple addressing via type and smaller features such as std::make_unique."
+                    ]
+                },
+                {
+                    "question": "Show examples of C++14 features (digit separators, binary literals, generic lambda, return type deduction, make_unique).",
+                    "answer": [
+                        "Digit separators: auto integer_literal = 1'000'000;",
+                        "Generic lambda: auto lambda = [](auto x, auto y) { return x + y; };"
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n\nauto square(int x) { return x * x; }            // return type deduction\n\nint main() {\n    auto big = 1'000'000;                        // digit separators\n    int b = 0b1010;                              // binary literal = 10\n    auto add = [](auto x, auto y) { return x + y; };   // generic lambda\n    auto p = std::make_unique<int>(7);           // make_unique\n    int n = 5;\n    auto f = [v = n * 2]() { return v; };        // lambda init-capture\n\n    std::cout << big << \" \" << b << \" \" << add(1, 2.5) << \" \"\n              << square(4) << \" \" << *p << \" \" << f() << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp17",
+            "title": "C++17",
+            "description": "Features added in C++17.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++17?",
+                    "answer": [
+                        "C++17 enables writing simple, clearer and more expressive code. Features: nested namespaces, variable declaration in if and switch (init-statement), if constexpr, structured bindings, fold expressions, direct list initialisation of enums, std::optional, std::variant, std::string_view, inline variables, std::filesystem, parallel algorithms."
+                    ]
+                },
+                {
+                    "question": "Show examples of C++17 features.",
+                    "answer": [
+                        "Nested namespaces: namespace A::B::C { }. Init-statement: if (auto it = m.find(k); it != m.end()). Structured bindings: auto [a, b] = pair. if constexpr: compile-time branch that discards the untaken branch. Fold expression: (args + ...)."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n#include <type_traits>\n\nnamespace A::B::C { int value = 1; }              // nested namespaces\n\ntemplate <typename T>\nauto describe(T x) {\n    if constexpr (std::is_integral_v<T>) return x + 1;   // compile-time branch\n    else return x;\n}\n\ntemplate <typename... Args>\nauto sum(Args... args) { return (args + ...); }   // fold expression\n\nint main() {\n    std::map<std::string, int> m{{\"a\", 1}};\n    if (auto it = m.find(\"a\"); it != m.end())      // variable in if\n        std::cout << it->second << std::endl;\n\n    auto [k, v] = *m.begin();                      // structured bindings\n    std::cout << k << v << \" \" << A::B::C::value << \" \"\n              << describe(1) << \" \" << sum(1, 2, 3) << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "lambda-expressions",
+            "title": "Lambda Expressions",
+            "description": "Anonymous function objects.",
+            "questions": [
+                {
+                    "question": "What is the difference between a lambda and a function?",
+                    "answer": [
+                        "A lambda is an unnamed function object that can be defined inline and can capture variables from the surrounding scope; syntax: [capture](parameters) -> returnType { body }. A normal function is named, has external or internal linkage and cannot capture local variables.",
+                        "Capture modes: [] nothing, [=] all by value, [&] all by reference, [x] x by value, [&x] x by reference, [this] the current object."
+                    ],
+                    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    int factor = 3;\n    auto times = [factor](int x) { return x * factor; };   // captures factor by value\n    std::cout << times(4) << std::endl;                    // 12\n\n    std::vector<int> v{3, 1, 2};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    for (int x : v) std::cout << x << \" \";                 // 3 2 1\n}"
+                },
+                {
+                    "question": "In C++, if you create a lambda inside main, where is it stored in memory?",
+                    "answer": [
+                        "A lambda is a shortcut for a functor: the compiler generates an unnamed class with operator() and creates an instance of it.",
+                        "The code of operator() resides along with the other code (text segment) and the instance (the closure object, holding the captured variables) is an ordinary object, stored on the stack when created as a local variable. If it is wrapped in std::function it may use heap memory for large captures."
+                    ]
                 }
             ]
         },
