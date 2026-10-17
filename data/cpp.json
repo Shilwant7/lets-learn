@@ -1,0 +1,71 @@
+{
+    "topics": [
+        {
+            "id": "introduction",
+            "title": "Introduction",
+            "description": "Start with the fundamentals of C++.",
+            "questions": [
+                {
+                    "question": "What is C++?",
+                    "answer": [
+                        "C++ is a compiled, general-purpose programming language that supports procedural, object-oriented and generic programming."
+                    ]
+                },
+                {
+                    "question": "What is the difference between C and C++?",
+                    "answer": [
+                        "C focuses on procedural programming. C++ adds classes, templates, exceptions, RAII and a rich standard library."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "inheritance",
+            "title": "Inheritance",
+            "description": "Understand how classes can reuse and extend behavior.",
+            "questions": [
+                {
+                    "question": "What is inheritance in C++?",
+                    "answer": [
+                        "Inheritance lets a derived class reuse or extend the members of a base class."
+                    ],
+                    "code": "class Animal {\npublic:\n    void eat() {}\n};\n\nclass Dog : public Animal {\npublic:\n    void bark() {}\n};"
+                },
+                {
+                    "question": "What are public, protected and private inheritance?",
+                    "answer": [
+                        "Public inheritance preserves public and protected accessibility. Protected inheritance makes inherited public and protected members protected. Private inheritance makes them private in the derived class."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "functions",
+            "title": "Functions",
+            "description": "Reusable blocks of code.",
+            "questions": [
+                {
+                    "question": "What is function overloading?",
+                    "answer": [
+                        "Multiple functions can share a name if their parameter lists differ. Return type alone cannot distinguish overloads."
+                    ],
+                    "code": "int add(int a, int b) { return a + b; }\ndouble add(double a, double b) { return a + b; }"
+                }
+            ]
+        },
+        {
+            "id": "raii",
+            "title": "RAII",
+            "description": "Manage resources safely through object lifetime.",
+            "questions": [
+                {
+                    "question": "What is RAII?",
+                    "answer": [
+                        "Resource Acquisition Is Initialization ties resource ownership to object lifetime. A destructor releases the resource automatically, including during exception unwinding."
+                    ],
+                    "code": "#include <memory>\nauto value = std::make_unique<int>(42); // automatic cleanup"
+                }
+            ]
+        }
+    ]
+}
