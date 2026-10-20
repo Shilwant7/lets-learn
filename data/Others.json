@@ -1,0 +1,659 @@
+{
+    "topics": [
+        {
+            "id": "makefile",
+            "title": "Makefile",
+            "description": "GNU Make: rules, variables, dependencies and common pitfalls.",
+            "questions": [
+                {
+                    "question": "What is make and how does it decide what to rebuild?",
+                    "answer": [
+                        "make is a build tool. You describe in a Makefile how to create a target from its prerequisites. make compares file modification times: if a target does not exist, or any prerequisite is newer than the target, the recipe runs. Otherwise the target is skipped.",
+                        "That is why only the changed files get recompiled."
+                    ],
+                    "code": "app: main.o util.o\n\tgcc main.o util.o -o app\n\nmain.o: main.c util.h\n\tgcc -c main.c\n\nutil.o: util.c util.h\n\tgcc -c util.c"
+                },
+                {
+                    "question": "What is the syntax of a rule? Why does 'missing separator' appear?",
+                    "answer": [
+                        "A rule is: target: prerequisites, followed by recipe lines. Every recipe line must begin with a TAB character, not spaces.",
+                        "'*** missing separator. Stop.' almost always means a recipe line starts with spaces instead of a tab (many editors convert tabs to spaces), or a line is not a valid rule or variable assignment.",
+                        "You can change the recipe prefix with .RECIPEPREFIX, but this is rarely done."
+                    ]
+                },
+                {
+                    "question": "What is the difference between =, :=, ?= and += in a Makefile?",
+                    "answer": [
+                        "= recursive (lazy): the value is expanded each time the variable is used, so it sees later changes of other variables.",
+                        ":= (or ::=) simple (immediate): expanded once at the moment of assignment.",
+                        "?= assign only if the variable is not already defined (good for defaults that the user can override).",
+                        "+= append to the existing value.",
+                        "Use := with $(shell ...) to avoid running the command again and again."
+                    ],
+                    "code": "A = $(B)\nB = hello\nC := $(B)\nB = world\n# A is 'world' (lazy), C is 'hello' (immediate)\nCC ?= gcc\nCFLAGS += -Wall"
+                },
+                {
+                    "question": "What are the automatic variables $@, $<, $^ and $?",
+                    "answer": [
+                        "$@ : the name of the target.",
+                        "$< : the first prerequisite.",
+                        "$^ : all prerequisites (without duplicates).",
+                        "$? : the prerequisites that are newer than the target.",
+                        "$* : the stem matched by % in a pattern rule."
+                    ],
+                    "code": "app: main.o util.o\n\t$(CC) $^ -o $@      # gcc main.o util.o -o app\n\n%.o: %.c\n\t$(CC) $(CFLAGS) -c $< -o $@"
+                },
+                {
+                    "question": "What is a pattern rule and what are implicit rules?",
+                    "answer": [
+                        "A pattern rule uses % to describe a whole family of targets, such as %.o: %.c. It saves you from writing one rule per file.",
+                        "make also has built-in implicit rules. For example, it knows how to build foo.o from foo.c using $(CC) $(CPPFLAGS) $(CFLAGS) -c. So 'app: main.o util.o' alone can work, because make finds the .c files itself.",
+                        "Use make -r to disable built-in rules, and make -p to print all rules and variables."
+                    ]
+                },
+                {
+                    "question": "What is .PHONY and why is it needed?",
+                    "answer": [
+                        "A phony target is a name for an action, not a file (like clean, all, install, test). If a real file named clean exists in the folder, make clean would say 'clean is up to date' and do nothing. Declaring .PHONY: clean tells make to always run it."
+                    ],
+                    "code": ".PHONY: all clean\nall: app\nclean:\n\trm -f *.o app"
+                },
+                {
+                    "question": "Why does changing a header file not trigger a rebuild, and how do you fix it?",
+                    "answer": [
+                        "Because the rule only lists the .c file as a prerequisite, make does not know that main.c includes util.h.",
+                        "The professional fix is automatic dependency generation: ask the compiler to write .d files with -MMD -MP and include them. -MMD creates the dependency file (without system headers), -MP adds dummy targets so a deleted header does not break the build."
+                    ],
+                    "code": "SRCS := $(wildcard *.c)\nOBJS := $(SRCS:.c=.o)\nDEPS := $(OBJS:.o=.d)\nCFLAGS += -MMD -MP\n\napp: $(OBJS)\n\t$(CC) $^ -o $@\n\n-include $(DEPS)"
+                },
+                {
+                    "question": "Why does each recipe line run in a separate shell? What problem does it cause?",
+                    "answer": [
+                        "make starts a new shell for every recipe line. So 'cd dir' on one line has no effect on the next line, and shell variables are not shared.",
+                        "Put commands on one line with && or ; or use a backslash to continue the line. GNU make 3.82+ also has .ONESHELL to run the whole recipe in one shell."
+                    ],
+                    "code": "build:\n\tcd src && $(MAKE)\n\n# or\nbuild:\n\tcd src; \\\n\tgcc -c a.c"
+                },
+                {
+                    "question": "What is the difference between $VAR, $(VAR) and $$VAR?",
+                    "answer": [
+                        "make variables with more than one letter need brackets: $(VAR) or ${VAR}. $VAR means $(V) followed by the letters AR.",
+                        "To pass a dollar sign to the shell, write $$. So a shell variable or command substitution inside a recipe needs $$, for example $$HOME, or $$(date)."
+                    ],
+                    "code": "show:\n\t@for f in *.c; do echo $$f; done\n\t@echo $(CC)"
+                },
+                {
+                    "question": "What is the difference between CFLAGS, CPPFLAGS, LDFLAGS and LDLIBS?",
+                    "answer": [
+                        "CPPFLAGS: preprocessor options like -I and -D.",
+                        "CFLAGS: C compiler options like -Wall -O2 -g.",
+                        "LDFLAGS: linker options like -L/path and -pthread.",
+                        "LDLIBS (or LIBS): libraries like -lm -lpthread.",
+                        "Order matters on the link line: libraries must come AFTER the object files that use them, otherwise you get 'undefined reference' errors with static linking and with --as-needed."
+                    ],
+                    "code": "CPPFLAGS = -Iinclude -DDEBUG\nCFLAGS   = -Wall -g\nLDFLAGS  = -Llib\nLDLIBS   = -lm -lpthread\napp: main.o\n\t$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@"
+                },
+                {
+                    "question": "What does make -j do and why can parallel builds fail?",
+                    "answer": [
+                        "make -jN runs up to N recipes at the same time. -j without a number is unlimited, which is dangerous.",
+                        "A build that works serially but fails with -j means a missing dependency: some target uses a file that the Makefile did not list as a prerequisite, so it only worked because of the usual order. The fix is to add the dependency, not to remove -j.",
+                        "Also be careful with recipes that write to the same file, and use order-only prerequisites for generated directories."
+                    ]
+                },
+                {
+                    "question": "How does recursive make work and what are its problems?",
+                    "answer": [
+                        "A top Makefile calls make in each sub-directory using $(MAKE) -C dir. Always write $(MAKE), not make, so that flags like -j and -n pass down correctly and -n (dry run) works.",
+                        "Problems: make in each directory does not see the whole dependency graph, so parallel builds and correct rebuilds can fail, and variables are not shared unless exported. A non-recursive Makefile with include is often better for large projects."
+                    ],
+                    "code": "SUBDIRS = lib app\nall:\n\tfor d in $(SUBDIRS); do $(MAKE) -C $$d || exit 1; done"
+                },
+                {
+                    "question": "How do you override variables from the command line or environment?",
+                    "answer": [
+                        "make CC=clang CFLAGS='-O2' sets the variable and overrides the value in the Makefile (unless the Makefile uses 'override').",
+                        "An environment variable does NOT override an assignment inside the Makefile, unless you run make -e. It only gives the default for variables not set in the Makefile (or set with ?=)."
+                    ]
+                },
+                {
+                    "question": "What are useful make command-line options for debugging a Makefile?",
+                    "answer": [
+                        "-n : dry run, print commands without running them.",
+                        "-B : rebuild everything regardless of timestamps.",
+                        "-k : keep going after errors.",
+                        "-C dir : change to a directory first.",
+                        "-p : print the database of rules and variables.",
+                        "-d or --debug=b : show why make decides to rebuild.",
+                        "-s : silent. -f file : use another file name.",
+                        "$(info text) and $(warning text) print messages while the Makefile is read."
+                    ]
+                },
+                {
+                    "question": "What do the prefixes @ and - mean in a recipe?",
+                    "answer": [
+                        "@ hides the command itself and shows only its output.",
+                        "- ignores a non-zero exit code of that command, so make continues. Normally any failing command stops make."
+                    ],
+                    "code": "clean:\n\t@echo Cleaning\n\t-rm -f missing_file"
+                },
+                {
+                    "question": "What are the useful make functions: wildcard, patsubst, shell, foreach?",
+                    "answer": [
+                        "$(wildcard *.c) : list of matching files.",
+                        "$(patsubst %.c,%.o,$(SRCS)) or $(SRCS:.c=.o) : change names by pattern.",
+                        "$(shell cmd) : run a shell command and use its output.",
+                        "$(foreach v,list,text) : loop. $(filter ...), $(sort ...), $(dir ...), $(notdir ...), $(addprefix ...) also exist."
+                    ],
+                    "code": "SRCS := $(wildcard src/*.c)\nOBJS := $(patsubst src/%.c,build/%.o,$(SRCS))\nGIT_HASH := $(shell git rev-parse --short HEAD)"
+                },
+                {
+                    "question": "What is an order-only prerequisite?",
+                    "answer": [
+                        "Written after a | in the prerequisite list. make makes sure it exists before the rule runs, but its timestamp does not trigger a rebuild. The standard use is creating an output directory, because a directory's timestamp changes whenever a file is added."
+                    ],
+                    "code": "build/%.o: src/%.c | build\n\t$(CC) -c $< -o $@\nbuild:\n\tmkdir -p build"
+                },
+                {
+                    "question": "How do you build a static library and a shared library with make?",
+                    "answer": [
+                        "Static: compile to .o, then pack with ar rcs libname.a files.o. Link with -L. -lname.",
+                        "Shared: compile with -fPIC (position independent code), then link with -shared. At run time the loader must find it: use -Wl,-rpath,<dir>, LD_LIBRARY_PATH, or install in a standard path and run ldconfig."
+                    ],
+                    "code": "libfoo.a: foo.o bar.o\n\tar rcs $@ $^\n\nlibfoo.so: CFLAGS += -fPIC\nlibfoo.so: foo.o bar.o\n\t$(CC) -shared -o $@ $^"
+                },
+                {
+                    "question": "How do you create a debug and a release build in the same Makefile?",
+                    "answer": [
+                        "Use a variable or target-specific variables. Target-specific variables apply to a target and its prerequisites.",
+                        "Better: build into different directories, so objects from debug and release do not mix. Otherwise switching mode will not rebuild files, because timestamps did not change."
+                    ],
+                    "code": "debug:   CFLAGS += -g -O0\nrelease: CFLAGS += -O2 -DNDEBUG\ndebug release: app"
+                },
+                {
+                    "question": "What is the default goal, and how can you change it?",
+                    "answer": [
+                        "The first target in the Makefile (that does not start with a dot) is the default one, run by plain 'make'. That is why 'all' is conventionally the first target.",
+                        "You can set it with .DEFAULT_GOAL := all."
+                    ]
+                },
+                {
+                    "question": "What is the difference between make and CMake?",
+                    "answer": [
+                        "make is a build executor: it runs commands based on a Makefile written by you.",
+                        "CMake is a build-system generator: from a CMakeLists.txt it generates Makefiles, Ninja files or IDE projects. It handles different platforms, compilers and finding libraries, so you do not write platform specifics by hand."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "cmake",
+            "title": "CMake",
+            "description": "CMakeLists.txt, targets, modern CMake and common pitfalls.",
+            "questions": [
+                {
+                    "question": "What is CMake and what are its stages?",
+                    "answer": [
+                        "CMake is a cross-platform meta build system. It does not compile anything itself. It reads CMakeLists.txt and generates native build files (Unix Makefiles, Ninja, Visual Studio, Xcode).",
+                        "Stages: 1) Configure: reads CMakeLists.txt, checks compilers and libraries, fills the cache. 2) Generate: writes the build files. 3) Build: you call the build tool (make, ninja), usually through cmake --build."
+                    ],
+                    "code": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release   # configure + generate\ncmake --build build --parallel                   # build\nctest --test-dir build --output-on-failure       # test\ncmake --install build --prefix /opt/app          # install"
+                },
+                {
+                    "question": "What does a minimal CMakeLists.txt look like?",
+                    "answer": [
+                        "cmake_minimum_required sets the policy version, project names the project and enables languages, add_executable creates a program target, and target_link_libraries links libraries to it."
+                    ],
+                    "code": "cmake_minimum_required(VERSION 3.16)\nproject(MyApp LANGUAGES C CXX)\n\nadd_library(util src/util.c)\ntarget_include_directories(util PUBLIC include)\n\nadd_executable(app src/main.c)\ntarget_link_libraries(app PRIVATE util)"
+                },
+                {
+                    "question": "What is an out-of-source build and why is it recommended?",
+                    "answer": [
+                        "The build files and objects go into a separate directory (for example build/), not into the source folder. You can delete the build directory to clean everything, keep several builds (Debug and Release) side by side, and your source tree stays clean in git.",
+                        "CMake has no reliable 'make distclean' in in-source builds."
+                    ]
+                },
+                {
+                    "question": "What is 'modern CMake' or target-based CMake?",
+                    "answer": [
+                        "Instead of setting global variables and directories (include_directories, link_directories, add_definitions, CMAKE_C_FLAGS), you attach properties to targets using target_include_directories, target_compile_definitions, target_compile_options and target_link_libraries. The properties then travel automatically to everything that links to the target.",
+                        "This makes dependencies explicit, and avoids hidden global settings."
+                    ]
+                },
+                {
+                    "question": "What is the difference between PUBLIC, PRIVATE and INTERFACE?",
+                    "answer": [
+                        "PRIVATE: needed only to build this target itself.",
+                        "INTERFACE: needed only by the users (targets that link to it), not to build itself. Used for header-only libraries.",
+                        "PUBLIC: needed by both this target and its users.",
+                        "Example: if util.h includes zlib.h, zlib must be PUBLIC for util. If only util.c includes zlib.h, zlib is PRIVATE."
+                    ],
+                    "code": "target_include_directories(util\n    PUBLIC  include        # users also need these headers\n    PRIVATE src)           # internal only\ntarget_link_libraries(util PRIVATE m)"
+                },
+                {
+                    "question": "What is the difference between include_directories and target_include_directories?",
+                    "answer": [
+                        "include_directories applies to every target in the current directory and below, including ones created later. It is global and hides which target needs what.",
+                        "target_include_directories applies only to the given target (and, with PUBLIC or INTERFACE, to its users). Prefer the target form. The same applies to add_definitions vs target_compile_definitions, and link_libraries vs target_link_libraries."
+                    ]
+                },
+                {
+                    "question": "What are the library types: STATIC, SHARED, OBJECT, INTERFACE, MODULE?",
+                    "answer": [
+                        "STATIC: .a or .lib archive, copied into the executable at link time.",
+                        "SHARED: .so, .dll or .dylib, loaded at run time.",
+                        "OBJECT: only compiles sources to object files, which can be reused in other targets.",
+                        "INTERFACE: no files, only usage requirements (header-only libraries).",
+                        "MODULE: a plugin loaded at run time with dlopen.",
+                        "If you omit the type, add_library follows the BUILD_SHARED_LIBS variable (default is static)."
+                    ],
+                    "code": "add_library(core STATIC core.c)\nadd_library(plugin MODULE plugin.c)\nadd_library(headers INTERFACE)\ntarget_include_directories(headers INTERFACE include)"
+                },
+                {
+                    "question": "What is the CMake cache (CMakeCache.txt) and what does -D do?",
+                    "answer": [
+                        "CMakeCache.txt in the build directory stores variables from earlier configure runs (compiler path, options, library paths). -DVAR=value sets a cache variable from the command line.",
+                        "Because of it, changing a set() in the CMakeLists may not take effect for a cache variable. If configuration behaves strangely, delete the build directory (or at least CMakeCache.txt) and configure again. Changing the compiler also requires a fresh build directory.",
+                        "option(NAME \"description\" ON) creates a boolean cache variable."
+                    ],
+                    "code": "option(ENABLE_TESTS \"Build tests\" ON)\n# cmake -S . -B build -DENABLE_TESTS=OFF"
+                },
+                {
+                    "question": "What are the CMake build types and what is the difference between single-config and multi-config generators?",
+                    "answer": [
+                        "Debug (-g), Release (-O3 -DNDEBUG), RelWithDebInfo (-O2 -g -DNDEBUG) and MinSizeRel (-Os).",
+                        "Single-config generators (Makefiles, Ninja) choose the type at configure time with -DCMAKE_BUILD_TYPE=Release. If you leave it empty, you get no optimisation and no -g flags.",
+                        "Multi-config generators (Visual Studio, Xcode, Ninja Multi-Config) choose it at build time with cmake --build build --config Release; CMAKE_BUILD_TYPE is ignored there."
+                    ]
+                },
+                {
+                    "question": "What is the difference between CMAKE_SOURCE_DIR, CMAKE_CURRENT_SOURCE_DIR, PROJECT_SOURCE_DIR and CMAKE_BINARY_DIR?",
+                    "answer": [
+                        "CMAKE_SOURCE_DIR: top-level source directory (where cmake -S points). Breaks when your project is included as a subproject by someone else.",
+                        "CMAKE_CURRENT_SOURCE_DIR: the directory of the CMakeLists.txt being processed now.",
+                        "PROJECT_SOURCE_DIR: the directory of the closest project() call. Good for referring to your own project root.",
+                        "CMAKE_BINARY_DIR and CMAKE_CURRENT_BINARY_DIR: the matching build directories."
+                    ]
+                },
+                {
+                    "question": "How does find_package work? What is the difference between Module mode and Config mode?",
+                    "answer": [
+                        "find_package(OpenSSL REQUIRED) looks for a package and defines variables and imported targets (for example OpenSSL::SSL), which you link with target_link_libraries.",
+                        "Module mode: CMake runs a FindXxx.cmake script (CMake ships many).",
+                        "Config mode: CMake finds XxxConfig.cmake or xxx-config.cmake, installed by the library itself. This is the modern way.",
+                        "If it is not found, give a hint with -DCMAKE_PREFIX_PATH=/path/to/install or -DXxx_DIR=/path/containing/XxxConfig.cmake."
+                    ],
+                    "code": "find_package(Threads REQUIRED)\nfind_package(ZLIB REQUIRED)\ntarget_link_libraries(app PRIVATE Threads::Threads ZLIB::ZLIB)"
+                },
+                {
+                    "question": "Why is file(GLOB ...) discouraged for source files?",
+                    "answer": [
+                        "The list is created only at configure time. If you add a new source file, the build system does not know it must re-run CMake, so the new file is silently not compiled until you configure again.",
+                        "Listing files explicitly is the recommended way. If you must use GLOB, add CONFIGURE_DEPENDS (CMake 3.12+), which makes the build re-check the list, at some cost."
+                    ],
+                    "code": "file(GLOB SRCS CONFIGURE_DEPENDS src/*.c)\nadd_executable(app ${SRCS})"
+                },
+                {
+                    "question": "How do you set the C or C++ standard?",
+                    "answer": [
+                        "Per target: set_target_properties(app PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF), or target_compile_features(app PUBLIC cxx_std_17).",
+                        "Globally: set(CMAKE_CXX_STANDARD 17) before creating targets. Without C_EXTENSIONS OFF you get -std=gnu11 and not -std=c11."
+                    ]
+                },
+                {
+                    "question": "What are variable scope rules in CMake? What does PARENT_SCOPE do?",
+                    "answer": [
+                        "A variable set in a directory is visible in that directory and its sub-directories (added with add_subdirectory), but not in the parent. A function has its own scope. A macro does not (it works like text replacement).",
+                        "set(VAR value PARENT_SCOPE) sets the variable in the caller's/parent's scope instead of the current one. CACHE variables are global."
+                    ],
+                    "code": "function(setup)\n    set(RESULT 42 PARENT_SCOPE)\nendfunction()\nsetup()\nmessage(STATUS \"${RESULT}\")"
+                },
+                {
+                    "question": "What is the difference between add_subdirectory, include and find_package?",
+                    "answer": [
+                        "add_subdirectory(dir): processes dir/CMakeLists.txt in a new scope with its own build folder. Used for parts of your own project or vendored source.",
+                        "include(file.cmake): runs a script in the current scope (utilities, modules).",
+                        "find_package: looks for an already built/installed external package."
+                    ]
+                },
+                {
+                    "question": "How do you install targets and what are CMAKE_INSTALL_PREFIX and DESTDIR?",
+                    "answer": [
+                        "install(TARGETS ...), install(FILES/DIRECTORY ...) say what goes where. Include GNUInstallDirs for standard directory names (bin, lib, include).",
+                        "CMAKE_INSTALL_PREFIX is the final install location (default /usr/local on Linux), and it can be baked into the paths of the program.",
+                        "DESTDIR is a staging root that is prepended at install time only (make install DESTDIR=/tmp/pkg). Used by package builders so files are copied to a temporary tree but keep the intended final paths."
+                    ],
+                    "code": "include(GNUInstallDirs)\ninstall(TARGETS app util\n    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\n    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})\ninstall(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})"
+                },
+                {
+                    "question": "How do you add and run tests with CTest?",
+                    "answer": [
+                        "Call enable_testing() (or include(CTest)) in the top-level CMakeLists, and add_test(NAME mytest COMMAND test_exe args). A test passes if the command returns 0.",
+                        "Run with ctest. Useful options: -R regex (select by name), -V (verbose), --output-on-failure, -j N (parallel)."
+                    ],
+                    "code": "enable_testing()\nadd_executable(test_util test_util.c)\ntarget_link_libraries(test_util PRIVATE util)\nadd_test(NAME util_test COMMAND test_util)"
+                },
+                {
+                    "question": "What are generator expressions?",
+                    "answer": [
+                        "Expressions of the form $<...> that are evaluated at generate time (not configure time), so they can depend on the build type or the target. They are needed for things like config-specific flags, and for different include paths when building and when installed.",
+                        "Common examples: $<CONFIG:Debug>, $<$<CONFIG:Debug>:-DDEBUG>, $<BUILD_INTERFACE:path>, $<INSTALL_INTERFACE:path>, $<TARGET_FILE:app>."
+                    ],
+                    "code": "target_compile_definitions(app PRIVATE $<$<CONFIG:Debug>:DEBUG_LOG>)\ntarget_include_directories(util PUBLIC\n    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>\n    $<INSTALL_INTERFACE:include>)"
+                },
+                {
+                    "question": "How do you cross-compile with CMake?",
+                    "answer": [
+                        "Write a toolchain file that sets CMAKE_SYSTEM_NAME, CMAKE_SYSTEM_PROCESSOR, CMAKE_C_COMPILER, CMAKE_CXX_COMPILER, CMAKE_SYSROOT and the find-root behaviour. Pass it with -DCMAKE_TOOLCHAIN_FILE=file.cmake on the first configure.",
+                        "CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER (use host tools) and MODE_LIBRARY/INCLUDE ONLY (use target libs) are the typical settings."
+                    ],
+                    "code": "# arm.cmake\nset(CMAKE_SYSTEM_NAME Linux)\nset(CMAKE_SYSTEM_PROCESSOR arm)\nset(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)\nset(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\nset(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)"
+                },
+                {
+                    "question": "What is the error with mixing target_link_libraries signatures, and what does 'undefined reference' mean here?",
+                    "answer": [
+                        "For one target you must use either the plain signature (target_link_libraries(app util)) or the keyword signature (PUBLIC/PRIVATE/INTERFACE) everywhere. Mixing gives an error.",
+                        "'undefined reference' at link time usually means the library was not linked (missing target_link_libraries), the order is wrong for static libraries, or the library was linked PRIVATE to an intermediate target while the final executable also uses its symbols."
+                    ]
+                },
+                {
+                    "question": "How do you pass information from CMake to the source code (configure_file, definitions)?",
+                    "answer": [
+                        "configure_file(config.h.in config.h) copies a template and replaces @VAR@ and ${VAR} with CMake values, and #cmakedefine lines become #define or comments.",
+                        "target_compile_definitions(app PRIVATE VERSION=\"1.2\") passes -D flags. Add the generated directory to the include path."
+                    ],
+                    "code": "# config.h.in\n#define APP_VERSION \"@PROJECT_VERSION@\"\n#cmakedefine ENABLE_LOG\n\n# CMakeLists.txt\nconfigure_file(config.h.in config.h)\ntarget_include_directories(app PRIVATE ${CMAKE_CURRENT_BINARY_DIR})"
+                },
+                {
+                    "question": "How do you use external dependencies with FetchContent, and how do you debug CMake?",
+                    "answer": [
+                        "FetchContent_Declare + FetchContent_MakeAvailable downloads a dependency (often from git) at configure time and adds it with add_subdirectory, so its targets can be linked directly.",
+                        "Debugging: message(STATUS \"var=${var}\"), cmake --trace-expand, cmake -LAH to list cache variables, cmake --build build --verbose (or VERBOSE=1 make) to see the real compiler commands, and -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to produce compile_commands.json for IDEs and clang tools."
+                    ],
+                    "code": "include(FetchContent)\nFetchContent_Declare(cjson\n    GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git\n    GIT_TAG v1.7.18)\nFetchContent_MakeAvailable(cjson)\ntarget_link_libraries(app PRIVATE cjson)"
+                },
+                {
+                    "question": "What are RPATH problems in CMake builds?",
+                    "answer": [
+                        "In the build tree, CMake adds a build RPATH so executables find your shared libraries without LD_LIBRARY_PATH. During install, it removes that build RPATH, so the installed program may fail with 'cannot open shared object file'.",
+                        "Fix it with set(CMAKE_INSTALL_RPATH \"$ORIGIN/../lib\") (or set INSTALL_RPATH on the target), or install libraries in a standard path."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "git-svn",
+            "title": "Git & SVN",
+            "description": "Version control: Git internals, daily workflows, recovery, and Subversion.",
+            "questions": [
+                {
+                    "question": "What is the main difference between Git and SVN?",
+                    "answer": [
+                        "Git is distributed: every clone has the full history, so you can commit, branch, diff and view logs offline. SVN is centralised: history lives on the server, and most operations (commit, log, diff against history) need a network connection.",
+                        "Git commits are snapshots identified by a hash, and branching is just a movable pointer (very cheap). SVN uses one global revision number for the whole repository, and branches are directory copies (also cheap on the server, but a different concept).",
+                        "SVN is still used for large binary assets, per-directory access control, and some legacy or regulated environments."
+                    ]
+                },
+                {
+                    "question": "What are the three areas in Git (working tree, staging area, repository)?",
+                    "answer": [
+                        "Working tree: the files you edit.",
+                        "Index (staging area): what will go into the next commit. git add copies changes there.",
+                        "Repository (.git): the commit history. git commit saves the staged snapshot.",
+                        "This is why git diff (working tree vs index), git diff --staged (index vs last commit) and git diff HEAD (working tree vs last commit) show different things."
+                    ],
+                    "code": "git add file.c         # working tree -> index\ngit commit -m \"msg\"    # index -> repository\ngit diff               # unstaged changes\ngit diff --staged      # staged changes"
+                },
+                {
+                    "question": "How does Git store data internally?",
+                    "answer": [
+                        "Git is a content-addressed database of four object types: blob (file content), tree (a directory listing of blobs and trees), commit (points to a tree, parent commits, author, message) and tag. Each object is named by the hash of its content (SHA-1 by default).",
+                        "A branch is just a small file holding a commit hash. HEAD is a pointer to the current branch (or directly to a commit in detached state).",
+                        "Identical file content is stored once, and Git later packs objects with delta compression."
+                    ]
+                },
+                {
+                    "question": "What is the difference between git fetch and git pull?",
+                    "answer": [
+                        "git fetch downloads new commits and updates remote-tracking branches (like origin/main) but does not change your local branch or files. It is always safe.",
+                        "git pull = git fetch + git merge (or + rebase with --rebase). It changes your current branch.",
+                        "Many experienced people prefer to fetch first, look at what changed (git log HEAD..origin/main), and then merge or rebase."
+                    ],
+                    "code": "git fetch origin\ngit log --oneline HEAD..origin/main\ngit pull --rebase"
+                },
+                {
+                    "question": "What is the difference between git merge and git rebase? When should you not rebase?",
+                    "answer": [
+                        "merge joins two histories with a merge commit (or a fast-forward), keeping the real history as it happened.",
+                        "rebase replays your commits on top of another base, creating new commits with new hashes, which gives a straight linear history.",
+                        "Golden rule: never rebase commits that others already have (pushed shared branches), because it rewrites history and forces everyone else to fix their copies. Rebase your own local, unpushed work."
+                    ],
+                    "code": "git switch feature\ngit rebase main        # replay feature commits on top of main\ngit switch main\ngit merge feature      # now a fast-forward"
+                },
+                {
+                    "question": "What is a fast-forward merge and what does --no-ff do?",
+                    "answer": [
+                        "If the target branch has no new commits since your branch started, Git simply moves the branch pointer forward. No merge commit is created.",
+                        "git merge --no-ff always creates a merge commit, so the fact that a feature branch existed stays visible in history, and you can revert the whole feature as one unit."
+                    ]
+                },
+                {
+                    "question": "What is the difference between git reset --soft, --mixed and --hard, and how is reset different from revert?",
+                    "answer": [
+                        "reset moves the current branch to another commit. --soft: keep changes staged. --mixed (default): keep changes in the working tree but unstaged. --hard: throw the changes away completely.",
+                        "revert creates a NEW commit that undoes an older commit. It does not change history, so it is the safe choice for commits that are already pushed.",
+                        "Use reset for local commits and revert for shared ones."
+                    ],
+                    "code": "git reset --soft HEAD~1   # undo commit, keep staged\ngit reset --hard HEAD~1   # undo commit and discard changes\ngit revert abc1234        # new commit that reverses abc1234"
+                },
+                {
+                    "question": "How do you undo common mistakes (wrong commit message, forgotten file, committed on the wrong branch, deleted branch)?",
+                    "answer": [
+                        "Fix the last commit message or add a forgotten file: git add file; git commit --amend (do not amend pushed commits).",
+                        "Committed on the wrong branch: create the right branch there (git branch newbranch), then git reset --hard HEAD~1 on the wrong branch.",
+                        "Discard local changes in a file: git restore file (older: git checkout -- file). Unstage a file: git restore --staged file.",
+                        "Lost commits after a hard reset or a deleted branch: git reflog shows where HEAD used to be, then git branch rescue <hash> or git reset --hard <hash>."
+                    ]
+                },
+                {
+                    "question": "What is the reflog and how does it save you?",
+                    "answer": [
+                        "The reflog is a local log of every position HEAD (and each branch) has been in. Even after reset --hard, a deleted branch or a bad rebase, the old commits are still in the object database for a time (30 to 90 days by default before cleanup), and the reflog tells you their hashes.",
+                        "It is local only. It is not pushed or shared."
+                    ],
+                    "code": "git reflog\ngit reset --hard HEAD@{2}"
+                },
+                {
+                    "question": "What is a detached HEAD and how do you get out of it?",
+                    "answer": [
+                        "HEAD normally points to a branch. When you check out a commit, tag or remote branch directly, HEAD points to the commit itself. New commits made there belong to no branch and can be lost after you switch away.",
+                        "To keep the work, create a branch at that point: git switch -c newbranch. To leave without keeping it: git switch main."
+                    ]
+                },
+                {
+                    "question": "How do you resolve a merge conflict?",
+                    "answer": [
+                        "Git stops and marks the conflicting files. Open them, look for markers (<<<<<<<, =======, >>>>>>>), choose the correct final content and delete the markers. Then git add the file and git commit (for a rebase use git rebase --continue).",
+                        "To give up: git merge --abort or git rebase --abort.",
+                        "Tools: git mergetool, git diff --name-only --diff-filter=U to list unresolved files, git checkout --ours / --theirs file to take one side. Be careful: in a rebase, 'ours' and 'theirs' are swapped (ours = the branch you rebase onto)."
+                    ],
+                    "code": "<<<<<<< HEAD\nint x = 1;\n=======\nint x = 2;\n>>>>>>> feature"
+                },
+                {
+                    "question": "What is git stash and how do you use it?",
+                    "answer": [
+                        "It saves your uncommitted changes on a stack and gives you a clean working tree, so you can switch branches. pop re-applies the latest stash and removes it, apply re-applies and keeps it.",
+                        "By default untracked files are not stashed. Use -u to include them."
+                    ],
+                    "code": "git stash push -m \"wip login\"\ngit stash list\ngit stash pop\ngit stash push -u"
+                },
+                {
+                    "question": "What is git cherry-pick?",
+                    "answer": [
+                        "It copies one or more specific commits from another branch onto the current branch, creating new commits with new hashes. Typical use: apply a bug fix from main to a release branch.",
+                        "Be careful: the same change then exists twice with different hashes, which can cause conflicts in a later merge."
+                    ],
+                    "code": "git switch release-1.0\ngit cherry-pick abc1234"
+                },
+                {
+                    "question": "How do you combine (squash) or edit several commits?",
+                    "answer": [
+                        "Use interactive rebase on commits not yet shared: git rebase -i HEAD~4. In the list change pick to squash (merge into the previous one), fixup (like squash, drop the message), reword (edit the message), edit (stop to change), or drop (remove).",
+                        "After rewriting history of a pushed branch you need a force push. Prefer git push --force-with-lease, which refuses if someone else pushed in the meantime, instead of plain --force."
+                    ]
+                },
+                {
+                    "question": "What is the difference between HEAD~1, HEAD^ and HEAD^2?",
+                    "answer": [
+                        "HEAD~1 and HEAD^ both mean the first parent of HEAD. HEAD~2 is the grandparent via first parents (same as HEAD^^).",
+                        "HEAD^2 means the SECOND parent, which only exists for a merge commit (the branch that was merged in).",
+                        "So ~N goes N generations back, while ^N chooses which parent."
+                    ]
+                },
+                {
+                    "question": "git add vs git commit -a, and what does 'git add -p' do?",
+                    "answer": [
+                        "git commit -a stages all modified and deleted TRACKED files automatically, but it does not add new (untracked) files.",
+                        "git add -p lets you choose parts (hunks) of a file to stage, so you can make small, focused commits from one messy working tree."
+                    ]
+                },
+                {
+                    "question": "Why does .gitignore not ignore a file that is already tracked, and how do you fix that?",
+                    "answer": [
+                        ".gitignore only affects untracked files. If a file was already committed, Git keeps tracking it.",
+                        "Stop tracking it but keep it on disk: git rm --cached file (or git rm -r --cached dir), then commit. Use git check-ignore -v file to see which rule matches."
+                    ]
+                },
+                {
+                    "question": "How do you find the commit that introduced a bug?",
+                    "answer": [
+                        "git bisect does a binary search through history. Mark one bad commit and one good commit; Git checks out the middle, you test and mark good or bad, and it finishes in about log2(N) steps. You can automate it with git bisect run <script>.",
+                        "Also useful: git blame file (who last changed each line), git log -S 'text' (commits that added/removed a string), git log -p -- file."
+                    ],
+                    "code": "git bisect start\ngit bisect bad              # current version is broken\ngit bisect good v1.0\n# test, then: git bisect good / bad\ngit bisect reset"
+                },
+                {
+                    "question": "What is the difference between a lightweight tag and an annotated tag?",
+                    "answer": [
+                        "A lightweight tag is only a name pointing to a commit. An annotated tag (git tag -a v1.0 -m 'msg') is a full object with tagger, date, message and an optional signature. Use annotated tags for releases.",
+                        "Tags are not pushed by default: git push origin v1.0 or git push --tags."
+                    ]
+                },
+                {
+                    "question": "How do you remove a password or large file committed by mistake from history?",
+                    "answer": [
+                        "First, treat a leaked secret as compromised: rotate or revoke it immediately. Removing it from history does not help if someone already copied it.",
+                        "To rewrite history use git filter-repo (recommended) or BFG Repo-Cleaner, then force push, and ask everybody to re-clone. git filter-branch is old and slow."
+                    ]
+                },
+                {
+                    "question": "How do you revert a merge commit?",
+                    "answer": [
+                        "A merge has two parents, so Git needs to know which side to keep: git revert -m 1 <merge-hash> keeps the first parent (usually the main branch).",
+                        "Gotcha: after reverting a merge, merging the same branch again will not bring back its old changes (Git thinks they are already merged). You must revert the revert first."
+                    ]
+                },
+                {
+                    "question": "What are origin, upstream and remote-tracking branches?",
+                    "answer": [
+                        "origin is the default name of the remote you cloned from. 'upstream' by convention names the original repository when you work on a fork.",
+                        "A remote-tracking branch (origin/main) is a local read-only copy of where the remote branch was at your last fetch. A local branch can be set to track one (git branch -u origin/main), which is what makes plain git pull and git push, and the 'ahead/behind' status, work."
+                    ],
+                    "code": "git remote -v\ngit remote add upstream https://github.com/orig/repo.git\ngit push -u origin feature"
+                },
+                {
+                    "question": "What branching strategies exist (Gitflow, GitHub flow, trunk-based)?",
+                    "answer": [
+                        "Gitflow: long-lived main and develop branches plus feature, release and hotfix branches. Good for scheduled releases, but heavy.",
+                        "GitHub flow: main is always deployable, short feature branches and pull requests.",
+                        "Trunk-based: everyone commits to main (or very short branches) often, with feature flags and strong CI. Preferred for continuous delivery."
+                    ]
+                },
+                {
+                    "question": "What are git submodules and git hooks?",
+                    "answer": [
+                        "A submodule embeds another repository at a fixed commit inside your repository. After cloning use git clone --recurse-submodules or git submodule update --init --recursive. The parent only records the commit hash, so you must commit the pointer when the submodule changes.",
+                        "Hooks are scripts in .git/hooks (pre-commit, commit-msg, pre-push, and so on) run on certain events, for example to run linters or check message format. They are not versioned or shared automatically (use core.hooksPath or tools like pre-commit)."
+                    ]
+                },
+                {
+                    "question": "How do you do a shallow clone and work with big repositories?",
+                    "answer": [
+                        "git clone --depth 1 downloads only the latest commit, which is much faster for CI. git fetch --unshallow gets the full history later. --filter=blob:none (partial clone) skips file contents until needed. sparse-checkout limits which folders appear in the working tree."
+                    ]
+                },
+                {
+                    "question": "SVN: what are trunk, branches and tags, and what are the basic commands?",
+                    "answer": [
+                        "By convention a repository has three top directories: trunk (main development), branches (parallel work) and tags (release snapshots). To SVN they are all just directories; the meaning is only a convention. A tag is a copy that should not be modified.",
+                        "svn checkout URL (get a working copy), svn update (get latest changes), svn status (what changed locally), svn diff, svn add, svn delete, svn move, svn commit -m 'msg', svn log, svn revert, svn info, svn resolve."
+                    ],
+                    "code": "svn checkout https://svn.example.com/repo/trunk proj\ncd proj\nsvn update\nsvn add newfile.c\nsvn commit -m \"Add newfile\""
+                },
+                {
+                    "question": "SVN: how do you create a branch or tag, and how do you switch?",
+                    "answer": [
+                        "svn copy is a cheap server-side copy (it does not duplicate data), so branching and tagging are fast and are done in the repository directly.",
+                        "svn switch URL changes your working copy to another branch without a new checkout."
+                    ],
+                    "code": "svn copy ^/trunk ^/branches/feature-x -m \"Create feature-x branch\"\nsvn copy ^/trunk ^/tags/release-1.0 -m \"Tag 1.0\"\nsvn switch ^/branches/feature-x"
+                },
+                {
+                    "question": "SVN: how does merging work?",
+                    "answer": [
+                        "Go to a working copy of the target (for example trunk) and run svn merge with the source URL. SVN 1.5+ keeps merge tracking in the svn:mergeinfo property, so it knows which revisions were already merged. Review the result, resolve conflicts, then svn commit the merge.",
+                        "Keep the feature branch in sync by merging trunk into it regularly. To merge only one change use svn merge -c REV URL, and to undo a committed revision use svn merge -c -REV . (negative revision)."
+                    ],
+                    "code": "cd trunk-wc\nsvn update\nsvn merge ^/branches/feature-x\nsvn commit -m \"Merge feature-x into trunk\"\n\nsvn merge -c -1234 .      # reverse-merge revision 1234"
+                },
+                {
+                    "question": "SVN: what is a tree conflict?",
+                    "answer": [
+                        "A conflict about the structure of files rather than their text content: for example you edited a file that someone else renamed or deleted, or the same file was moved in two different ways.",
+                        "svn status shows 'C' in a special column, and svn resolve --accept working (or theirs-full / mine-full) settles it after you decide how to combine the changes. Git handles many of these cases automatically by rename detection, while SVN needs manual choices."
+                    ]
+                },
+                {
+                    "question": "SVN: what are properties (svn:ignore, svn:externals, svn:executable)?",
+                    "answer": [
+                        "Properties are versioned key/value metadata attached to files and directories. svn:ignore lists patterns to ignore in a directory (set with svn propset or svn propedit, then commit; it is not recursive). svn:externals pulls another repository path into a directory (like a submodule). svn:executable marks a file executable. svn:eol-style and svn:mime-type control line endings and type.",
+                        "global-ignores in the client config is the machine-wide equivalent."
+                    ],
+                    "code": "svn propset svn:ignore \"*.o\" .\nsvn propset svn:externals \"lib ^/libs/common\" .\nsvn proplist -v file.c"
+                },
+                {
+                    "question": "SVN: what is the difference between svn export and checkout, and svn update vs svn commit conflicts?",
+                    "answer": [
+                        "checkout creates a working copy with .svn metadata, so you can commit and update. export gives a clean copy of the files with no .svn folders (for releases and packaging).",
+                        "A commit fails with 'out of date' if the server has newer changes in the same files. Run svn update first, resolve conflicts, then commit again."
+                    ]
+                },
+                {
+                    "question": "SVN vs Git: how do these commands map (update/pull, revert/restore, commit, branch)?",
+                    "answer": [
+                        "svn update is like git pull. svn commit = git commit + git push in one step (it goes straight to the server).",
+                        "svn revert file is like git restore file (discard local changes). svn status is git status. svn diff is similar to git diff.",
+                        "svn copy for a branch is like git branch + git push. svn switch is like git switch. svn log is git log (but for a path or a whole repository, and it needs the server).",
+                        "SVN has no staging area and no local commits, so you cannot commit work in progress without publishing it to everyone."
+                    ]
+                },
+                {
+                    "question": "SVN: how do locking, cleanup and repository maintenance work?",
+                    "answer": [
+                        "svn lock file makes a file read-only for others until svn unlock. It is used for binary files that cannot be merged (svn:needs-lock).",
+                        "svn cleanup fixes a working copy left in a locked or inconsistent state after an interrupted operation.",
+                        "On the server: svnadmin create, svnadmin dump / load (backup and migration), svnadmin hotcopy (safe live copy) and hook scripts in the hooks folder (pre-commit, post-commit)."
+                    ]
+                },
+                {
+                    "question": "How do you migrate from SVN to Git?",
+                    "answer": [
+                        "git svn clone converts the SVN history to a Git repository. Use --stdlayout if the repo follows trunk/branches/tags, and an authors file (--authors-file) to map SVN user names to Git name and email.",
+                        "After the conversion, convert SVN tag branches to real Git tags, clean up, and push to the new remote. Large repositories take a long time, and tools like svn2git help with branches and tags."
+                    ],
+                    "code": "git svn clone --stdlayout --authors-file=authors.txt https://svn.example.com/repo proj-git"
+                }
+            ]
+        }
+    ]
+}

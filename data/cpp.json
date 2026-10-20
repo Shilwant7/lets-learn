@@ -1130,7 +1130,8 @@
                 {
                     "question": "What is RAII?",
                     "answer": [
-                        "Resource Acquisition Is Initialization ties resource ownership to object lifetime. A destructor releases the resource automatically, including during exception unwinding."
+                        "Resource Acquisition Is Initialization ties resource ownership to object lifetime. A destructor releases the resource automatically, including during exception unwinding.",
+                        "RAII stands for Resource Acquisition Is Initialization. It’s a design principle in C++ where resource allocation happens when an object is created (in the constructor), and the resource is automatically released when the object goes out of scope (in the destructor). This ensures that resources like memory, file handles, or mutexes are properly managed without needing manual cleanup, making the code more robust and exception-safe"
                     ],
                     "code": "#include <memory>\nauto value = std::make_unique<int>(42); // automatic cleanup"
                 }

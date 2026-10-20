@@ -1,1 +1,32 @@
-{"topics":[{"id":"commands","title":"Basic Commands","description":"Everyday shell commands.","questions":[{"question":"How do I list files, including hidden ones?","answer":["Use ls -la to show a detailed listing, including dotfiles."],"code":"ls -la"}]},{"id":"permissions","title":"Permissions","description":"Read, write and execute access.","questions":[{"question":"What does chmod 755 mean?","answer":["The owner gets read/write/execute (7); group and others get read/execute (5 each)."],"code":"chmod 755 script.sh"}]}]}
+{
+  "topics": [
+    {
+      "id": "commands",
+      "title": "Basic Commands",
+      "description": "Everyday shell commands.",
+      "questions": [
+        {
+          "question": "How do I list files, including hidden ones?",
+          "answer": [
+            "Use ls -la to show a detailed listing, including dotfiles."
+          ],
+          "code": "ls -la"
+        }
+      ]
+    },
+    {
+      "id": "permissions",
+      "title": "Permissions",
+      "description": "Read, write and execute access.",
+      "questions": [
+        {
+          "question": "What does chmod 755 mean?",
+          "answer": [
+            "The owner gets read/write/execute (7); group and others get read/execute (5 each)."
+          ],
+          "code": "chmod 755 script.sh"
+        }
+      ]
+    }
+  ]
+}

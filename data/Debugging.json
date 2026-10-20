@@ -1,0 +1,474 @@
+{
+    "topics": [
+        {
+            "id": "gdb",
+            "title": "GDB",
+            "description": "GNU Debugger: breakpoints, watchpoints, core dumps, threads and remote debugging.",
+            "questions": [
+                {
+                    "question": "How to create a core dump file in linux?",
+                    "answer": [
+                        "ulimit -c unlimited\n\n",
+                        "Check the setting:",
+                        "ulimit -a\n",
+                        "The default path where core dumps are stored is then in /var/lib/systemd/coredump."
+
+                    ]
+                },
+                {
+                    "question": "How to compile code for gdb and run?",
+                    "answer": [
+                        "gcc program -o program.out -g",
+                        "g flag means you can see the proper names of variables and functions in your stack frames, get line numbers and see the source as you step around in the executable.",
+                        "gdb ./program.out"
+                    ]
+                },
+                {
+                    "question": "What are gdb usefull commands?",
+                    "answer": [
+                        "Here are few useful commands to get started with gdb for the above example:- ",
+                        "run or r : executes the program from start to end.",
+                        "break or b : sets breakpoint on a particular line.",
+                        "Info b : see the breakpoint info",
+                        "disable : disable a breakpoint.",
+                        "enable : enable a disabled breakpoint.",
+                        "next or n : executes next line of code, but don’t dive into functions.",
+                        "step : go to next instruction, diving into the function.",
+                        "list or l : displays the code.by default first 10 lines.",
+                        "print or p : used to display the stored value.",
+                        "quit or q : exits out of gdb.",
+                        "clear : to clear all breakpoints.",
+                        "continue : continue normal execution."
+                    ]
+                },
+                 {
+                    "question": "How to apply GDB to core dump?",
+                    "answer": [],
+                    "code": "gdb program.o -c corefile \n\nbt full or where"
+                },
+                {
+                    "question": "How to see the current/number of threads and how to set a particular thread?",
+                    "answer": [
+                        "(gdb) info threads",
+                        "output: ",
+                        "3 process 35 thread 27  0x34e5 in sigpause ()",
+                        "2 process 35 thread 23  0x34e5 in sigpause ()",
+                        "* 1 process 35 thread 13  main (argc=1, argv=0x7ffffff8)",
+                        "at threadtest.c:68",
+                        "Now to set to particular thread: ",
+                        "Thread <thread id>", 
+                        "Example:"
+                    ],
+                    "code": "thread 27"
+                },
+                {
+                    "question": "What is GDB and how do you prepare a program for debugging?",
+                    "answer": [
+                        "GDB is the GNU debugger. It lets you pause a running program, look at variables and memory, and step through code line by line.",
+                        "Compile with -g so the binary carries debug symbols (file names, line numbers, variable names). Use -O0 as well, because optimisation reorders or removes code and makes stepping confusing.",
+                        "Without -g you can still debug, but you only see assembly and function names, not source lines."
+                    ],
+                    "code": "gcc -g -O0 main.c -o main\ngdb ./main"
+                },
+                {
+                    "question": "What are the different ways to start GDB?",
+                    "answer": [
+                        "gdb ./prog : load a program, then type run.",
+                        "gdb --args ./prog a b c : load the program with command-line arguments. (Or use 'set args a b c' / 'run a b c' inside gdb.)",
+                        "gdb -p <pid> : attach to an already running process.",
+                        "gdb ./prog core : analyse a core dump after a crash.",
+                        "gdb -batch -ex 'run' -ex 'bt' --args ./prog : run non-interactively, useful in scripts and CI."
+                    ],
+                    "code": "gdb --args ./prog input.txt -v\n(gdb) run < data.txt        # redirect stdin\n(gdb) start                 # temporary breakpoint at main, then run"
+                },
+                {
+                    "question": "What is the difference between next, step, finish, until and continue?",
+                    "answer": [
+                        "next (n): run the next line, but treat a function call as one step (does not go inside).",
+                        "step (s): run the next line and go inside the function if it has debug info.",
+                        "finish: keep running until the current function returns, then print the return value.",
+                        "until / advance <line>: run until a line greater than the current one (leaves loops) or until a given location.",
+                        "continue (c): run until the next breakpoint, signal or exit.",
+                        "stepi / nexti: the same as step and next, but for one machine instruction."
+                    ],
+                    "code": "(gdb) break foo\n(gdb) run\n(gdb) step      # enter a callee\n(gdb) finish    # Run till exit... Value returned is $1 = 42"
+                },
+                {
+                    "question": "How do you set different kinds of breakpoints?",
+                    "answer": [
+                        "break func / break file.c:42 : stop at a function or line.",
+                        "tbreak : temporary breakpoint, deleted after it is hit once.",
+                        "break file.c:42 if i == 100 : conditional breakpoint.",
+                        "rbreak ^parse_ : breakpoints on all functions matching a regular expression.",
+                        "info breakpoints, disable 2, enable 2, delete 2 : manage them.",
+                        "ignore 1 50 : skip the next 50 hits of breakpoint 1."
+                    ],
+                    "code": "(gdb) break loop.c:12 if i == 100\n(gdb) condition 1 i == 200     # change condition of breakpoint 1\n(gdb) tbreak main"
+                },
+                {
+                    "question": "What is the difference between a breakpoint and a watchpoint?",
+                    "answer": [
+                        "A breakpoint stops when execution reaches a certain code location.",
+                        "A watchpoint stops when the value of a variable or memory address changes, no matter which line changed it. It is the best tool to find 'who overwrote my variable?'.",
+                        "watch var (on write), rwatch var (on read), awatch var (on read or write).",
+                        "Hardware watchpoints use CPU debug registers and are fast, but the number is limited (about 4 on x86). When the limit is exceeded, GDB falls back to software watchpoints, which single-step and are very slow."
+                    ],
+                    "code": "(gdb) watch counter\n(gdb) watch *(int*)0x7ffe1234abcd\n(gdb) watch arr[3] if arr[3] > 10"
+                },
+                {
+                    "question": "How do you find the cause of a segmentation fault using GDB?",
+                    "answer": [
+                        "Run the program inside gdb. When it crashes, gdb stops at the exact line. Then type bt to see the call chain.",
+                        "Use 'frame N' to jump to a stack frame, 'info locals' and 'print ptr' to check which pointer is NULL or invalid.",
+                        "If the crash happened somewhere else (for example on a customer machine), use the core file."
+                    ],
+                    "code": "(gdb) run\nProgram received signal SIGSEGV, Segmentation fault.\n(gdb) bt\n(gdb) frame 1\n(gdb) info locals\n(gdb) print *node"
+                },
+                {
+                    "question": "How do you debug using a core dump?",
+                    "answer": [
+                        "A core dump is a snapshot of the process memory at the time of the crash. Enable it with 'ulimit -c unlimited' in the shell before running the program.",
+                        "Where the file goes depends on /proc/sys/kernel/core_pattern. On many modern systems it is piped to systemd-coredump, so use coredumpctl gdb instead of looking for a file named core.",
+                        "Open it with gdb <binary> <core>. The binary must be the same build that crashed, ideally with debug symbols."
+                    ],
+                    "code": "ulimit -c unlimited\n./prog          # crashes, writes core\ngdb ./prog core\n(gdb) bt full"
+                },
+                {
+                    "question": "How do you print variables, arrays, structures and memory in GDB?",
+                    "answer": [
+                        "print var, print *ptr, print ptr->field, print/x var (hex), print/t var (binary), print/c var (char).",
+                        "Arrays through a pointer: print *arr@10 prints 10 elements starting at arr. (Plain print arr@10 does not do what you expect.)",
+                        "x (examine memory): x/<count><format><size> address. For example x/8xb &var shows 8 bytes in hex, x/4dw shows 4 words in decimal, x/s str prints a string, x/5i $pc prints 5 instructions.",
+                        "ptype shows the full type definition, whatis shows the type name only.",
+                        "set print pretty on makes structures easy to read."
+                    ],
+                    "code": "(gdb) print *arr@5\n$1 = {1, 2, 3, 4, 5}\n(gdb) x/8xb &value\n(gdb) x/s name\n(gdb) ptype struct node\n(gdb) set print pretty on"
+                },
+                {
+                    "question": "How do you change a variable or call a function while debugging?",
+                    "answer": [
+                        "set var x = 10 changes a variable (print x = 10 also does it).",
+                        "call func(3) or print func(3) runs a function in the debugged program.",
+                        "return (with an optional value) pops the current frame and returns immediately, skipping the rest of the function.",
+                        "jump <line> continues from another line. Be careful, because this can leave the stack in a bad state."
+                    ],
+                    "code": "(gdb) set var retries = 0\n(gdb) call cleanup(buf)\n(gdb) return -1"
+                },
+                {
+                    "question": "How do you move around the call stack?",
+                    "answer": [
+                        "backtrace (bt) shows the call stack. bt full also shows local variables of each frame. bt 5 shows only the innermost 5 frames.",
+                        "frame N selects a frame, up and down move one frame. After selecting a frame, info locals and print show variables of that frame.",
+                        "info frame gives details like saved registers and return address."
+                    ]
+                },
+                {
+                    "question": "How do you debug a multi-threaded program in GDB?",
+                    "answer": [
+                        "info threads lists all threads. thread N switches to thread N.",
+                        "thread apply all bt prints the backtrace of every thread. This is the first command for deadlock investigation: look for threads waiting in pthread_mutex_lock.",
+                        "By default, when you stop at a breakpoint, all threads stop (all-stop mode). When you step, other threads may run too. Use set scheduler-locking on to freeze other threads while stepping.",
+                        "break foo thread 2 sets a breakpoint only for thread 2."
+                    ],
+                    "code": "(gdb) info threads\n(gdb) thread apply all bt\n(gdb) set scheduler-locking on"
+                },
+                {
+                    "question": "How do you debug a program that calls fork()?",
+                    "answer": [
+                        "By default gdb keeps following the parent and the child runs free, so breakpoints in the child are never hit.",
+                        "set follow-fork-mode child makes gdb follow the child.",
+                        "set detach-on-fork off keeps both processes under gdb. Then use info inferiors and inferior N to switch.",
+                        "For exec() use set follow-exec-mode."
+                    ],
+                    "code": "(gdb) set follow-fork-mode child\n(gdb) set detach-on-fork off\n(gdb) break child_work\n(gdb) run"
+                },
+                {
+                    "question": "Why does gdb show '<optimized out>' and why do breakpoints land on strange lines?",
+                    "answer": [
+                        "The binary was built with optimisation (-O1, -O2, -O3). The compiler may keep a variable only in a register for a short time, merge or reorder lines, and inline functions.",
+                        "Rebuild with -O0 -g for debugging. If you must debug a release build, use -Og or -O2 -g, and expect jumps in the line order.",
+                        "Also remember that a bug that disappears at -O0 often means undefined behaviour or a missing volatile."
+                    ]
+                },
+                {
+                    "question": "What is the difference between -g, -ggdb and -g3? What if the binary is stripped?",
+                    "answer": [
+                        "-g produces debug info in the platform's native format (DWARF on Linux). -ggdb produces extra gdb-specific info. -g3 also includes macro definitions, so you can print macros.",
+                        "A stripped binary has no symbols, so bt shows only addresses. You can keep the debug info in a separate file with objcopy --only-keep-debug and load it in gdb using symbol-file or by build-id. Many distributions provide debuginfod to download symbols automatically."
+                    ],
+                    "code": "objcopy --only-keep-debug prog prog.debug\nstrip prog\ngdb -s prog.debug -e prog"
+                },
+                {
+                    "question": "How do you attach gdb to a running process and why can 'Operation not permitted' happen?",
+                    "answer": [
+                        "Use gdb -p <pid> or attach <pid> inside gdb. The process is paused when you attach. detach lets it continue.",
+                        "On many Linux systems, ptrace is restricted by Yama: /proc/sys/kernel/yama/ptrace_scope = 1 allows attaching only to your own child processes. Either run as root (sudo gdb -p pid) or set it to 0.",
+                        "In containers, ptrace needs the SYS_PTRACE capability."
+                    ],
+                    "code": "sudo gdb -p $(pidof myserver)\n(gdb) thread apply all bt\n(gdb) detach"
+                },
+                {
+                    "question": "What is remote debugging with gdbserver?",
+                    "answer": [
+                        "gdbserver runs on the target (for example an embedded board) and controls the program. gdb runs on your development PC and connects over TCP or serial.",
+                        "The PC copy of the binary has the symbols, so the target can have a small stripped binary. Use a cross-gdb (for example arm-none-eabi-gdb or aarch64-linux-gnu-gdb) matching the target."
+                    ],
+                    "code": "# on target\ngdbserver :1234 ./app\n# on host\ngdb-multiarch ./app\n(gdb) target remote 192.168.1.10:1234"
+                },
+                {
+                    "question": "How do you handle signals in gdb?",
+                    "answer": [
+                        "gdb stops when the program receives many signals. Use handle SIGUSR1 nostop noprint pass so gdb does not stop but still delivers the signal to the program.",
+                        "info signals lists the settings.",
+                        "You can send a signal yourself with signal SIGINT, or discard it with signal 0."
+                    ],
+                    "code": "(gdb) handle SIGALRM nostop noprint pass\n(gdb) handle SIGPIPE stop print"
+                },
+                {
+                    "question": "How can you stop a hung or infinite-loop program in gdb and find where it is stuck?",
+                    "answer": [
+                        "Press Ctrl+C in gdb. It sends SIGINT and the program stops where it is. Then use bt, and step a few times.",
+                        "For a program that is not under gdb, attach with gdb -p and run thread apply all bt.",
+                        "Do this a few times: if the same function appears every time, that is where it spends its time or waits."
+                    ]
+                },
+                {
+                    "question": "How do you automate actions at a breakpoint (commands, logging, .gdbinit)?",
+                    "answer": [
+                        "The commands block runs gdb commands when a breakpoint is hit, for example print a variable and continue. This works like adding a printf without recompiling.",
+                        "dprintf location,\"format\",args is a shortcut that prints and continues.",
+                        "Put settings in ~/.gdbinit (global) or .gdbinit (project, needs auto-load permission). Run scripts with gdb -x script.gdb."
+                    ],
+                    "code": "(gdb) break process if id > 100\n(gdb) commands\n> silent\n> printf \"id=%d\\n\", id\n> continue\n> end\n(gdb) dprintf file.c:50,\"x=%d\\n\", x"
+                },
+                {
+                    "question": "What is reverse debugging in gdb?",
+                    "answer": [
+                        "With record (record full), gdb saves each step so you can run backwards using reverse-next, reverse-step, reverse-continue and reverse-finish. It is slow and uses a lot of memory, but it is very helpful to find where a value became wrong.",
+                        "Tools like rr give a faster and more reliable record and replay for Linux."
+                    ],
+                    "code": "(gdb) break main\n(gdb) run\n(gdb) record\n(gdb) continue\n(gdb) reverse-continue"
+                },
+                {
+                    "question": "How do you look at registers, assembly and the instruction pointer?",
+                    "answer": [
+                        "info registers (or info registers rip) shows CPU registers. p $rsp, p $pc also work.",
+                        "disassemble shows the assembly of the current function. disassemble /s mixes source and assembly.",
+                        "x/10i $pc shows the next 10 instructions. layout asm or layout split shows them in the TUI.",
+                        "set disassembly-flavor intel gives Intel syntax instead of AT&T."
+                    ]
+                },
+                {
+                    "question": "Why is my breakpoint not hit or shown as 'pending'?",
+                    "answer": [
+                        "Common causes: no debug info (-g missing), the code is in a shared library not loaded yet (gdb asks to make the breakpoint pending; use set breakpoint pending on), the line has no code because of optimisation, a different binary is being run than the source you are looking at, or the function was inlined.",
+                        "Check with info breakpoints, info sharedlibrary and info source. Also check that the source path is right (directory command or set substitute-path)."
+                    ]
+                },
+                {
+                    "question": "What is TUI mode?",
+                    "answer": [
+                        "A text user interface inside the terminal that shows the source code in a window above the gdb prompt. Start with gdb -tui, or press Ctrl+X A to toggle. layout src, layout asm, layout regs, layout split pick the windows.",
+                        "If the screen gets garbled use Ctrl+L to refresh."
+                    ]
+                },
+                {
+                    "question": "How do you debug a stack overflow or a corrupted stack?",
+                    "answer": [
+                        "A stack overflow from deep recursion shows a very long backtrace (bt -20 shows the outermost 20 frames, bt 20 the innermost). Look for a repeating function pattern.",
+                        "For a corrupted stack (return address overwritten), the backtrace is garbage or ends at 0x4141414141. Use a watchpoint on the buffer neighbour or build with -fstack-protector or AddressSanitizer to find the overflowing write.",
+                        "Check the stack limit with ulimit -s."
+                    ]
+                },
+                {
+                    "question": "Can you step into a function that has no debug info, and why does 'step' skip it?",
+                    "answer": [
+                        "step does not enter functions that have no line info (like libc functions) and acts like next. Use stepi to go instruction by instruction, or set step-mode on so step also enters such functions at the assembly level.",
+                        "To skip uninteresting functions deliberately, use skip function foo or skip file bar.c."
+                    ],
+                    "code": "(gdb) skip function std::vector<int>::operator[]\n(gdb) set step-mode on"
+                }
+            ]
+        },
+        {
+            "id": "valgrind",
+            "title": "Valgrind",
+            "description": "Memory error and leak detection, profiling and thread checking.",
+            "questions": [
+                {
+                    "question": "How will you find memory leaks?",
+                    "answer": [
+                        "Memory leak occurs when programmers create a memory in heap and forget to delete it.",
+                        "Valgrind\\",
+                        "--tool=memcheck(fine grained memory checker)/massif(measures how much heap memory prog uses)/cachegrind(cache simulator)  \\",
+                        "--leak-check=full \\",
+                        "--show-leak-kinds=all \\",
+                        "--track-origins=yes \\",
+                        "--verbose \\",
+                        "--log-file=valgrind-out.txt \\",
+                        "./executable exampleParam1"
+                    ],
+                    "code": "valgrind --tool=memcheck --leak-check=full MyProgram.out"
+                },
+                {
+                    "question": "What is Valgrind and which tools does it have?",
+                    "answer": [
+                        "Valgrind is a framework that runs your program on a virtual CPU and instruments it to find problems, without recompiling. Its tools are:",
+                        "Memcheck (default): memory errors and leaks.",
+                        "Helgrind and DRD: data races and lock-order problems in threads.",
+                        "Massif: heap usage over time. DHAT: heap allocation behaviour.",
+                        "Cachegrind: cache and branch prediction simulation. Callgrind: call graph profile (view with KCachegrind).",
+                        "Choose a tool with --tool=<name>."
+                    ],
+                    "code": "valgrind ./prog                  # memcheck by default\nvalgrind --tool=helgrind ./prog"
+                },
+                {
+                    "question": "How do you run Valgrind to get the most useful report?",
+                    "answer": [
+                        "Compile with -g (and -O0 or -O1) so the report has file names and line numbers.",
+                        "Use --leak-check=full to see where each leak was allocated, --show-leak-kinds=all to include all kinds, and --track-origins=yes to learn where an uninitialised value came from (slower).",
+                        "--error-exitcode=1 makes Valgrind return a failure code, so it is useful in CI."
+                    ],
+                    "code": "gcc -g -O0 main.c -o main\nvalgrind --leak-check=full --show-leak-kinds=all \\\n         --track-origins=yes --error-exitcode=1 ./main"
+                },
+                {
+                    "question": "What are the leak categories: definitely lost, indirectly lost, possibly lost and still reachable?",
+                    "answer": [
+                        "Definitely lost: no pointer to the block exists anymore. A real leak. Fix it first.",
+                        "Indirectly lost: the block is only reachable from a block that is definitely lost (for example nodes of a list whose head was lost). Fixing the parent fixes these.",
+                        "Possibly lost: only a pointer into the middle of the block exists. It may be a leak, or you may be using interior pointers on purpose.",
+                        "Still reachable: a pointer still exists at exit (for example a global), but the memory was not freed. It is not a leak in the sense of growing memory, and many programs do this on purpose, but it can hide problems in long-running programs."
+                    ]
+                },
+                {
+                    "question": "What are the common error messages Memcheck prints and what do they mean?",
+                    "answer": [
+                        "Invalid read / write of size N: access outside an allocated block, or to freed memory (use-after-free). The message says how far from a block it was, for example '4 bytes after a block of size 40 alloc'd'.",
+                        "Conditional jump or move depends on uninitialised value(s): an if/loop used a variable that was never set.",
+                        "Invalid free() / delete: freeing a pointer twice, or a pointer that did not come from malloc.",
+                        "Mismatched free() / delete / delete []: allocated with one family (malloc, new, new[]) and released with another.",
+                        "Source and destination overlap in memcpy: should use memmove.",
+                        "Syscall param write(buf) points to uninitialised byte(s): writing garbage to a file or socket (can leak secrets)."
+                    ],
+                    "code": "int *a = malloc(10 * sizeof(int));\na[10] = 5;      // Invalid write of size 4 ... 0 bytes after a block of size 40\nfree(a);\nfree(a);        // Invalid free()"
+                },
+                {
+                    "question": "How does Valgrind (Memcheck) work and what is its cost?",
+                    "answer": [
+                        "It uses dynamic binary instrumentation: it translates your machine code on the fly and adds checking code. It replaces malloc/free with its own versions to track each block, and keeps shadow memory that records which bytes are addressable and which bits are initialised.",
+                        "Cost: programs run roughly 10 to 50 times slower and use more memory. So use small test inputs, or run in nightly tests."
+                    ]
+                },
+                {
+                    "question": "What can Valgrind NOT detect?",
+                    "answer": [
+                        "It does not reliably detect overflow of arrays on the stack or in global/static memory, because it only knows the bounds of heap blocks. An overflow inside a struct, or from one stack variable into its neighbour, is also missed.",
+                        "It only finds problems on paths that your test actually executes.",
+                        "It cannot find logic errors, and it is not meant for finding data races with Memcheck (use Helgrind or DRD).",
+                        "For stack and global overflows use AddressSanitizer."
+                    ]
+                },
+                {
+                    "question": "Valgrind vs AddressSanitizer (ASan): when do you use which?",
+                    "answer": [
+                        "ASan is built into the compiler (-fsanitize=address). It needs a rebuild, but is only about 2x slower, and it detects stack, global and heap overflows and use-after-return. LeakSanitizer is included on Linux.",
+                        "Valgrind needs no rebuild and works on any binary (including third-party libraries), and detects uninitialised value use, which ASan does not (that is MemorySanitizer).",
+                        "Do not use both at the same time in the same process. In practice: run ASan day to day, and use Valgrind when you cannot rebuild or need uninitialised-memory checks."
+                    ],
+                    "code": "gcc -g -fsanitize=address,undefined main.c -o main_asan"
+                },
+                {
+                    "question": "Is 'total heap usage: 10 allocs, 10 frees' proof that there are no leaks?",
+                    "answer": [
+                        "Not by itself. The counts only say the number of calls, not that each free matched the right block. A double free plus a missing free can still show equal counts.",
+                        "The reliable line is 'All heap blocks were freed -- no leaks are possible'. Read the full leak summary and the error summary too."
+                    ]
+                },
+                {
+                    "question": "How do you find the origin of 'Conditional jump depends on uninitialised value'?",
+                    "answer": [
+                        "Run with --track-origins=yes. Valgrind then adds 'Uninitialised value was created by a heap allocation / stack allocation at ...' with a stack trace.",
+                        "Remember that the error is reported where the value is USED in a decision, not where it was left uninitialised. Valgrind allows copying uninitialised values around silently and complains only at a branch, an address use or a system call."
+                    ]
+                },
+                {
+                    "question": "Why does Valgrind show no line numbers or '???' in the stack trace?",
+                    "answer": [
+                        "The program (or the library) was built without -g, or it was stripped. Rebuild with -g. For system libraries install their debug symbol packages.",
+                        "High optimisation can also give confusing line numbers, so use -O0 or -O1."
+                    ]
+                },
+                {
+                    "question": "How do you use suppressions?",
+                    "answer": [
+                        "A suppression file hides known, harmless errors, usually from third-party or system libraries that you cannot fix.",
+                        "Run with --gen-suppressions=all to print a ready-made suppression block after each error, copy the ones you want to a file, and pass --suppressions=my.supp.",
+                        "Use them carefully, so you do not hide real bugs."
+                    ],
+                    "code": "valgrind --gen-suppressions=all ./prog 2> out.txt\nvalgrind --suppressions=my.supp ./prog"
+                },
+                {
+                    "question": "How do you detect data races and deadlocks with Valgrind?",
+                    "answer": [
+                        "Use Helgrind (--tool=helgrind) or DRD (--tool=drd). Both watch pthread calls and memory accesses. Helgrind reports 'Possible data race during read/write' when two threads access the same location without a common lock, and also reports lock-order violations that can lead to deadlock.",
+                        "They are slower than Memcheck and may give false positives with custom synchronisation (such as lock-free code) unless annotated."
+                    ],
+                    "code": "valgrind --tool=helgrind ./threaded_prog"
+                },
+                {
+                    "question": "How do you profile heap usage with Massif?",
+                    "answer": [
+                        "valgrind --tool=massif ./prog writes massif.out.<pid>. Read it with ms_print massif.out.<pid>, which shows a graph of heap size over time and the allocation call chains at peak usage.",
+                        "Use --time-unit=B to measure time in bytes allocated and --pages-as-heap=yes to include all memory pages (not only malloc)."
+                    ],
+                    "code": "valgrind --tool=massif ./prog\nms_print massif.out.12345 | less"
+                },
+                {
+                    "question": "How do you find slow functions with Callgrind and Cachegrind?",
+                    "answer": [
+                        "valgrind --tool=callgrind ./prog creates callgrind.out.<pid>. View it with kcachegrind or callgrind_annotate. It shows instruction counts per function and per call, which is deterministic (not affected by machine noise).",
+                        "Cachegrind (--tool=cachegrind) simulates caches and branches, and shows cache misses per line with cg_annotate."
+                    ],
+                    "code": "valgrind --tool=callgrind ./prog\ncallgrind_annotate callgrind.out.12345"
+                },
+                {
+                    "question": "How do you use Valgrind with a program that forks or has multiple processes?",
+                    "answer": [
+                        "By default Valgrind only follows the main process. Use --trace-children=yes to also follow child processes started by fork and exec.",
+                        "Use --log-file=vg.%p.log so each process writes to its own file (%p is the pid)."
+                    ],
+                    "code": "valgrind --trace-children=yes --log-file=vg.%p.log ./launcher"
+                },
+                {
+                    "question": "How can you combine Valgrind with GDB?",
+                    "answer": [
+                        "Start with --vgdb=yes --vgdb-error=0. Valgrind stops at startup and waits for a gdb connection. In gdb run target remote | vgdb. You can then continue and gdb stops at the first Valgrind error, where you can inspect variables.",
+                        "Inside gdb you can also use monitor commands such as monitor leak_check full."
+                    ],
+                    "code": "valgrind --vgdb=yes --vgdb-error=0 ./prog\n# other terminal\ngdb ./prog\n(gdb) target remote | vgdb"
+                },
+                {
+                    "question": "Why does Valgrind report leaks in memory I free at exit, or errors in libc?",
+                    "answer": [
+                        "Many libraries allocate memory that lives until exit (still reachable), which is normal. Also some libraries, like OpenSSL or glibc, trigger known false positives, which distributions ship suppression files for.",
+                        "If you free memory inside an atexit handler, the leak check runs after the handlers, so it is fine."
+                    ]
+                },
+                {
+                    "question": "Why does a program behave differently (or not crash) under Valgrind?",
+                    "answer": [
+                        "Valgrind changes timing (so races can disappear), memory layout (uninitialised memory is filled with different bytes), and it makes malloc return memory at different addresses.",
+                        "A bug that vanishes under Valgrind, or only appears there, often means undefined behaviour or a race. Try Helgrind, ASan and TSan as well."
+                    ]
+                },
+                {
+                    "question": "What are Valgrind's limits on platforms and static binaries?",
+                    "answer": [
+                        "Valgrind supports Linux on x86, x86-64, ARM, ARM64, PPC, MIPS, s390x, and some other platforms. Support for macOS on newer versions is limited or missing, and Windows is not supported (use tools like Dr. Memory or the compiler sanitizers).",
+                        "Statically linked executables are a problem, because Valgrind cannot replace malloc inside them, so memory errors are mostly not detected. Link dynamically when testing."
+                    ]
+                }
+            ]
+        }
+    ]
+}
