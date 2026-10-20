@@ -1,1 +1,1356 @@
-{"topics":[{"id":"introduction","title":"Introduction","description":"Core concepts of C.","questions":[{"question":"What is C?","answer":["C is a general-purpose, compiled programming language commonly used for systems and embedded software."]}]},{"id":"pointers","title":"Pointers","description":"Addresses and indirection.","questions":[{"question":"What is a pointer?","answer":["A pointer stores the address of an object or function of a compatible type."],"code":"int x = 10;\nint *p = &x;\nprintf(\"%d\\n\", *p);"}]}]}
+{
+    "topics": [
+        {
+            "id": "introduction",
+            "title": "Introduction",
+            "description": "Core concepts of C.",
+            "questions": [
+                {
+                    "question": "What is C?",
+                    "answer": [
+                        "C is a general-purpose, compiled programming language commonly used for systems and embedded software.",
+                        "It is close to the hardware, fast, and gives you direct control over memory. Operating systems, drivers and microcontroller firmware are often written in it."
+                    ]
+                },
+                {
+                    "question": "What are the stages of compilation of a C program?",
+                    "answer": [
+                        "1. Preprocessing: handles lines starting with # (#include, #define). Output is expanded source code.",
+                        "2. Compilation: converts the expanded code into assembly.",
+                        "3. Assembly: converts assembly into machine code in an object file (.o).",
+                        "4. Linking: joins object files and libraries into one executable.",
+                        "Think of it like making a book: expand shorthand, translate, print pages, then bind them together."
+                    ],
+                    "code": "gcc -E main.c -o main.i   // preprocess only\ngcc -S main.i -o main.s   // to assembly\ngcc -c main.s -o main.o   // to object file\ngcc main.o -o main        // link"
+                },
+                {
+                    "question": "What is the difference between declaration and definition?",
+                    "answer": [
+                        "A declaration tells the compiler that a name exists and what its type is. No memory is reserved.",
+                        "A definition actually creates the thing: memory is reserved for a variable, or a body is given to a function.",
+                        "A variable can be declared many times (using extern) but defined only once in the whole program."
+                    ],
+                    "code": "extern int count;      // declaration (no memory)\nint count = 5;         // definition (memory reserved)\n\nint add(int, int);     // function declaration\nint add(int a, int b) { return a + b; }  // definition"
+                },
+                {
+                    "question": "What is the difference between a compiler and an interpreter?",
+                    "answer": [
+                        "A compiler translates the whole program into machine code first, then you run it. Runs fast.",
+                        "An interpreter reads and runs the program line by line. Usually slower.",
+                        "C is normally compiled."
+                    ]
+                },
+                {
+                    "question": "What is the difference between int main() and int main(void)?",
+                    "answer": [
+                        "In C, int main() means 'unspecified number of arguments'. The compiler will not complain if you call it with arguments.",
+                        "int main(void) clearly means 'takes no arguments'. It is the safer and recommended form.",
+                        "This is a common trap because in C++ both are the same."
+                    ],
+                    "code": "void f() {}      // C: can be called as f(1, 2) without error\nvoid g(void) {}  // C: g(1) is a compile error"
+                },
+                {
+                    "question": "What do argc and argv mean in main?",
+                    "answer": [
+                        "They carry command-line arguments. argc is the count of arguments. argv is an array of strings holding them.",
+                        "argv[0] is the program name. argv[argc] is always NULL."
+                    ],
+                    "code": "int main(int argc, char *argv[]) {\n    for (int i = 0; i < argc; i++)\n        printf(\"%d: %s\\n\", i, argv[i]);\n    return 0;\n}\n// ./a.out hello world  ->  0: ./a.out, 1: hello, 2: world"
+                },
+                {
+                    "question": "What does the return value of main mean?",
+                    "answer": [
+                        "It is the exit status given to the operating system. 0 (or EXIT_SUCCESS) means success, any non-zero value (or EXIT_FAILURE) means failure.",
+                        "In C99 and later, if main reaches the closing brace without a return, it behaves as if it returned 0."
+                    ]
+                },
+                {
+                    "question": "What is the difference between exit() and return in main?",
+                    "answer": [
+                        "return in main ends main and passes the value to the system.",
+                        "exit() can be called from any function and ends the whole program immediately, after running functions registered with atexit and flushing open files.",
+                        "In a normal (non-main) function, return only goes back to the caller, but exit() ends everything."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "data-types",
+            "title": "Data Types and Variables",
+            "description": "Basic types, sizes, signedness and conversions.",
+            "questions": [
+                {
+                    "question": "What are the basic data types in C and their typical sizes?",
+                    "answer": [
+                        "char: 1 byte. short: at least 2 bytes. int: usually 4 bytes. long: 4 or 8 bytes. long long: at least 8 bytes. float: 4 bytes. double: 8 bytes.",
+                        "The C standard only guarantees minimum sizes and ordering, not exact sizes. sizeof(char) is always 1.",
+                        "Use <stdint.h> (int32_t, uint8_t and so on) when you need exact sizes."
+                    ],
+                    "code": "printf(\"%zu %zu %zu %zu\\n\", sizeof(char), sizeof(int), sizeof(long), sizeof(double));"
+                },
+                {
+                    "question": "What is the difference between signed and unsigned?",
+                    "answer": [
+                        "A signed type can hold negative and positive values. An unsigned type holds only zero and positive values, but its maximum is about double.",
+                        "For an 8-bit type: signed range is -128 to 127, unsigned range is 0 to 255.",
+                        "Unsigned overflow wraps around (well-defined). Signed overflow is undefined behaviour."
+                    ],
+                    "code": "unsigned char c = 255;\nc = c + 1;   // wraps to 0"
+                },
+                {
+                    "question": "Is plain char signed or unsigned?",
+                    "answer": [
+                        "It is implementation-defined. On many x86 compilers it is signed, on many ARM compilers it is unsigned.",
+                        "This is a tricky question because code that compares or prints a char with high values can behave differently on different machines. Use signed char or unsigned char explicitly when it matters."
+                    ],
+                    "code": "char c = 200;\nprintf(\"%d\\n\", c);  // -56 on signed-char systems, 200 on unsigned-char systems"
+                },
+                {
+                    "question": "What is sizeof('a') in C?",
+                    "answer": [
+                        "It is 4 (size of int) in C, because a character constant has type int in C.",
+                        "In C++ it is 1. Many experienced people answer 1 and get it wrong."
+                    ],
+                    "code": "printf(\"%zu %zu\\n\", sizeof('a'), sizeof(char));  // C: 4 1"
+                },
+                {
+                    "question": "What is the difference between a variable declared as const and #define?",
+                    "answer": [
+                        "#define is a text replacement done by the preprocessor. It has no type, no memory and no scope.",
+                        "const creates a real typed variable. The compiler can type-check it and a debugger can see it.",
+                        "Prefer const (or enum for integer constants) over #define for safety."
+                    ],
+                    "code": "#define PI 3.14       // text replaced before compiling\nconst double pi = 3.14; // real variable with a type"
+                },
+                {
+                    "question": "What is type casting? What is the difference between implicit and explicit?",
+                    "answer": [
+                        "Type casting converts a value from one type to another.",
+                        "Implicit: the compiler does it automatically (for example int to float in a mixed expression).",
+                        "Explicit: you write it with (type). It is used when you want to force the conversion."
+                    ],
+                    "code": "int a = 7, b = 2;\nprintf(\"%d\\n\", a / b);          // 3 (integer division)\nprintf(\"%f\\n\", (float)a / b);   // 3.500000"
+                },
+                {
+                    "question": "What is integer promotion and why does -1 > 1u give true?",
+                    "answer": [
+                        "When an int and an unsigned int are compared, the int is converted to unsigned.",
+                        "-1 becomes a huge unsigned number (4294967295 for 32-bit), which is bigger than 1. So the comparison is true.",
+                        "Also, types smaller than int (char, short) are promoted to int before arithmetic."
+                    ],
+                    "code": "int a = -1;\nunsigned int b = 1;\nif (a > b) printf(\"surprise\\n\");   // prints, because a becomes unsigned"
+                },
+                {
+                    "question": "Why is 0.1 + 0.2 == 0.3 false for floating point?",
+                    "answer": [
+                        "Computers store floating point numbers in binary. Numbers like 0.1 cannot be stored exactly, just like 1/3 cannot be written exactly in decimal.",
+                        "So tiny errors appear. Compare floats by checking if the difference is smaller than a small epsilon."
+                    ],
+                    "code": "#include <math.h>\ndouble a = 0.1 + 0.2;\nif (fabs(a - 0.3) < 1e-9) printf(\"equal enough\\n\");"
+                },
+                {
+                    "question": "What is size_t?",
+                    "answer": [
+                        "It is an unsigned integer type used for sizes and counts. sizeof returns it, and malloc, strlen and array indexing use it.",
+                        "Print it with %zu. Be careful: because it is unsigned, 'for (size_t i = n-1; i >= 0; i--)' is an infinite loop."
+                    ]
+                },
+                {
+                    "question": "What is the difference between ++i and i++?",
+                    "answer": [
+                        "++i (pre-increment) increases i first, then gives the new value.",
+                        "i++ (post-increment) gives the old value first, then increases i.",
+                        "As a separate statement both do the same."
+                    ],
+                    "code": "int i = 5;\nint a = i++;  // a = 5, i = 6\nint b = ++i;  // i = 7, b = 7"
+                },
+                {
+                    "question": "What are the rules for naming variables (identifiers)?",
+                    "answer": [
+                        "Can contain letters, digits and underscore. Cannot start with a digit. Cannot be a keyword. Is case sensitive (count and Count are different).",
+                        "Names starting with underscore followed by a capital letter, or two underscores, are reserved for the compiler."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "operators",
+            "title": "Operators and Expressions",
+            "description": "Operators, precedence and evaluation order.",
+            "questions": [
+                {
+                    "question": "What is the difference between = and ==?",
+                    "answer": [
+                        "= assigns a value. == compares two values.",
+                        "Writing if (x = 5) assigns 5 to x and the condition is always true (non-zero). It is a classic bug. Some people write 5 == x to catch it at compile time."
+                    ],
+                    "code": "int x = 3;\nif (x = 5) printf(\"always runs, x is now 5\\n\");"
+                },
+                {
+                    "question": "What is short-circuit evaluation?",
+                    "answer": [
+                        "With && the right side is skipped if the left side is false. With || the right side is skipped if the left side is true.",
+                        "This is useful for safe checks, but be careful if the right side has side effects."
+                    ],
+                    "code": "int *p = NULL;\nif (p != NULL && *p > 0) { }   // *p is never evaluated, so no crash\n\nint a = 0, b = 0;\nif (a && b++) { }   // b++ never runs, b stays 0"
+                },
+                {
+                    "question": "What is the output of i = i++ + ++i? Why?",
+                    "answer": [
+                        "It is undefined behaviour. The variable i is modified more than once between two sequence points, and C does not say which change happens first.",
+                        "Any output is possible. A good answer is: 'Do not write such code'. Never depend on the order of evaluation of side effects."
+                    ],
+                    "code": "int i = 1;\ni = i++ + ++i;   // undefined behaviour"
+                },
+                {
+                    "question": "What is the order of evaluation of function arguments?",
+                    "answer": [
+                        "It is unspecified. In f(a(), b()), the compiler may call b() before a().",
+                        "So never write arguments that depend on each other's side effects, like printf(\"%d %d\", i++, i++)."
+                    ]
+                },
+                {
+                    "question": "What is the comma operator?",
+                    "answer": [
+                        "It evaluates the left expression, throws the result away, then evaluates and returns the right expression.",
+                        "Seen mostly in for loops. Do not confuse it with the comma that separates function arguments."
+                    ],
+                    "code": "int a = (1, 2, 3);   // a = 3\nfor (int i = 0, j = 10; i < j; i++, j--) { }"
+                },
+                {
+                    "question": "What is the ternary operator?",
+                    "answer": [
+                        "It is a short form of if-else that gives a value: condition ? value_if_true : value_if_false."
+                    ],
+                    "code": "int a = 5, b = 8;\nint max = (a > b) ? a : b;   // 8"
+                },
+                {
+                    "question": "What is the difference between logical and bitwise operators (&& vs &)?",
+                    "answer": [
+                        "&& and || work on whole truth values and give 0 or 1.",
+                        "& and | work on each bit separately.",
+                        "Example: 2 && 1 is 1 (both true), but 2 & 1 is 0 (bits 10 and 01 share no bit)."
+                    ],
+                    "code": "printf(\"%d %d\\n\", 2 && 1, 2 & 1);   // 1 0"
+                },
+                {
+                    "question": "What is operator precedence? Give a common mistake.",
+                    "answer": [
+                        "Precedence decides which operator is applied first, like multiplication before addition.",
+                        "Common mistake: == has higher precedence than &. So (x & 1 == 0) means x & (1 == 0), which is always 0. Use brackets: ((x & 1) == 0).",
+                        "When in doubt, use brackets."
+                    ],
+                    "code": "int x = 4;\nif (x & 1 == 0)   { }  // wrong, means x & 0\nif ((x & 1) == 0) { }  // correct: x is even"
+                },
+                {
+                    "question": "What happens on integer division by zero and on integer overflow?",
+                    "answer": [
+                        "Integer division or modulo by zero is undefined behaviour (usually crashes).",
+                        "Signed integer overflow is also undefined behaviour. Unsigned overflow wraps around and is defined.",
+                        "Floating point division by zero normally gives inf, not a crash."
+                    ]
+                },
+                {
+                    "question": "What does the % operator do with negative numbers?",
+                    "answer": [
+                        "Since C99 the result takes the sign of the left operand. So -7 % 3 is -1, and 7 % -3 is 1.",
+                        "It is not the same as a mathematical modulo that is always positive."
+                    ],
+                    "code": "printf(\"%d %d\\n\", -7 % 3, 7 % -3);  // -1 1"
+                }
+            ]
+        },
+        {
+            "id": "control-flow",
+            "title": "Control Flow",
+            "description": "Decisions and loops.",
+            "questions": [
+                {
+                    "question": "What is the difference between while, do-while and for loops?",
+                    "answer": [
+                        "while checks the condition first, so it may run zero times.",
+                        "do-while runs the body first and checks later, so it runs at least once.",
+                        "for puts initialisation, condition and update in one line, best when the count is known."
+                    ],
+                    "code": "int i = 10;\nwhile (i < 5) { }        // never runs\ndo { printf(\"once\\n\"); } while (i < 5);  // runs once"
+                },
+                {
+                    "question": "What is the difference between break and continue?",
+                    "answer": [
+                        "break leaves the loop (or switch) completely.",
+                        "continue skips the rest of the current round and goes to the next round of the loop."
+                    ],
+                    "code": "for (int i = 1; i <= 5; i++) {\n    if (i == 2) continue;  // skip 2\n    if (i == 4) break;     // stop at 4\n    printf(\"%d \", i);      // 1 3\n}"
+                },
+                {
+                    "question": "What is fall-through in switch?",
+                    "answer": [
+                        "If a case does not end with break, execution continues into the next case.",
+                        "It is sometimes done on purpose (several cases sharing code), but is often a bug."
+                    ],
+                    "code": "int x = 1;\nswitch (x) {\n    case 1: printf(\"one \");   // no break\n    case 2: printf(\"two \");   // also runs\n    break;\n    default: printf(\"other\");\n}\n// prints: one two"
+                },
+                {
+                    "question": "Can a switch use float or string values?",
+                    "answer": [
+                        "No. The switch expression must be an integer type (int, char, enum). Case labels must be compile-time constants.",
+                        "For strings use if-else with strcmp."
+                    ]
+                },
+                {
+                    "question": "What does this print: for(;;) ? Is it valid?",
+                    "answer": [
+                        "Yes, it is valid. All three parts of for are optional. An empty condition means 'always true', so it is an infinite loop. It is the same as while(1)."
+                    ]
+                },
+                {
+                    "question": "What does a semicolon right after if or for do?",
+                    "answer": [
+                        "It becomes an empty statement, so the body is that empty statement and the following block always runs.",
+                        "This is a very common hidden bug."
+                    ],
+                    "code": "int x = 0;\nif (x == 5);          // empty body\n{ printf(\"always prints\\n\"); }\n\nfor (int i = 0; i < 3; i++);   // loop does nothing\nprintf(\"%d\\n\", 3);"
+                },
+                {
+                    "question": "Is goto bad? When is it used?",
+                    "answer": [
+                        "goto jumps to a label in the same function. Overuse makes code hard to read.",
+                        "One accepted use is jumping out of deeply nested loops or to a single cleanup section on error."
+                    ],
+                    "code": "FILE *f = fopen(\"a.txt\", \"r\");\nif (!f) goto fail;\n/* ... work ... */\nfclose(f);\nreturn 0;\nfail:\nreturn 1;"
+                },
+                {
+                    "question": "What is the dangling else problem?",
+                    "answer": [
+                        "An else always belongs to the nearest unmatched if, no matter how you indent the code.",
+                        "Use braces to make your intention clear."
+                    ],
+                    "code": "if (a)\n    if (b) printf(\"A\");\nelse printf(\"B\");   // belongs to if (b), not if (a)"
+                }
+            ]
+        },
+        {
+            "id": "functions",
+            "title": "Functions",
+            "description": "Parameters, recursion, function pointers.",
+            "questions": [
+                {
+                    "question": "Is C call by value or call by reference?",
+                    "answer": [
+                        "C is always call by value. A copy of each argument is given to the function.",
+                        "To change the original you pass its address (a pointer). The pointer itself is still copied, but it points to the original. This is often called 'pass by pointer'."
+                    ],
+                    "code": "void swap(int *a, int *b) {\n    int t = *a; *a = *b; *b = t;\n}\nint x = 1, y = 2;\nswap(&x, &y);   // x = 2, y = 1"
+                },
+                {
+                    "question": "What is recursion? What are its disadvantages?",
+                    "answer": [
+                        "Recursion is when a function calls itself. It needs a base case to stop.",
+                        "Disadvantages: each call uses stack memory, so very deep recursion causes stack overflow, and it can be slower than a loop."
+                    ],
+                    "code": "int fact(int n) {\n    if (n <= 1) return 1;     // base case\n    return n * fact(n - 1);\n}"
+                },
+                {
+                    "question": "What is a function pointer? Give an example.",
+                    "answer": [
+                        "A function pointer holds the address of a function, so you can call functions chosen at run time. Used for callbacks and tables of handlers.",
+                        "Syntax: return_type (*name)(parameter_types)."
+                    ],
+                    "code": "int add(int a, int b) { return a + b; }\nint mul(int a, int b) { return a * b; }\n\nint (*op)(int, int) = add;\nprintf(\"%d\\n\", op(3, 4));   // 7\nop = mul;\nprintf(\"%d\\n\", op(3, 4));   // 12"
+                },
+                {
+                    "question": "What is a callback function?",
+                    "answer": [
+                        "A function that you pass (by pointer) to another function so it can call it later. qsort is a good example: you give it your comparison function."
+                    ],
+                    "code": "int cmp(const void *a, const void *b) {\n    return *(const int*)a - *(const int*)b;\n}\nint arr[] = {5, 2, 9};\nqsort(arr, 3, sizeof(int), cmp);"
+                },
+                {
+                    "question": "What are variadic functions? How does printf work?",
+                    "answer": [
+                        "A variadic function takes a variable number of arguments, written with ... in the declaration. You use va_list, va_start, va_arg and va_end from <stdarg.h>.",
+                        "printf reads the format string to know how many arguments to expect and their types. If the format and arguments do not match, the behaviour is undefined."
+                    ],
+                    "code": "#include <stdarg.h>\nint sum(int n, ...) {\n    va_list ap; va_start(ap, n);\n    int s = 0;\n    for (int i = 0; i < n; i++) s += va_arg(ap, int);\n    va_end(ap);\n    return s;\n}\n// sum(3, 10, 20, 30) returns 60"
+                },
+                {
+                    "question": "What is the output of printf(\"%d\", printf(\"Hi\"))?",
+                    "answer": [
+                        "The inner printf prints Hi and returns the number of characters printed, which is 2. Then the outer prints 2. Output: Hi2.",
+                        "Many people do not know that printf returns a value."
+                    ]
+                },
+                {
+                    "question": "What is the problem with returning a pointer to a local variable?",
+                    "answer": [
+                        "A local (auto) variable lives on the stack and is destroyed when the function ends. The returned pointer then points to dead memory (a dangling pointer). Using it is undefined behaviour.",
+                        "Fix: return a malloc'd pointer, use a static variable, or let the caller pass in a buffer."
+                    ],
+                    "code": "int *bad() { int x = 10; return &x; }          // wrong\nint *good() { int *p = malloc(sizeof *p); *p = 10; return p; }  // caller must free"
+                },
+                {
+                    "question": "What is an inline function? How is it different from a macro?",
+                    "answer": [
+                        "inline is a hint asking the compiler to put the function body at the call site to avoid call overhead.",
+                        "Unlike a macro, an inline function is type-checked, evaluates its arguments only once, and can be debugged."
+                    ]
+                },
+                {
+                    "question": "What is the difference between a function declaration (prototype) and definition? Why do we need prototypes?",
+                    "answer": [
+                        "A prototype tells the compiler the function's name, return type and parameter types before it is used, so it can check calls.",
+                        "Without a prototype, older C assumed the function returns int, which causes wrong results. Modern compilers warn or error."
+                    ]
+                },
+                {
+                    "question": "What is tail recursion?",
+                    "answer": [
+                        "A recursive call that is the very last action of the function. Compilers can optimise it into a loop, so no extra stack is used.",
+                        "C does not guarantee this optimisation, but GCC does it with optimisation on."
+                    ],
+                    "code": "int sum(int n, int acc) {\n    if (n == 0) return acc;\n    return sum(n - 1, acc + n);   // tail call\n}"
+                }
+            ]
+        },
+        {
+            "id": "pointers",
+            "title": "Pointers",
+            "description": "Addresses and indirection.",
+            "questions": [
+                {
+                    "question": "What is a pointer?",
+                    "answer": [
+                        "A pointer stores the address of an object or function of a compatible type.",
+                        "Think of a house address written on paper. The paper is the pointer, the house is the variable."
+                    ],
+                    "code": "int x = 10;\nint *p = &x;\nprintf(\"%d\\n\", *p);"
+                },
+                {
+                    "question": "What is a NULL pointer, a void pointer, a dangling pointer and a wild pointer?",
+                    "answer": [
+                        "NULL pointer: points to nothing. Dereferencing it is undefined (usually a crash).",
+                        "void pointer (void*): a generic pointer with no type. You must cast it before dereferencing. malloc returns it.",
+                        "Dangling pointer: points to memory that was freed or has gone out of scope.",
+                        "Wild pointer: an uninitialised pointer holding a random address.",
+                        "Good habit: initialise pointers to NULL and set them to NULL after free."
+                    ],
+                    "code": "int *wild;                 // wild, never use\nint *p = malloc(4);\nfree(p);                   // p is now dangling\np = NULL;                  // safe now"
+                },
+                {
+                    "question": "What is pointer arithmetic?",
+                    "answer": [
+                        "Adding 1 to a pointer moves it by the size of the type it points to, not by 1 byte.",
+                        "For an int* on a system with 4-byte int, p + 1 moves 4 bytes ahead.",
+                        "You can subtract two pointers of the same array to get the number of elements between them."
+                    ],
+                    "code": "int a[] = {10, 20, 30};\nint *p = a;\nprintf(\"%d\\n\", *(p + 2));   // 30\nprintf(\"%ld\\n\", (p + 2) - p); // 2"
+                },
+                {
+                    "question": "What is the difference between const int *p, int *const p and const int *const p?",
+                    "answer": [
+                        "Read from right to left.",
+                        "const int *p: pointer to a const int. You cannot change the value through p, but p can point elsewhere.",
+                        "int *const p: const pointer to int. p cannot point elsewhere, but you can change the value.",
+                        "const int *const p: neither can change."
+                    ],
+                    "code": "int a = 1, b = 2;\nconst int *p1 = &a;  p1 = &b;   /* ok */  /* *p1 = 5; error */\nint *const p2 = &a;  *p2 = 5;   /* ok */  /* p2 = &b; error */"
+                },
+                {
+                    "question": "What is a double pointer (pointer to pointer)? When is it used?",
+                    "answer": [
+                        "It stores the address of another pointer.",
+                        "Used when a function must change the caller's pointer (for example to allocate memory), for arrays of strings, and for 2D dynamic arrays."
+                    ],
+                    "code": "void alloc(int **pp) {\n    *pp = malloc(sizeof(int));\n    **pp = 42;\n}\nint *p = NULL;\nalloc(&p);\nprintf(\"%d\\n\", *p);   // 42\nfree(p);"
+                },
+                {
+                    "question": "What is the difference between an array and a pointer?",
+                    "answer": [
+                        "An array is a fixed block of memory with its own storage. A pointer is a variable that holds an address.",
+                        "sizeof(array) gives the total bytes of the array. sizeof(pointer) gives the size of the pointer (4 or 8).",
+                        "An array name usually 'decays' to a pointer to its first element, but you cannot assign to an array name (a = b is an error)."
+                    ],
+                    "code": "int a[5];\nint *p = a;\nprintf(\"%zu %zu\\n\", sizeof(a), sizeof(p));  // 20 8 (typical)"
+                },
+                {
+                    "question": "Why does a[i] equal i[a]?",
+                    "answer": [
+                        "The compiler converts a[i] to *(a + i). Addition is commutative, so *(i + a) is the same thing, and that is i[a].",
+                        "It works, but nobody should write it. It is asked to test if you understand arrays and pointers."
+                    ],
+                    "code": "int a[] = {10, 20, 30};\nprintf(\"%d %d\\n\", a[1], 1[a]);  // 20 20"
+                },
+                {
+                    "question": "What is the difference between a and &a for an array a?",
+                    "answer": [
+                        "Both give the same address value, but different types.",
+                        "a decays to a pointer to the first element (int*), so a + 1 moves by one element.",
+                        "&a is a pointer to the whole array (int (*)[5]), so &a + 1 moves by the whole array size."
+                    ],
+                    "code": "int a[5];\nprintf(\"%p %p\\n\", (void*)(a + 1), (void*)(&a + 1));  // second is 20 bytes further"
+                },
+                {
+                    "question": "Why does sizeof on an array parameter give the pointer size?",
+                    "answer": [
+                        "When you pass an array to a function, it decays into a pointer. The function receives only the address, not the size.",
+                        "That is why you must pass the length as a separate argument."
+                    ],
+                    "code": "void f(int arr[]) {\n    printf(\"%zu\\n\", sizeof(arr));   // 8, not the array size\n}\nint a[10];\nprintf(\"%zu\\n\", sizeof(a));   // 40\nf(a);"
+                },
+                {
+                    "question": "Can we do arithmetic on a void pointer?",
+                    "answer": [
+                        "Not in standard C, because void has no size. GCC allows it as an extension, treating the size as 1, but it is not portable.",
+                        "Cast to char* if you want byte-wise movement."
+                    ]
+                },
+                {
+                    "question": "What is the difference between NULL, 0, '\\0' and \"\"?",
+                    "answer": [
+                        "NULL is a null pointer constant (usually (void*)0).",
+                        "0 is the integer zero.",
+                        "'\\0' is the null character, an integer with value 0, used to end strings.",
+                        "\"\" is an empty string: an array with one element, '\\0'."
+                    ]
+                },
+                {
+                    "question": "What is the difference between malloc(), calloc(), free() and realloc()?",
+                    "answer": [
+                        "They are C library functions (<stdlib.h>) for dynamic memory allocation on the heap.",
+                        "malloc(size): allocates size bytes, memory is uninitialised (contains garbage). Returns void* or NULL on failure.",
+                        "calloc(n, size): allocates space for n elements of the given size and sets every byte to 0. It takes two parameters compared to malloc().",
+                        "realloc(ptr, newSize): resizes a block previously allocated with malloc/calloc. The block may move, so always assign the result to a temporary first.",
+                        "free(ptr): releases memory. Never free memory twice."
+                    ],
+                    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int n = 5;\n    int *p = malloc(n * sizeof(int));          // uninitialised\n    if (!p) return 1;\n    for (int i = 0; i < n; ++i) p[i] = i;\n\n    int *q = calloc(n, sizeof(int));           // all zeros\n    if (!q) { free(p); return 1; }\n\n    int *tmp = realloc(p, 2 * n * sizeof(int)); // grow\n    if (!tmp) { free(p); free(q); return 1; }   // old block still valid on failure\n    p = tmp;\n\n    printf(\"%d %d\\n\", q[0], p[4]);              // 0 4\n    free(p);\n    free(q);\n    return 0;\n}"
+                }
+            ]
+        },
+        {
+            "id": "arrays-strings",
+            "title": "Arrays and Strings",
+            "description": "Arrays, character strings and string functions.",
+            "questions": [
+                {
+                    "question": "How are strings represented in C?",
+                    "answer": [
+                        "A string is an array of char that ends with a null character '\\0'. There is no separate string type.",
+                        "A string of 5 letters needs 6 bytes, because of the '\\0'."
+                    ],
+                    "code": "char s[] = \"hello\";   // 6 bytes: h e l l o \\0\nprintf(\"%zu %zu\\n\", strlen(s), sizeof(s));  // 5 6"
+                },
+                {
+                    "question": "What is the difference between char s[] = \"abc\" and char *s = \"abc\"?",
+                    "answer": [
+                        "char s[] = \"abc\": a copy of the text is placed in your own array. You can change it.",
+                        "char *s = \"abc\": s points to a string literal stored in read-only memory. Changing it is undefined behaviour (usually a crash).",
+                        "Use const char *s for literals to let the compiler catch mistakes."
+                    ],
+                    "code": "char a[] = \"abc\";\na[0] = 'X';           // ok\nchar *p = \"abc\";\n// p[0] = 'X';       // crash / undefined behaviour"
+                },
+                {
+                    "question": "What is the difference between strlen and sizeof for a string?",
+                    "answer": [
+                        "strlen counts characters until '\\0' at run time, not counting '\\0'.",
+                        "sizeof gives the memory size of the array at compile time, including '\\0'. For a char pointer, sizeof gives the pointer size, not the string size."
+                    ],
+                    "code": "char a[20] = \"hi\";\nprintf(\"%zu %zu\\n\", strlen(a), sizeof(a));  // 2 20"
+                },
+                {
+                    "question": "Why is gets() dangerous? What should we use?",
+                    "answer": [
+                        "gets() has no way to limit how many characters are read, so long input overflows the buffer. It was removed from the C11 standard.",
+                        "Use fgets(buffer, size, stdin). It stops at size-1 characters. Note fgets keeps the newline character."
+                    ],
+                    "code": "char buf[50];\nif (fgets(buf, sizeof buf, stdin)) {\n    buf[strcspn(buf, \"\\n\")] = '\\0';   // remove newline\n}"
+                },
+                {
+                    "question": "What is the difference between strcpy, strncpy and memcpy?",
+                    "answer": [
+                        "strcpy copies until '\\0' with no size check. Can overflow the destination.",
+                        "strncpy copies at most n characters, but if the source is longer, it does NOT add '\\0'. You must add it yourself.",
+                        "memcpy copies exactly n bytes regardless of '\\0'. Use it for any raw data.",
+                        "For safe string copy, many people use snprintf."
+                    ],
+                    "code": "char dst[5];\nstrncpy(dst, \"abcdefgh\", sizeof dst - 1);\ndst[sizeof dst - 1] = '\\0';   // must add manually"
+                },
+                {
+                    "question": "What is the difference between memcpy and memmove?",
+                    "answer": [
+                        "memcpy is undefined if source and destination memory overlap.",
+                        "memmove is safe with overlap, because it behaves as if it copied through a temporary buffer."
+                    ],
+                    "code": "char s[] = \"abcdef\";\nmemmove(s + 2, s, 4);   // safe overlap\n// memcpy(s + 2, s, 4); would be undefined"
+                },
+                {
+                    "question": "How do you compare two strings? Why does == not work?",
+                    "answer": [
+                        "== on strings compares the addresses, not the text. Two equal strings at different places are not equal by ==.",
+                        "Use strcmp. It returns 0 if equal, a negative number if the first is smaller, positive if bigger."
+                    ],
+                    "code": "char a[] = \"hi\", b[] = \"hi\";\nprintf(\"%d\\n\", a == b);            // 0\nprintf(\"%d\\n\", strcmp(a, b) == 0); // 1"
+                },
+                {
+                    "question": "What happens if you access an array outside its bounds?",
+                    "answer": [
+                        "C does not check bounds. It is undefined behaviour. It may crash, print garbage, or silently overwrite other variables, which can become a security hole (buffer overflow)."
+                    ],
+                    "code": "int a[3] = {1, 2, 3};\nprintf(\"%d\\n\", a[5]);   // undefined behaviour"
+                },
+                {
+                    "question": "How do arrays get initialised? What happens if you give fewer values?",
+                    "answer": [
+                        "If you give fewer values than the size, the rest are set to zero.",
+                        "Global and static arrays are zero by default. Local arrays without initialiser contain garbage."
+                    ],
+                    "code": "int a[5] = {1, 2};   // 1 2 0 0 0\nint b[5] = {0};      // all zero\nint c[] = {1, 2, 3}; // size becomes 3"
+                },
+                {
+                    "question": "What is a variable length array (VLA)?",
+                    "answer": [
+                        "An array whose size is decided at run time, introduced in C99. It lives on the stack, so a big size can overflow the stack.",
+                        "It became optional in C11. For large or unknown sizes, prefer malloc."
+                    ],
+                    "code": "int n = 5;\nint arr[n];   // VLA"
+                },
+                {
+                    "question": "How do you create a 2D array dynamically?",
+                    "answer": [
+                        "Method 1: allocate an array of row pointers, then allocate each row. Method 2: allocate one single block of rows*cols and compute index = r*cols + c (faster, easier to free)."
+                    ],
+                    "code": "int rows = 3, cols = 4;\nint **m = malloc(rows * sizeof(int*));\nfor (int i = 0; i < rows; i++) m[i] = malloc(cols * sizeof(int));\n/* free */\nfor (int i = 0; i < rows; i++) free(m[i]);\nfree(m);"
+                },
+                {
+                    "question": "How do you reverse a string in place?",
+                    "answer": [
+                        "Use two indexes, one at the start and one at the end. Swap and move them toward each other."
+                    ],
+                    "code": "void reverse(char *s) {\n    int i = 0, j = strlen(s) - 1;\n    while (i < j) {\n        char t = s[i]; s[i] = s[j]; s[j] = t;\n        i++; j--;\n    }\n}"
+                },
+                {
+                    "question": "What is the difference between '\\n' and \"\\n\"? Between 'a' and \"a\"?",
+                    "answer": [
+                        "Single quotes make a character constant (an integer value). Double quotes make a string, which is an array ending in '\\0'.",
+                        "'a' is one char (value 97). \"a\" is two bytes: 'a' and '\\0'."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "memory-management",
+            "title": "Memory Management",
+            "description": "Stack, heap, leaks and memory layout.",
+            "questions": [
+                {
+                    "question": "What is the memory layout of a C program?",
+                    "answer": [
+                        "Text: the machine code, usually read-only.",
+                        "Data: global and static variables that have a non-zero initial value.",
+                        "BSS: global and static variables that are uninitialised or zero. Set to zero at start.",
+                        "Heap: dynamic memory (malloc), grows upward.",
+                        "Stack: local variables and function call information, grows downward."
+                    ]
+                },
+                {
+                    "question": "What is the difference between stack and heap?",
+                    "answer": [
+                        "Stack: automatic, fast, small, freed automatically when the function returns.",
+                        "Heap: manual (malloc/free), slower, large, stays until you free it.",
+                        "Stack problems: stack overflow (deep recursion, big local arrays). Heap problems: leaks, fragmentation, double free."
+                    ]
+                },
+                {
+                    "question": "What is a memory leak? How do you avoid it?",
+                    "answer": [
+                        "A memory leak happens when you allocate memory and lose the pointer to it without freeing it. The memory cannot be reused until the program ends.",
+                        "Avoid: free everything you allocate, match each malloc with a free, set pointers to NULL after free, and use tools like Valgrind or AddressSanitizer."
+                    ],
+                    "code": "int *p = malloc(100);\np = malloc(200);   // leak: first block is lost"
+                },
+                {
+                    "question": "What is a double free? What happens?",
+                    "answer": [
+                        "Calling free on the same pointer twice. It is undefined behaviour and can corrupt the heap or crash.",
+                        "free(NULL) is safe and does nothing, so setting pointers to NULL after free prevents double free."
+                    ]
+                },
+                {
+                    "question": "What does malloc(0) return?",
+                    "answer": [
+                        "It is implementation-defined. It may return NULL or a unique pointer that must not be dereferenced but can be freed.",
+                        "So do not assume NULL means failure when the size is 0."
+                    ]
+                },
+                {
+                    "question": "What happens when malloc fails? Do you always have to check?",
+                    "answer": [
+                        "It returns NULL. Yes, always check. Using the result without a check can crash.",
+                        "On Linux with overcommit, malloc can appear to succeed even when memory is low, and the crash occurs later, but you should still check."
+                    ]
+                },
+                {
+                    "question": "Why should realloc be assigned to a temporary pointer?",
+                    "answer": [
+                        "If realloc fails it returns NULL, but your original block is still valid. If you write p = realloc(p, n), you overwrite p with NULL and lose the original block (a leak).",
+                        "Assign to temp, check, then copy to p."
+                    ]
+                },
+                {
+                    "question": "What are the special cases of realloc?",
+                    "answer": [
+                        "realloc(NULL, n) works like malloc(n).",
+                        "realloc(ptr, 0) is implementation-defined and may free the block, so avoid it. Use free instead."
+                    ]
+                },
+                {
+                    "question": "What is a buffer overflow? Why is it dangerous?",
+                    "answer": [
+                        "Writing more data into a buffer than it can hold, overwriting nearby memory.",
+                        "Attackers can use it to change return addresses and run their own code. Prevent with bounds checks, fgets/snprintf, and safe functions."
+                    ]
+                },
+                {
+                    "question": "What is a stack overflow?",
+                    "answer": [
+                        "The stack has a fixed limit (often 1 to 8 MB). Infinite recursion or huge local arrays use it all up and the program crashes."
+                    ],
+                    "code": "void f(void) { f(); }   // infinite recursion, stack overflow"
+                },
+                {
+                    "question": "What is memory alignment and why does it matter?",
+                    "answer": [
+                        "CPUs read memory fastest when a value is placed at an address that is a multiple of its size. The compiler adds padding to make sure of this.",
+                        "malloc returns memory aligned for any type."
+                    ]
+                },
+                {
+                    "question": "What is a flexible array member?",
+                    "answer": [
+                        "A C99 feature: the last member of a struct can be an array with no size. You allocate extra memory for it with malloc, so the struct has a variable length."
+                    ],
+                    "code": "struct Packet {\n    int len;\n    char data[];   // flexible array member\n};\nstruct Packet *p = malloc(sizeof *p + 10);\np->len = 10;"
+                },
+                {
+                    "question": "What is the difference between memset and calloc? Is memset to 0 right for pointers and floats?",
+                    "answer": [
+                        "memset sets existing memory to a byte value. calloc allocates and zeros.",
+                        "All-bits-zero is 0 for integers and 0.0 for floats on common systems, but the C standard does not guarantee that all-bits-zero is a NULL pointer on every machine. In practice it works on mainstream platforms."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "structures",
+            "title": "Structures, Unions and Enums",
+            "description": "User-defined types.",
+            "questions": [
+                {
+                    "question": "What is a structure?",
+                    "answer": [
+                        "A structure groups different types of variables under one name. Like a form with several fields."
+                    ],
+                    "code": "struct Student {\n    int roll;\n    char name[20];\n    float marks;\n};\nstruct Student s = {1, \"Amit\", 88.5f};\nprintf(\"%s\\n\", s.name);"
+                },
+                {
+                    "question": "What is structure padding? Why is sizeof(struct) bigger than the sum of members?",
+                    "answer": [
+                        "The compiler adds unused bytes between members so each one is aligned to its natural boundary, which makes access faster.",
+                        "Ordering members from largest to smallest reduces padding."
+                    ],
+                    "code": "struct A { char c; int i; };      // usually 8 (3 bytes padding)\nstruct B { int i; char c; };      // usually 8 (3 bytes tail padding)\nstruct C { char a; char b; int i; }; // usually 8, not 12\nprintf(\"%zu\\n\", sizeof(struct A));"
+                },
+                {
+                    "question": "What is the difference between structure and union?",
+                    "answer": [
+                        "In a struct every member has its own memory. Size is at least the sum of all members.",
+                        "In a union all members share the same memory. Size is the size of the largest member. Only one member holds a valid value at a time (the last written)."
+                    ],
+                    "code": "union U { int i; float f; char c; };\nunion U u;\nu.i = 65;\nprintf(\"%zu\\n\", sizeof(u));  // 4"
+                },
+                {
+                    "question": "Can we compare two structures with ==?",
+                    "answer": [
+                        "No, it is a compile error. memcmp is also unsafe because padding bytes may contain garbage. Compare each member one by one."
+                    ]
+                },
+                {
+                    "question": "Can a structure contain a pointer to itself? Can it contain itself?",
+                    "answer": [
+                        "It can contain a pointer to its own type (that is how linked lists work). It cannot contain itself as a member, because its size would be infinite."
+                    ],
+                    "code": "struct Node {\n    int data;\n    struct Node *next;\n};"
+                },
+                {
+                    "question": "What is a bit field?",
+                    "answer": [
+                        "A struct member that uses a given number of bits. Saves memory for flags.",
+                        "Bit layout and ordering are implementation-defined and you cannot take the address of a bit field, so it is not good for portable data formats."
+                    ],
+                    "code": "struct Flags {\n    unsigned int a : 1;\n    unsigned int b : 3;\n};"
+                },
+                {
+                    "question": "What is an enum? Are enum values integers?",
+                    "answer": [
+                        "An enum is a set of named integer constants. By default values start at 0 and increase by 1.",
+                        "In C, enum constants are plain ints and you can assign any int to an enum variable without an error."
+                    ],
+                    "code": "enum Color { RED, GREEN = 5, BLUE };   // 0, 5, 6\nenum Color c = BLUE;"
+                },
+                {
+                    "question": "What is typedef? How is it different from #define?",
+                    "answer": [
+                        "typedef creates a new name for an existing type and is handled by the compiler. #define is plain text replacement.",
+                        "They behave differently with pointers: #define PINT int* then PINT a, b; makes only a a pointer. typedef int* PINT; PINT a, b; makes both pointers."
+                    ],
+                    "code": "#define PINT1 int*\ntypedef int* PINT2;\nPINT1 a, b;   // a is int*, b is int\nPINT2 c, d;   // both int*"
+                },
+                {
+                    "question": "How do you find the offset of a member in a structure?",
+                    "answer": [
+                        "Use the offsetof macro from <stddef.h>."
+                    ],
+                    "code": "#include <stddef.h>\nstruct S { char c; int i; };\nprintf(\"%zu\\n\", offsetof(struct S, i));   // usually 4"
+                },
+                {
+                    "question": "How do you pass a structure to a function?",
+                    "answer": [
+                        "By value: the whole structure is copied (slow for big structs and the original is unchanged).",
+                        "By pointer: only the address is passed. Faster, and the function can change the original. Use const pointer if it should not change."
+                    ],
+                    "code": "void show(const struct Student *s) { printf(\"%s\\n\", s->name); }"
+                }
+            ]
+        },
+        {
+            "id": "storage-classes",
+            "title": "Storage Classes and Qualifiers",
+            "description": "static, extern, register, const, volatile, restrict.",
+            "questions": [
+                {
+                    "question": "What are the storage classes in C?",
+                    "answer": [
+                        "auto: default for local variables. Lives while the block runs. Garbage value if uninitialised.",
+                        "static: lives for the whole program. Zero by default.",
+                        "extern: refers to a variable defined in another file.",
+                        "register: a hint to keep the variable in a CPU register. You cannot take its address."
+                    ]
+                },
+                {
+                    "question": "What are the uses of the static keyword?",
+                    "answer": [
+                        "Inside a function: the variable keeps its value between calls and is initialised only once.",
+                        "On a global variable or function: it becomes private to that file (internal linkage). Other files cannot access it."
+                    ],
+                    "code": "void counter(void) {\n    static int n = 0;\n    n++;\n    printf(\"%d \", n);\n}\n// calling counter() three times prints: 1 2 3"
+                },
+                {
+                    "question": "What is the difference between static and global variables?",
+                    "answer": [
+                        "A global variable can be used from other files with extern.",
+                        "A static global is visible only in its own file. A static local is visible only in its function but lives forever."
+                    ]
+                },
+                {
+                    "question": "What is volatile? Explain with an example.",
+                    "answer": [
+                        "volatile tells the compiler that a variable can change at any time outside the normal flow, so it must read it from memory each time and not optimise the reads away.",
+                        "Used for hardware registers, variables changed in an interrupt handler, and shared variables in signal handlers.",
+                        "Without volatile the compiler could turn the loop below into an infinite loop with a cached value."
+                    ],
+                    "code": "volatile int flag = 0;   // set by an interrupt\nwhile (!flag) { /* wait */ }"
+                },
+                {
+                    "question": "Can a variable be both const and volatile?",
+                    "answer": [
+                        "Yes. For example a read-only hardware status register: your code must not write to it (const), but its value can change by hardware (volatile).",
+                        "This is a favourite embedded interview question."
+                    ],
+                    "code": "const volatile unsigned int *status = (unsigned int *)0x40000000;"
+                },
+                {
+                    "question": "Can a pointer be volatile?",
+                    "answer": [
+                        "Yes. volatile int *p means the data pointed to is volatile. int *volatile p means the pointer itself is volatile. You can have both."
+                    ]
+                },
+                {
+                    "question": "What does the restrict keyword do?",
+                    "answer": [
+                        "A C99 promise to the compiler that, for the lifetime of the pointer, the memory it points to is accessed only through that pointer (no aliasing). This lets the compiler optimise more.",
+                        "If you break the promise, the behaviour is undefined. memcpy uses restrict, which is why overlap is not allowed."
+                    ]
+                },
+                {
+                    "question": "What is the scope and lifetime of a variable?",
+                    "answer": [
+                        "Scope: the part of the code where the name can be used (block, function, file).",
+                        "Lifetime: how long the memory exists (automatic, static, or allocated).",
+                        "They are different. A static local has function scope but program lifetime."
+                    ]
+                },
+                {
+                    "question": "What is the default value of local, static and global variables?",
+                    "answer": [
+                        "Local (auto): garbage (indeterminate). Static and global: 0.",
+                        "Heap memory from malloc is garbage. From calloc it is 0."
+                    ]
+                },
+                {
+                    "question": "Can we declare a static variable without initialising? Can we initialise it with a non-constant value?",
+                    "answer": [
+                        "Yes, it becomes 0. But in C a static (or global) variable must be initialised with a compile-time constant. int x = f(); at global scope is an error in C."
+                    ]
+                },
+                {
+                    "question": "What is the register keyword and can we take its address?",
+                    "answer": [
+                        "It suggests to the compiler to keep the variable in a CPU register for speed. Modern compilers ignore it mostly. You cannot use & on a register variable."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "preprocessor",
+            "title": "Preprocessor and Macros",
+            "description": "#define, #include, conditional compilation.",
+            "questions": [
+                {
+                    "question": "What is a macro? What are the dangers of macros?",
+                    "answer": [
+                        "A macro is a name replaced by text before compilation. Macros with arguments have no type checking, and arguments may be evaluated more than once.",
+                        "Always put brackets around each parameter and around the whole macro."
+                    ],
+                    "code": "#define SQUARE(x) x * x\nprintf(\"%d\\n\", SQUARE(2 + 3));   // 2 + 3 * 2 + 3 = 11, not 25\n\n#define SQ(x) ((x) * (x))\nint i = 3;\nprintf(\"%d\\n\", SQ(i++));  // undefined, i++ happens twice"
+                },
+                {
+                    "question": "What is the difference between #include <file.h> and #include \"file.h\"?",
+                    "answer": [
+                        "Angle brackets search the system include directories. Double quotes search the current directory first, then the system directories."
+                    ]
+                },
+                {
+                    "question": "What are include guards? Why are they needed?",
+                    "answer": [
+                        "They stop a header file from being included twice in one source file, which would cause 'redefinition' errors.",
+                        "Use #ifndef / #define / #endif, or #pragma once (not standard, but widely supported)."
+                    ],
+                    "code": "#ifndef MYHEADER_H\n#define MYHEADER_H\n/* declarations here */\n#endif"
+                },
+                {
+                    "question": "What do # and ## do in macros?",
+                    "answer": [
+                        "# turns a macro argument into a string (stringify).",
+                        "## joins two tokens into one (token pasting)."
+                    ],
+                    "code": "#define STR(x) #x\n#define JOIN(a, b) a##b\nprintf(\"%s\\n\", STR(hello));   // hello\nint JOIN(var, 1) = 5;          // int var1 = 5;"
+                },
+                {
+                    "question": "What are predefined macros like __FILE__, __LINE__ and __func__?",
+                    "answer": [
+                        "__FILE__: current file name. __LINE__: current line number. __DATE__ and __TIME__: compile date and time. __func__ (C99): current function name.",
+                        "Useful for logging and debugging."
+                    ],
+                    "code": "printf(\"%s:%d in %s\\n\", __FILE__, __LINE__, __func__);"
+                },
+                {
+                    "question": "What is conditional compilation?",
+                    "answer": [
+                        "Using #if, #ifdef, #ifndef, #else, #endif to include or exclude code at compile time, for example for debug code or different platforms."
+                    ],
+                    "code": "#ifdef DEBUG\n    printf(\"debug info\\n\");\n#endif"
+                },
+                {
+                    "question": "What is the difference between a macro and a function?",
+                    "answer": [
+                        "A macro is expanded in place (no call overhead, but bigger code, no type safety, hard to debug).",
+                        "A function is a real call (small overhead, type checked, evaluates arguments once, easy to debug)."
+                    ]
+                },
+                {
+                    "question": "What is the do { } while(0) trick in macros?",
+                    "answer": [
+                        "It makes a multi-statement macro behave like a single statement, so it works safely inside if-else with a semicolon."
+                    ],
+                    "code": "#define SWAP(a, b) do { int t = (a); (a) = (b); (b) = t; } while (0)\nif (x > y) SWAP(x, y);\nelse printf(\"ok\\n\");"
+                },
+                {
+                    "question": "What is #pragma?",
+                    "answer": [
+                        "A compiler-specific instruction. For example #pragma pack(1) changes structure packing, and #pragma once is an include guard. Unknown pragmas are ignored."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "bit-manipulation",
+            "title": "Bit Manipulation",
+            "description": "Bitwise operators and common tricks.",
+            "questions": [
+                {
+                    "question": "How do you set, clear, toggle and check a bit?",
+                    "answer": [
+                        "Set bit n: num |= (1 << n)",
+                        "Clear bit n: num &= ~(1 << n)",
+                        "Toggle bit n: num ^= (1 << n)",
+                        "Check bit n: (num >> n) & 1"
+                    ],
+                    "code": "unsigned int x = 0b0101;   // 5 (binary literal is a GCC/C23 feature)\nx |= (1u << 1);    // 0111\nx &= ~(1u << 0);   // 0110\nx ^= (1u << 2);    // 0010\nprintf(\"%u\\n\", (x >> 1) & 1);   // 1"
+                },
+                {
+                    "question": "How do you check if a number is a power of 2?",
+                    "answer": [
+                        "A power of 2 has exactly one bit set. n & (n - 1) removes the lowest set bit, so for a power of 2 the result is 0. Also check n > 0."
+                    ],
+                    "code": "int isPow2(unsigned n) { return n && !(n & (n - 1)); }"
+                },
+                {
+                    "question": "How do you count the number of set bits in a number?",
+                    "answer": [
+                        "Brian Kernighan's method: n & (n - 1) removes the lowest set bit. Count how many times you can do it until n is 0. It loops only as many times as there are set bits."
+                    ],
+                    "code": "int countBits(unsigned n) {\n    int c = 0;\n    while (n) { n &= (n - 1); c++; }\n    return c;\n}"
+                },
+                {
+                    "question": "How do you swap two numbers without a temporary variable?",
+                    "answer": [
+                        "Use XOR: a ^= b; b ^= a; a ^= b;",
+                        "It fails if both are the same variable (for example swap(&x, &x) gives 0), and modern compilers do not gain speed from it. A temp variable is clearer."
+                    ],
+                    "code": "int a = 5, b = 9;\na ^= b; b ^= a; a ^= b;   // a = 9, b = 5"
+                },
+                {
+                    "question": "How do you check if a machine is little endian or big endian?",
+                    "answer": [
+                        "Little endian stores the least significant byte at the lowest address. Big endian stores the most significant byte first.",
+                        "Store 1 in an int and read its first byte through a char pointer."
+                    ],
+                    "code": "int x = 1;\nchar *c = (char*)&x;\nprintf(\"%s\\n\", *c ? \"little endian\" : \"big endian\");"
+                },
+                {
+                    "question": "What is the difference between right shift of signed and unsigned numbers?",
+                    "answer": [
+                        "For unsigned, zeros are filled on the left (logical shift).",
+                        "For negative signed numbers, the result is implementation-defined (usually the sign bit is copied, called arithmetic shift).",
+                        "Left shifting a negative number, or shifting by a count greater than or equal to the bit width, is undefined."
+                    ]
+                },
+                {
+                    "question": "How do you reverse the bits of a number or swap its bytes?",
+                    "answer": [
+                        "Loop over each bit and build the result by shifting. For byte swapping (endianness conversion) use shifts and masks."
+                    ],
+                    "code": "unsigned swap32(unsigned x) {\n    return (x >> 24) | ((x >> 8) & 0xFF00) | ((x << 8) & 0xFF0000) | (x << 24);\n}"
+                },
+                {
+                    "question": "What is the result of ~0 and ~5?",
+                    "answer": [
+                        "~ flips every bit. ~0 is all ones, which is -1 for a signed int. ~5 is -6, because ~x equals -x - 1 in two's complement."
+                    ]
+                },
+                {
+                    "question": "How do you find the sign or absolute value without if?",
+                    "answer": [
+                        "Right-shifting a negative int copies the sign bit on most machines, giving -1 for negative and 0 for positive. This is implementation-defined, so it is mostly a trick question; the portable way is the ternary operator."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "file-handling",
+            "title": "File Handling",
+            "description": "Reading and writing files.",
+            "questions": [
+                {
+                    "question": "How do you open, read and close a file?",
+                    "answer": [
+                        "Use fopen to open (returns NULL on failure), then fgets, fscanf, fread to read, and fclose to close.",
+                        "Always check that fopen succeeded."
+                    ],
+                    "code": "FILE *f = fopen(\"data.txt\", \"r\");\nif (!f) { perror(\"fopen\"); return 1; }\nchar line[100];\nwhile (fgets(line, sizeof line, f)) printf(\"%s\", line);\nfclose(f);"
+                },
+                {
+                    "question": "What are the file opening modes?",
+                    "answer": [
+                        "\"r\": read, file must exist. \"w\": write, creates a new file or erases an existing one. \"a\": append at the end.",
+                        "\"r+\": read and write, file must exist. \"w+\": read and write, erases the file. \"a+\": read and append.",
+                        "Add b for binary files, such as \"rb\" or \"wb\"."
+                    ]
+                },
+                {
+                    "question": "Why is while(!feof(fp)) wrong?",
+                    "answer": [
+                        "feof becomes true only AFTER a read has tried to go past the end. So the loop runs one extra time and the last item is processed twice or with garbage.",
+                        "Correct way: check the return value of the read function."
+                    ],
+                    "code": "int x;\nwhile (fscanf(fp, \"%d\", &x) == 1) { /* use x */ }"
+                },
+                {
+                    "question": "What is the difference between text and binary files?",
+                    "answer": [
+                        "A text file stores readable characters, and on some systems (Windows) newline characters are translated.",
+                        "A binary file stores raw bytes exactly as in memory with no translation. Use fread/fwrite for binary."
+                    ]
+                },
+                {
+                    "question": "What are fseek, ftell and rewind?",
+                    "answer": [
+                        "fseek moves the file position. ftell returns the current position. rewind goes back to the start.",
+                        "A common use is to find the size of a file."
+                    ],
+                    "code": "fseek(f, 0, SEEK_END);\nlong size = ftell(f);\nrewind(f);"
+                },
+                {
+                    "question": "What is the difference between printf, fprintf and sprintf? Why prefer snprintf?",
+                    "answer": [
+                        "printf writes to the screen. fprintf writes to a file. sprintf writes into a string buffer.",
+                        "sprintf can overflow the buffer. snprintf takes the buffer size and is safe."
+                    ],
+                    "code": "char buf[20];\nsnprintf(buf, sizeof buf, \"Value=%d\", 42);"
+                },
+                {
+                    "question": "What does scanf return and what are its common mistakes?",
+                    "answer": [
+                        "It returns the number of items successfully read (or EOF).",
+                        "Common mistakes: forgetting & for non-string variables, %s stops at whitespace and has no length limit (use %19s for a char[20]), and a leftover newline stays in the buffer and confuses the next getchar or %c."
+                    ],
+                    "code": "int a;\nif (scanf(\"%d\", &a) != 1) { /* bad input */ }\nchar name[20];\nscanf(\"%19s\", name);"
+                },
+                {
+                    "question": "What is the difference between stdout and stderr? What is buffering?",
+                    "answer": [
+                        "stdout is for normal output and is usually buffered (shown when a newline comes or the buffer is full). stderr is for errors and is unbuffered.",
+                        "If a program crashes, unflushed stdout text may be lost. Use fflush(stdout) to force output."
+                    ]
+                },
+                {
+                    "question": "What are errno and perror?",
+                    "answer": [
+                        "errno is a global variable set by library functions when they fail. perror prints a readable message for the current errno. strerror(errno) gives the message text."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "data-structures",
+            "title": "Data Structures in C",
+            "description": "Common coding questions using pointers and structures.",
+            "questions": [
+                {
+                    "question": "How do you create a singly linked list and insert at the beginning?",
+                    "answer": [
+                        "Create a node with malloc, point its next to the current head, then make it the new head.",
+                        "Pass a pointer to the head pointer (double pointer) if the function must change the head."
+                    ],
+                    "code": "struct Node { int data; struct Node *next; };\n\nvoid push(struct Node **head, int val) {\n    struct Node *n = malloc(sizeof *n);\n    if (!n) return;\n    n->data = val;\n    n->next = *head;\n    *head = n;\n}"
+                },
+                {
+                    "question": "How do you reverse a linked list?",
+                    "answer": [
+                        "Walk through the list and change each node's next pointer to point to the previous node. Keep three pointers: prev, curr and next."
+                    ],
+                    "code": "struct Node *reverse(struct Node *head) {\n    struct Node *prev = NULL, *curr = head;\n    while (curr) {\n        struct Node *next = curr->next;\n        curr->next = prev;\n        prev = curr;\n        curr = next;\n    }\n    return prev;\n}"
+                },
+                {
+                    "question": "How do you detect a loop in a linked list?",
+                    "answer": [
+                        "Floyd's tortoise and hare: move one pointer 1 step and another 2 steps. If they ever meet, there is a loop. If the fast one reaches NULL, there is no loop."
+                    ],
+                    "code": "int hasLoop(struct Node *head) {\n    struct Node *slow = head, *fast = head;\n    while (fast && fast->next) {\n        slow = slow->next;\n        fast = fast->next->next;\n        if (slow == fast) return 1;\n    }\n    return 0;\n}"
+                },
+                {
+                    "question": "How do you find the middle of a linked list in one pass?",
+                    "answer": [
+                        "Use slow and fast pointers. When fast reaches the end, slow is at the middle."
+                    ],
+                    "code": "struct Node *middle(struct Node *head) {\n    struct Node *s = head, *f = head;\n    while (f && f->next) { s = s->next; f = f->next->next; }\n    return s;\n}"
+                },
+                {
+                    "question": "How do you implement a stack using an array?",
+                    "answer": [
+                        "Keep an array and an index 'top'. Push increases top and stores the value. Pop reads the value and decreases top. Check for overflow and underflow."
+                    ],
+                    "code": "#define MAX 100\nint stack[MAX], top = -1;\n\nint push(int v) { if (top == MAX - 1) return 0; stack[++top] = v; return 1; }\nint pop(int *v) { if (top < 0) return 0; *v = stack[top--]; return 1; }"
+                },
+                {
+                    "question": "How do you do binary search? What is the common bug?",
+                    "answer": [
+                        "Works on a sorted array. Compare the middle element, then keep searching in the left or right half.",
+                        "Common bug: (low + high) / 2 can overflow for large indexes. Use low + (high - low) / 2."
+                    ],
+                    "code": "int bsearch_idx(int a[], int n, int key) {\n    int lo = 0, hi = n - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (a[mid] == key) return mid;\n        if (a[mid] < key) lo = mid + 1; else hi = mid - 1;\n    }\n    return -1;\n}"
+                }
+            ]
+        },
+        {
+            "id": "tricky",
+            "title": "Tricky Questions (Looks Easy, Often Answered Wrong)",
+            "description": "Short questions where even experienced people often slip.",
+            "questions": [
+                {
+                    "question": "What is the output: int a = 5; printf(\"%d %d\", a, a++)?",
+                    "answer": [
+                        "Undefined behaviour. The order in which printf's arguments are evaluated is unspecified, and a is read and modified without a sequence point in between. Output can be '5 5' or '6 5'.",
+                        "The right answer is to say it is undefined."
+                    ]
+                },
+                {
+                    "question": "What is the output of printf(\"%d\", sizeof(int) > -1)?",
+                    "answer": [
+                        "It prints 0. sizeof gives size_t (unsigned). -1 converts to a very large unsigned number, so 4 > huge is false.",
+                        "This is the same signed/unsigned comparison trap."
+                    ]
+                },
+                {
+                    "question": "What is the output: printf(\"%s\", NULL)?",
+                    "answer": [
+                        "Undefined behaviour. Some libraries print (null), but others crash. Never pass NULL to %s."
+                    ]
+                },
+                {
+                    "question": "What is the output: char c = 'a'; printf(\"%d\", c + 1)?",
+                    "answer": [
+                        "98. c is promoted to int (97) and 1 is added. If you want the next character, print with %c: it gives 'b'."
+                    ]
+                },
+                {
+                    "question": "What is wrong with: char *p = malloc(strlen(s)); strcpy(p, s);?",
+                    "answer": [
+                        "strlen does not count the terminating '\\0'. You need strlen(s) + 1 bytes. Otherwise strcpy writes one byte past the end (buffer overflow)."
+                    ],
+                    "code": "char *p = malloc(strlen(s) + 1);\nstrcpy(p, s);"
+                },
+                {
+                    "question": "What is wrong with: int *p = malloc(sizeof(p)); ?",
+                    "answer": [
+                        "sizeof(p) is the size of the pointer (8), not of an int. Use sizeof(*p) so the size always matches the type pointed to. Writing p = malloc(sizeof *p) is the safest style."
+                    ]
+                },
+                {
+                    "question": "Does free(p) set p to NULL?",
+                    "answer": [
+                        "No. free only releases the memory. p still holds the old address (dangling). You must set p = NULL yourself, because free gets a copy of the pointer and cannot change yours."
+                    ]
+                },
+                {
+                    "question": "Is it safe to call free(NULL)?",
+                    "answer": [
+                        "Yes. It does nothing. So you do not need an if (p) check before free."
+                    ]
+                },
+                {
+                    "question": "What is the difference between ++*p, *p++ and (*p)++?",
+                    "answer": [
+                        "++*p: increases the value pointed to, then uses it.",
+                        "*p++: uses the value pointed to, then moves the pointer forward (post-increment applies to p, not to *p).",
+                        "(*p)++: uses the value, then increases the value pointed to."
+                    ],
+                    "code": "int a[] = {10, 20};\nint *p = a;\nint x = *p++;   // x = 10, p now points to 20\np = a;\n(*p)++;         // a[0] becomes 11"
+                },
+                {
+                    "question": "What does this print: int x = 10; { int x = 20; } printf(\"%d\", x);",
+                    "answer": [
+                        "10. The inner x is a separate variable that hides the outer one only inside its block. It ends at the closing brace."
+                    ]
+                },
+                {
+                    "question": "Can a function return an array?",
+                    "answer": [
+                        "No, a function cannot return an array type. It can return a pointer to an array (which must not be local), or a struct that contains an array."
+                    ]
+                },
+                {
+                    "question": "What is the size of an empty structure in C?",
+                    "answer": [
+                        "An empty struct is not allowed in standard C. GCC allows it as an extension and gives size 0. In C++ the size is 1."
+                    ]
+                },
+                {
+                    "question": "What is the output of: if (printf(\"\")) printf(\"A\"); else printf(\"B\");",
+                    "answer": [
+                        "B. printf(\"\") prints nothing and returns 0, so the condition is false."
+                    ]
+                },
+                {
+                    "question": "What is the value of an uninitialised local variable?",
+                    "answer": [
+                        "Indeterminate (garbage). Reading it is undefined behaviour in some cases. Do not assume it is 0."
+                    ]
+                },
+                {
+                    "question": "Is main allowed to call itself? Is it a keyword?",
+                    "answer": [
+                        "In C, main can call itself (recursion is allowed), although in C++ it is forbidden. main is not a keyword. It is a special function name where execution starts."
+                    ]
+                },
+                {
+                    "question": "Is C pass by reference for arrays?",
+                    "answer": [
+                        "Not truly. The array decays into a pointer to its first element, and that pointer is passed by value. But since the function has the address, it can modify the original array elements, so it looks like pass by reference."
+                    ]
+                },
+                {
+                    "question": "What is the difference between a pointer and a reference in C?",
+                    "answer": [
+                        "C does not have references. They exist in C++. In C, only pointers are used. This tests if you mix C with C++."
+                    ]
+                },
+                {
+                    "question": "What is the output: int arr[3] = {1,2,3}; printf(\"%d\", sizeof(arr)/sizeof(arr[0]));",
+                    "answer": [
+                        "3. It is the usual way to find the element count, but it works only where arr is a real array, not a pointer or an array parameter."
+                    ]
+                },
+                {
+                    "question": "What is undefined, unspecified and implementation-defined behaviour?",
+                    "answer": [
+                        "Undefined: the standard puts no rules. Anything can happen (crash, wrong output, works by luck). Example: array out of bounds, signed overflow.",
+                        "Unspecified: the standard allows several results and the compiler need not say which. Example: order of evaluation of function arguments.",
+                        "Implementation-defined: the compiler must choose one result and document it. Example: size of int, signedness of char."
+                    ]
+                },
+                {
+                    "question": "What is a sequence point?",
+                    "answer": [
+                        "A point in the code where all earlier side effects are complete before the next ones begin. Examples: the end of a full statement (;), the && || and comma operators, and the ? : operator. Changing a variable twice between sequence points is undefined."
+                    ]
+                },
+                {
+                    "question": "What is the difference between lvalue and rvalue?",
+                    "answer": [
+                        "An lvalue is something with a memory location that can be on the left of an assignment (like a variable or *p). An rvalue is a value without such a location (like 5 or a + b), which can only be on the right."
+                    ]
+                },
+                {
+                    "question": "Why can't you use == to check if two floats are equal, and what else goes wrong with float loops?",
+                    "answer": [
+                        "Because of rounding errors. A loop such as for (float f = 0; f != 1.0; f += 0.1) may never end, because f never exactly equals 1.0. Use an integer counter or compare with a tolerance."
+                    ]
+                },
+                {
+                    "question": "What is the output: unsigned int i; for (i = 3; i >= 0; i--) printf(\"%u \", i);",
+                    "answer": [
+                        "Infinite loop. An unsigned value is never below 0, so i >= 0 is always true. After 0, i wraps to the maximum value."
+                    ]
+                },
+                {
+                    "question": "What is the output: char a[] = \"abc\"; printf(\"%zu\", sizeof(a)); and for char *p = \"abc\"?",
+                    "answer": [
+                        "For the array it is 4 (a, b, c and '\\0'). For the pointer it is 8 on a 64-bit machine (the size of the pointer, not the string)."
+                    ]
+                },
+                {
+                    "question": "What does int *p, q; declare?",
+                    "answer": [
+                        "p is a pointer to int, but q is only a plain int. The * belongs to the variable name, not to the type. Write int *p, *q; if you need two pointers."
+                    ]
+                },
+                {
+                    "question": "Is it okay to cast the result of malloc in C?",
+                    "answer": [
+                        "It is not needed in C, because void* converts automatically. Casting can hide the error of forgetting #include <stdlib.h> in old compilers. In C++ the cast is required."
+                    ]
+                }
+            ]
+        }
+    ]
+}

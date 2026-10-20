@@ -84,18 +84,6 @@
                     "code": "// a.cpp\nint counter = 0;                 // external linkage\nstatic int hidden = 5;           // internal linkage (only in a.cpp)\nnamespace { int secret = 1; }    // internal linkage (unnamed namespace)\n\n// b.cpp\nextern int counter;              // refers to counter defined in a.cpp\n// extern int hidden;            // link error: hidden is not visible here"
                 },
                 {
-                    "question": "What is malloc(), calloc(), free() and realloc()?",
-                    "answer": [
-                        "They are C library functions (<cstdlib>) for dynamic memory allocation on the heap.",
-                        "malloc(size): allocates size bytes, memory is uninitialised. Returns void* (cast it in C++) or NULL on failure.",
-                        "calloc(n, size): allocates contiguous space for n elements of the given size and initialises every byte to 0. It takes two parameters compared to malloc().",
-                        "realloc(ptr, newSize): resizes a block previously allocated with malloc/calloc. The block may move, so always assign the result to a temporary first.",
-                        "free(ptr): releases memory. Never free memory twice and never mix free with delete.",
-                        "In C++ prefer new/delete or, better, std::vector and smart pointers."
-                    ],
-                    "code": "#include <cstdlib>\n#include <iostream>\n\nint main() {\n    int n = 5;\n    int* p = (int*)malloc(n * sizeof(int));        // uninitialised\n    if (!p) return 1;\n    for (int i = 0; i < n; ++i) p[i] = i;\n\n    int* q = (int*)calloc(n, sizeof(int));         // all zeros\n    if (!q) { free(p); return 1; }\n\n    int* tmp = (int*)realloc(p, 2 * n * sizeof(int));   // grow\n    if (!tmp) { free(p); free(q); return 1; }           // old block still valid on failure\n    p = tmp;\n\n    std::cout << q[0] << \" \" << p[4] << std::endl;      // 0 4\n    free(p);\n    free(q);\n}"
-                },
-                {
                     "question": "What is memory corruption?",
                     "answer": [
                         "Memory corruption occurs when the contents of a memory location are modified by program behaviour that exceeds what the programmer intended, i.e. memory safety is violated.",
