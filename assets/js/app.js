@@ -23,6 +23,119 @@ function escapeHTML(s) {
       ],
   );
 }
+
+/* ---------- Lightweight, safe Markdown support ---------- */
+
+// Inline formatting: `code`, ***bold italic***, **bold**, *italic*,
+// ~~strike~~, <u>underline</u>, [text](http://link)
+function inlineMD(s) {
+  let t = escapeHTML(s);
+  const codes = [];
+  // Pull out inline code first so nothing inside it gets formatted
+  t = t.replace(/`([^`]+)`/g, (m, c) => {
+    codes.push(c);
+    return "\u0000" + (codes.length - 1) + "\u0000";
+  });
+  // Allow only <u>...</u> as raw HTML
+  t = t.replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, "<u>$1</u>");
+  t = t.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>");
+  t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/\*(?!\s)([^*]+?)\*/g, "<em>$1</em>");
+  t = t.replace(/~~(.+?)~~/g, "<del>$1</del>");
+  t = t.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+  );
+  // Restore inline code
+  t = t.replace(/\u0000(\d+)\u0000/g, (m, i) => `<code>${codes[i]}</code>`);
+  return t;
+}
+
+// Block formatting: headings, bullet lists, numbered lists, paragraphs.
+// One "answer" string may contain several lines separated by \n.
+function blockMD(text) {
+  const lines = String(text ?? "").split("\n");
+  let html = "",
+    para = [],
+    list = null; // "ul" | "ol"
+  const flushPara = () => {
+    if (para.length) {
+      html += `<p>${para.map(inlineMD).join("<br>")}</p>`;
+      para = [];
+    }
+  };
+  const closeList = () => {
+    if (list) {
+      html += `</${list}>`;
+      list = null;
+    }
+  };
+  let inCode = false,
+    codeLines = [];
+  for (const line of lines) {
+    // Fenced code block: ``` ... ```
+    if (inCode) {
+      if (/^\s*```\s*$/.test(line)) {
+        html += `<pre><code>${escapeHTML(codeLines.join("\n"))}</code></pre>`;
+        inCode = false;
+        codeLines = [];
+      } else codeLines.push(line);
+      continue;
+    }
+    if (/^\s*```/.test(line)) {
+      flushPara();
+      closeList();
+      inCode = true;
+      continue;
+    }
+    let m;
+    if ((m = line.match(/^\s*(#{1,6})\s+(.*)$/))) {
+      flushPara();
+      closeList();
+      const level = Math.max(3, m[1].length); // h1/h2 are used by the page
+      html += `<h${level}>${inlineMD(m[2])}</h${level}>`;
+    } else if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) {
+      flushPara();
+      if (list !== "ul") {
+        closeList();
+        html += "<ul>";
+        list = "ul";
+      }
+      html += `<li>${inlineMD(m[1])}</li>`;
+    } else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
+      flushPara();
+      if (list !== "ol") {
+        closeList();
+        html += "<ol>";
+        list = "ol";
+      }
+      html += `<li>${inlineMD(m[1])}</li>`;
+    } else if (!line.trim()) {
+      flushPara();
+      closeList();
+    } else {
+      closeList();
+      para.push(line);
+    }
+  }
+  if (inCode) {
+    // unclosed fence: still show what was written
+    html += `<pre><code>${escapeHTML(codeLines.join("\n"))}</code></pre>`;
+  }
+  flushPara();
+  closeList();
+  return html;
+}
+
+// One item of the "answer" array: either a text string (Markdown),
+// or an object like { "code": ["line 1", "line 2"] } for a code block.
+function renderPart(p) {
+  if (p && typeof p === "object" && p.code !== undefined) {
+    const code = Array.isArray(p.code) ? p.code.join("\n") : String(p.code);
+    return `<pre><code>${escapeHTML(code)}</code></pre>`;
+  }
+  return blockMD(p);
+}
 function renderHome() {
   selected = null;
   topic = null;
@@ -111,7 +224,7 @@ function showTopic(t) {
     return;
   }
   $("content").innerHTML =
-    `<span class="eyebrow">${escapeHTML(subjects.find((s) => s.id === selected).name)} / LEARNING NOTES</span><h1>${escapeHTML(t.title)}</h1><p class="lead">${escapeHTML(t.description || "Questions and answers")}</p>${t.questions.map((q, i) => `<section class="qa"><span class="pill">QUESTION ${i + 1}</span><h2>${escapeHTML(q.question)}</h2>${(q.answer || []).map((p) => `<p>${escapeHTML(p)}</p>`).join("")}${q.code ? `<pre><code>${escapeHTML(q.code)}</code></pre>` : ""}</section>`).join("")}`;
+    `<span class="eyebrow">${escapeHTML(subjects.find((s) => s.id === selected).name)} / LEARNING NOTES</span><h1>${escapeHTML(t.title)}</h1><p class="lead">${inlineMD(t.description || "Questions and answers")}</p>${t.questions.map((q, i) => `<section class="qa"><span class="pill">QUESTION ${i + 1}</span><h2>${inlineMD(q.question)}</h2>${(q.answer || []).map(renderPart).join("")}${q.code ? `<pre><code>${escapeHTML(q.code)}</code></pre>` : ""}</section>`).join("")}`;
 }
 function route() {
   const [id] = decodeURIComponent(location.hash.slice(1)).split("/");

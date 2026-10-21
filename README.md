@@ -76,6 +76,117 @@ Each topic `id` must be unique within its subject. It is used in the URL, e.g. `
 2. Add `{id:'python',name:'Python',file:'python.json'}` to the `subjects` array near the top of `assets/js/app.js`.
 3. Refresh the page. The header and sidebar will update automatically.
 
+## Writing Content in JSON
+
+Each subject has a JSON file in `data/` (for example `data/c.json`).
+
+### File structure
+
+```json
+{
+  "topics": [
+    {
+      "id": "pointers",
+      "title": "Pointers",
+      "description": "A short intro shown under the title.",
+      "questions": [
+        {
+          "question": "What is a pointer?",
+          "answer": [
+            "A **pointer** is a variable that stores a memory address.",
+            "Second paragraph here."
+          ],
+          "code": "int x = 10;\nint *p = &x;"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `answer` is an array. **Each string is one block** (a paragraph, a heading, or a list).
+- `code` is optional. It is shown as a code block exactly as written, with no formatting applied.
+
+### Supported formatting
+
+| What you want | Write this in JSON | Result |
+|---|---|---|
+| Bold | `"**Bold text**"` | **Bold text** |
+| Italic | `"*Italic text*"` | *Italic text* |
+| Bold + italic | `"***Bold and italic***"` | ***Bold and italic*** |
+| Underline | `"<u>Underlined text</u>"` | <u>Underlined text</u> |
+| Strikethrough | `"~~Strikethrough text~~"` | ~~Strikethrough text~~ |
+| Inline code | ``"`Inline code`"`` | `Inline code` |
+| Mixed in a sentence | `"This is **bold** and *italic*."` | This is **bold** and *italic*. |
+| Heading | `"### This is a heading"` | Heading |
+| Bullet list | `"- First item\n- Second item"` | • First item<br>• Second item |
+| Numbered list | `"1. First step\n2. Second step"` | 1. First step<br>2. Second step |
+| Line break in a paragraph | `"Line one\nLine two"` | Two lines, same paragraph |
+| Link | `"[Click here](https://example.com)"` | Link (opens in a new tab) |
+
+### Examples
+
+```json
+"answer": [
+  "### Key points",
+  "- Uses **malloc** to allocate memory\n- Always call `free()` afterwards\n- Never use freed memory",
+  "1. Declare the pointer\n2. Allocate memory\n3. Use it\n4. Free it",
+  "This is <u>important</u>: ~~old way~~ is no longer recommended.",
+  "See the [C reference](https://en.cppreference.com/w/c) for more."
+]
+```
+
+### Rules and tips
+
+- **Headings:** `#`, `##` and `###` all render at the same level (the page already uses H1 and H2). `####` and deeper render slightly smaller.
+- **Lists:** start each line with `- ` (dash and space), or `1. ` for numbered lists. Separate lines with `\n` inside the same string.
+- **Italic:** `*text*` needs no space after the first `*`. Underscore italics (`_text_`) are not supported.
+- **Quotes inside text:** escape double quotes in JSON: `"He said \"hello\""`.
+- **Backslashes:** write `\\` for one backslash, for example `"Use \\n for a newline in C"`.
+- **Newlines:** JSON strings cannot contain real line breaks. Use `\n`.
+- **HTML:** only `<u>...</u>` is allowed. Any other HTML tag is shown as plain text, not run.
+- **Formatting inside `code`:** none. Markdown is not applied there.
+- **Formatting inside questions and descriptions:** bold, italic, underline, strikethrough and inline code work there too. Headings and lists do not.
+
+### Code blocks between text
+
+To place a code snippet between two descriptions, add a `{ "code": [...] }` object as its own item in the `answer` array. Each string inside `code` is one line of code.
+
+```json
+{
+  "question": "How do you print a value in C++?",
+  "answer": [
+    "Hi, following is a code snippet:",
+    { "code": ["cout<<a<<endl;"] },
+    "**Explanation:** `cout` will print a value on the console.",
+    "Here is a full program:",
+    { "code": [
+        "#include <iostream>",
+        "using namespace std;",
+        "",
+        "int main() {",
+        "    int a = 5;",
+        "    cout << a << endl;",
+        "    return 0;",
+        "}"
+    ] },
+    "It prints `5`."
+  ]
+}
+```
+
+**Rules**
+
+- Items appear in the order you write them, so you can alternate text and code as many times as you like.
+- Text items are plain strings and support bold, italic, lists and so on.
+- Code items are objects with a `"code"` key whose value is an array of lines, not a single string.
+- Use an empty string `""` for a blank line in code.
+- Put indentation spaces at the start of the line string, for example `"    return 0;"`.
+- Escape double quotes inside code, for example `"cout << \"Hello\";"`.
+- Every item in the array needs a comma after it except the last one.
+- No formatting is applied inside code, so `**` and `<` are shown exactly as typed.
+- The older `"code": "..."` field next to `answer` still works, but it always appears after all the answer text, not in between.
+
 ## Publish on GitHub Pages
 1. Create a public GitHub repository named `lets-learn` (or any name you prefer).
 2. Upload the **contents** of this folder to the repository root, ensuring `index.html` is at the root. Or from a terminal in this folder:

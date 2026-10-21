@@ -261,7 +261,11 @@
                 {
                     "question": "What are the different cast operators in C++?",
                     "answer": [
-                        "static_cast, dynamic_cast, const_cast and reinterpret_cast. They are preferred over the old C-style cast because each one states its intent and is easy to search for."
+                        "**1.static_cast** (Compile time): Basic conversions between related types (e.g., int to float, or upcasting in class hierarchies).",
+                        "**2.dynamic_cast** (Runtime): Safe downcasting in polymorphic class hierarchies; verifies validity.", 
+                        "**3.const_cast** (Compile time): Adding or removing const or volatile modifiers.",
+                        "**4.reinterpret_cast** (Compile time): Low-level reinterpretation of system bits (e.g., pointer-to-pointer or pointer-to-integer).", 
+                        "\n*They are preferred over the old C-style cast because each one states its intent and is easy to search for.*"
                     ]
                 },
                 {
@@ -320,10 +324,14 @@
                 {
                     "question": "Give a comparison of the four cast operators.",
                     "answer": [
-                        "static_cast: normal and related-class conversions, checked at compile time. Safety: mostly safe.",
-                        "dynamic_cast: safe downcast with a runtime check, needs virtual functions. Safety: safest (returns nullptr / throws bad_cast on failure).",
-                        "const_cast: add or remove const. Safety: dangerous if the object is really const.",
-                        "reinterpret_cast: reinterpret bit patterns / unrelated pointers. Safety: very dangerous and non-portable."
+                        "static_cast: normal and related-class conversions, checked at compile time. ",
+                        " - Safety: mostly safe.",
+                        "dynamic_cast: safe downcast with a runtime check, needs virtual functions. ",
+                        " - Safety: safest (returns nullptr / throws bad_cast on failure).",
+                        "const_cast: add or remove const.",
+                        "- Safety: dangerous if the object is really const.",
+                        "reinterpret_cast: reinterpret bit patterns / unrelated pointers. ",
+                        "- Safety: very dangerous and non-portable."
                     ]
                 },
                 {
