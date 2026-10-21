@@ -391,8 +391,8 @@
                     "question": "What are new and delete?",
                     "answer": [
                         "They are operators used for dynamic memory allocation on the heap.",
-                        "new: 1) allocates memory from the heap (calls operator new), 2) calls the constructor if it is a class object, 3) returns a typed pointer. It does not need a cast, unlike malloc.",
-                        "delete: calls the destructor and then releases the memory. Use delete for new and delete[] for new[]."
+                        "**new**:\n1) allocates memory from the heap (calls operator new),\n2) calls the constructor if it is a class object,\n3) returns a typed pointer. It does not need a cast, unlike malloc.",
+                        "**delete**: calls the destructor and then releases the memory. Use delete for new and delete[] for new[]."
                     ],
                     "code": "#include <iostream>\n\nclass Test {\npublic:\n    Test()  { std::cout << \"Constructor\\n\"; }\n    ~Test() { std::cout << \"Destructor\\n\"; }\n};\n\nint main() {\n    Test* t = new Test();   // Constructor\n    delete t;               // Destructor\n\n    int* arr = new int[5];  // array allocation\n    delete[] arr;\n}"
                 },

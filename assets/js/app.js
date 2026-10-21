@@ -215,16 +215,37 @@ function renderTopics() {
             selected + "/" + encodeURIComponent(b.dataset.topic))),
     );
 }
-function showTopic(t) {
+// "Collapse answers" setting (off by default, remembered in the browser)
+let accordion = false;
+try {
+  accordion = localStorage.getItem("lets-learn-accordion") === "1";
+} catch (e) {}
+
+function renderQuestion(q, i) {
+  const body =
+    (q.answer || []).map(renderPart).join("") +
+    (q.code ? `<pre><code>${escapeHTML(q.code)}</code></pre>` : "");
+  const pill = `<span class="pill">QUESTION ${i + 1}</span>`;
+  if (accordion) {
+    // Always starts collapsed: only the question is visible
+    return `<details class="qa acc"><summary>${pill}<span class="qtext">${inlineMD(q.question)}</span></summary><div class="ans">${body}</div></details>`;
+  }
+  return `<section class="qa">${pill}<h2>${inlineMD(q.question)}</h2>${body}</section>`;
+}
+function showTopic(t, keepScroll) {
   topic = t?.id || null;
   renderTopics();
+  if (!keepScroll) {
+    window.scrollTo(0, 0); // always start from the first question
+    $("content").scrollTop = 0;
+  }
   if (!t) {
     $("content").innerHTML =
       "<h1>Coming soon</h1><p>Add a topic in the corresponding JSON file.</p>";
     return;
   }
   $("content").innerHTML =
-    `<span class="eyebrow">${escapeHTML(subjects.find((s) => s.id === selected).name)} / LEARNING NOTES</span><h1>${escapeHTML(t.title)}</h1><p class="lead">${inlineMD(t.description || "Questions and answers")}</p>${t.questions.map((q, i) => `<section class="qa"><span class="pill">QUESTION ${i + 1}</span><h2>${inlineMD(q.question)}</h2>${(q.answer || []).map(renderPart).join("")}${q.code ? `<pre><code>${escapeHTML(q.code)}</code></pre>` : ""}</section>`).join("")}`;
+    `<span class="eyebrow">${escapeHTML(subjects.find((s) => s.id === selected).name)} / LEARNING NOTES</span><h1>${escapeHTML(t.title)}</h1><p class="lead">${inlineMD(t.description || "Questions and answers")}</p>${t.questions.map(renderQuestion).join("")}`;
 }
 function route() {
   const [id] = decodeURIComponent(location.hash.slice(1)).split("/");
@@ -255,6 +276,19 @@ if (localStorage.getItem("lets-learn-theme") === "dark") {
   document.body.classList.add("dark");
   $("theme").textContent = "☀";
 }
+function syncAccordionButton() {
+  $("accordion").setAttribute("aria-pressed", accordion ? "true" : "false");
+}
+$("accordion").onclick = () => {
+  accordion = !accordion;
+  try {
+    localStorage.setItem("lets-learn-accordion", accordion ? "1" : "0");
+  } catch (e) {}
+  syncAccordionButton();
+  const current = items.find((x) => x.id === topic);
+  if (selected && current) showTopic(current, true);
+};
+syncAccordionButton();
 window.addEventListener("hashchange", route);
 renderNav();
 route();

@@ -356,6 +356,113 @@ h6 code {
     font-size: .92em
 }
 
+/* "Collapse answers" setting button */
+.setting {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    padding: 9px 13px;
+    border-radius: 9px;
+    white-space: nowrap;
+    font-weight: 650;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px
+}
+
+.setting:hover {
+    background: var(--soft);
+    color: var(--accent)
+}
+
+.setting .dot {
+    width: 30px;
+    height: 17px;
+    border-radius: 20px;
+    background: var(--muted);
+    opacity: .5;
+    position: relative;
+    transition: .2s
+}
+
+.setting .dot::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--panel);
+    transition: .2s
+}
+
+.setting[aria-pressed="true"] {
+    color: var(--accent);
+    background: var(--soft);
+    border-color: var(--accent)
+}
+
+.setting[aria-pressed="true"] .dot {
+    background: var(--accent);
+    opacity: 1
+}
+
+.setting[aria-pressed="true"] .dot::after {
+    left: 15px
+}
+
+/* Collapsible questions */
+.qa.acc {
+    margin-top: 0;
+    padding-top: 0
+}
+
+.acc summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 16px 0
+}
+
+.acc summary::-webkit-details-marker {
+    display: none
+}
+
+.acc summary::after {
+    content: "▾";
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform .2s
+}
+
+.acc[open] summary::after {
+    transform: rotate(180deg)
+}
+
+.acc .pill {
+    flex-shrink: 0
+}
+
+.qtext {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4
+}
+
+.acc summary:hover .qtext {
+    color: var(--accent)
+}
+
+.acc .ans {
+    padding-bottom: 14px
+}
+
 footer {
     text-align: center;
     color: var(--muted);
