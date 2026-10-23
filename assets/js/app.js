@@ -6,7 +6,7 @@ const subjects = [
   { id: "linux", name: "Linux", file: "linux.json" },
   { id: "database", name: "Database", file: "database.json" },
   { id: "Debugging", name: "Debugging", file: "Debugging.json" },
-  { id: "Other", name: "Other", file: "others.json" },
+  { id: "others", name: "Other", file: "others.json" },
 
 ];
 const $ = (id) => document.getElementById(id);
