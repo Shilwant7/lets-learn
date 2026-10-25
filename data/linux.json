@@ -1,30 +1,886 @@
 {
   "topics": [
     {
-      "id": "commands",
-      "title": "Basic Commands",
-      "description": "Everyday shell commands.",
+      "id": "basic-commands",
+      "title": "Basic Commands & Navigation",
+      "description": "The first commands every interviewer expects you to know.",
       "questions": [
         {
-          "question": "How do I list files, including hidden ones?",
+          "question": "How do you check your current directory and list files?",
           "answer": [
-            "Use ls -la to show a detailed listing, including dotfiles."
-          ],
-          "code": "ls -la"
+            "Use `pwd` (print working directory) to see where you are, and `ls` to list files.",
+            { "code": ["pwd", "ls", "ls -l", "ls -la", "ls -lh", "ls -lt", "ls -R"] },
+            "- `ls -l`: long format (permissions, owner, size, date)\n- `ls -a`: show hidden files (names starting with `.`)\n- `ls -h`: human-readable sizes (with `-l`)\n- `ls -t`: sort by modification time, newest first\n- `ls -R`: list subdirectories recursively"
+          ]
+        },
+        {
+          "question": "Explain the output of `ls -l`.",
+          "answer": [
+            "Example line:",
+            { "code": ["-rwxr-xr-- 1 john dev 4096 Oct 25 10:30 app.sh"] },
+            "- **First character:** file type (`-` regular file, `d` directory, `l` symbolic link)\n- **Next 9 characters:** permissions for owner, group and others (`rwx r-x r--`)\n- **`1`:** number of hard links\n- **`john`:** owner\n- **`dev`:** group\n- **`4096`:** size in bytes\n- **Date and time:** last modification\n- **`app.sh`:** file name"
+          ]
+        },
+        {
+          "question": "How do you change directories? (`cd` variations)",
+          "answer": [
+            { "code": ["cd /home/john      # absolute path", "cd projects        # relative path", "cd ..              # one level up", "cd ../..           # two levels up", "cd ~               # home directory (same as just 'cd')", "cd -               # previous directory"] },
+            "An **absolute path** starts with `/` and works from anywhere. A **relative path** starts from the current directory."
+          ]
+        },
+        {
+          "question": "How do you get help for a command?",
+          "answer": [
+            { "code": ["man ls          # full manual page (press q to quit)", "ls --help       # short usage summary", "info ls         # GNU info pages", "apropos copy    # search commands by keyword", "whatis ls       # one-line description"] }
+          ]
+        },
+        {
+          "question": "How do you find out who you are, the machine name and the OS/kernel version?",
+          "answer": [
+            { "code": ["whoami            # current user name", "id                # user id, group id, groups", "hostname          # machine name", "uname -a           # kernel name, version, architecture", "uname -r           # kernel version only", "cat /etc/os-release   # distribution details", "uptime            # how long the system has been running", "date              # current date and time"] }
+          ]
+        },
+        {
+          "question": "What is the difference between `which`, `whereis` and `type`?",
+          "answer": [
+            "- `which gcc`: shows the path of the executable that would run (searches `PATH`)\n- `whereis gcc`: shows the binary, source and man page locations\n- `type cd`: shows how the shell interprets a command (builtin, alias, function or file)",
+            { "code": ["which g++", "whereis g++", "type ls"] }
+          ]
+        },
+        {
+          "question": "What are the most useful keyboard shortcuts in the terminal?",
+          "answer": [
+            "- `Ctrl+C`: stop (interrupt) the running program\n- `Ctrl+Z`: suspend the running program (send to background, stopped)\n- `Ctrl+D`: end of input / logout\n- `Ctrl+L`: clear the screen (same as `clear`)\n- `Ctrl+R`: search command history\n- `Tab`: auto-complete file and command names\n- `Up / Down arrows`: browse previous commands\n- `!!`: repeat the last command\n- `history`: list previously run commands"
+          ]
+        },
+        {
+          "question": "How do you print text on the terminal?",
+          "answer": [
+            { "code": ["echo Hello World", "echo \"Home is $HOME\"", "echo -n \"no newline\"", "printf '%d items\\n' 5"] },
+            "`echo` prints text and variable values. `printf` gives C-style formatting."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "files-directories",
+      "title": "Files & Directories (copy, move, delete)",
+      "description": "Creating, copying, moving, deleting and viewing files. The most commonly asked commands.",
+      "questions": [
+        {
+          "question": "How do you create files and directories?",
+          "answer": [
+            { "code": ["touch file.txt                 # create empty file (or update its timestamp)", "mkdir mydir                    # create a directory", "mkdir -p a/b/c                 # create nested directories", "echo 'hello' > file.txt        # create file with content", "cat > notes.txt                # type text, press Ctrl+D to save"] }
+          ]
+        },
+        {
+          "question": "How do you copy files and directories? (`cp`)",
+          "answer": [
+            { "code": ["cp a.txt b.txt              # copy file", "cp a.txt /tmp/             # copy into a directory", "cp a.txt b.txt c.txt dir/  # copy several files into dir", "cp -r src backup           # copy a directory recursively", "cp -i a.txt b.txt          # ask before overwriting", "cp -p a.txt b.txt          # preserve permissions and timestamps", "cp -v a.txt b.txt          # verbose (show what is copied)"] },
+            "Copying a **directory** needs `-r` (recursive). Without it you get *omitting directory*."
+          ]
+        },
+        {
+          "question": "How do you move or rename files? (`mv`)",
+          "answer": [
+            "`mv` is used for both moving and renaming.",
+            { "code": ["mv old.txt new.txt        # rename", "mv a.txt /tmp/            # move to another directory", "mv a.txt /tmp/b.txt       # move and rename", "mv dir1 dir2              # rename (or move into dir2 if it exists)", "mv -i a.txt b.txt         # ask before overwriting"] }
+          ]
+        },
+        {
+          "question": "What is the difference between `cp` and `mv`?",
+          "answer": [
+            "- `cp` makes a **duplicate**; the original stays.\n- `mv` **relocates or renames**; the original no longer exists at the old path.\n- Within the same filesystem, `mv` only changes the directory entry, so it is instant even for huge files. `cp` copies all the data."
+          ]
+        },
+        {
+          "question": "How do you delete files and directories? (`rm`, `rmdir`)",
+          "answer": [
+            { "code": ["rm file.txt         # delete a file", "rm -i file.txt      # ask before deleting", "rm -f file.txt      # force, no prompts or errors", "rm -r mydir         # delete directory and everything inside", "rm -rf mydir        # recursive + force", "rmdir emptydir      # delete an EMPTY directory only"] },
+            "**Warning:** there is no recycle bin. `rm -rf /` or a stray space like `rm -rf / tmp` can destroy the system. Always double-check the path."
+          ]
+        },
+        {
+          "question": "How do you delete all `.o` files in a directory?",
+          "answer": [
+            { "code": ["rm *.o                              # current directory only", "find . -name '*.o' -type f -delete   # current directory and all subdirectories"] }
+          ]
+        },
+        {
+          "question": "How do you view the contents of a file?",
+          "answer": [
+            { "code": ["cat file.txt          # print whole file", "cat -n file.txt       # with line numbers", "less file.txt         # scroll page by page (q to quit, /text to search)", "more file.txt         # older, simpler pager", "head file.txt         # first 10 lines", "head -n 20 file.txt   # first 20 lines", "tail file.txt         # last 10 lines", "tail -n 5 file.txt    # last 5 lines", "tail -f app.log       # follow the file as new lines are added"] },
+            "`tail -f` is very useful for watching log files live."
+          ]
+        },
+        {
+          "question": "How do you count lines, words and characters in a file?",
+          "answer": [
+            { "code": ["wc file.txt       # lines, words, bytes", "wc -l file.txt    # lines only", "wc -w file.txt    # words only", "wc -c file.txt    # bytes only", "ls | wc -l        # number of files in the current directory"] }
+          ]
+        },
+        {
+          "question": "What is a hard link and a soft (symbolic) link? How do you create them?",
+          "answer": [
+            { "code": ["ln file.txt hardlink.txt       # hard link", "ln -s file.txt softlink.txt    # soft (symbolic) link"] },
+            "- **Hard link:** another name for the **same inode** (same data). Deleting the original does not delete the data. Cannot cross filesystems and cannot link directories.\n- **Soft link:** a small file that stores the **path** to the target (like a shortcut). It breaks if the target is deleted. Can cross filesystems and link directories."
+          ]
+        },
+        {
+          "question": "How do you find the type, size and details of a file?",
+          "answer": [
+            { "code": ["file a.out         # tells if it is text, ELF executable, image, etc.", "stat file.txt       # size, inode, permissions, timestamps", "ls -lh file.txt     # size in readable form", "du -sh file.txt     # disk usage"] }
+          ]
+        },
+        {
+          "question": "How do you compare two files?",
+          "answer": [
+            { "code": ["diff a.txt b.txt        # show line differences", "diff -u a.txt b.txt     # unified format (like git)", "diff -r dir1 dir2       # compare directories", "cmp a.txt b.txt         # byte-by-byte comparison", "sort a.txt | uniq -d    # show duplicate lines in a file"] }
+          ]
+        },
+        {
+          "question": "How do you rename many files at once?",
+          "answer": [
+            "Use a shell loop. Example: rename all `.txt` files to `.bak`.",
+            { "code": ["for f in *.txt; do", "    mv \"$f\" \"${f%.txt}.bak\"", "done"] },
+            "Quote the variable (`\"$f\"`) so file names with spaces work."
+          ]
+        },
+        {
+          "question": "What are wildcards?",
+          "answer": [
+            "The shell expands these patterns into matching file names:\n- `*` matches any number of characters\n- `?` matches exactly one character\n- `[abc]` matches one character from the set\n- `[0-9]` matches one character in the range",
+            { "code": ["ls *.cpp         # all .cpp files", "ls file?.txt     # file1.txt, fileA.txt ...", "ls [ab]*.txt     # files starting with a or b", "rm data[0-9].log # data0.log ... data9.log"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "searching-text",
+      "title": "Searching & Text Processing",
+      "description": "grep, find, sort, cut, awk and sed. Used daily to search code and logs.",
+      "questions": [
+        {
+          "question": "How do you search for text inside a file? (`grep`)",
+          "answer": [
+            { "code": ["grep 'error' app.log          # lines containing error", "grep -i 'error' app.log       # ignore case", "grep -n 'error' app.log       # show line numbers", "grep -c 'error' app.log       # count matching lines", "grep -v 'error' app.log       # lines NOT matching", "grep -w 'main' file.cpp       # whole word only", "grep -A 2 -B 2 'error' app.log  # 2 lines after and before", "grep -E 'err|warn' app.log    # extended regex (OR)"] }
+          ]
+        },
+        {
+          "question": "How do you search for a string in all `.cpp` files of a project?",
+          "answer": [
+            { "code": ["grep -rn 'MyClass' .                          # recursive, with line numbers", "grep -rn 'MyClass' --include='*.cpp' .         # only .cpp files", "grep -rl 'MyClass' .                          # only list file names"] }
+          ]
+        },
+        {
+          "question": "How do you find files by name, type, size or time? (`find`)",
+          "answer": [
+            { "code": ["find . -name 'main.cpp'            # by name", "find . -iname '*.cpp'              # case-insensitive", "find / -type d -name 'src'        # directories only", "find . -type f -size +100M        # files larger than 100 MB", "find . -mtime -1                  # modified in the last 24 hours", "find . -mtime +7                  # modified more than 7 days ago", "find . -user john                 # owned by john", "find . -perm 755                  # with permissions 755"] },
+            "Syntax: `find <where> <conditions> <action>`. The default action is to print the path."
+          ]
+        },
+        {
+          "question": "How do you run a command on every file that `find` returns?",
+          "answer": [
+            { "code": ["find . -name '*.log' -exec rm {} \\;          # run rm once per file", "find . -name '*.cpp' -exec grep -l 'main' {} +  # batch many files per call", "find . -name '*.cpp' | xargs wc -l               # pipe into xargs"] },
+            "`{}` is replaced by each found file. `xargs` builds a command line from its input."
+          ]
+        },
+        {
+          "question": "What is the difference between `find` and `locate`?",
+          "answer": [
+            "- `find` searches the real filesystem at the moment you run it. It is accurate but slower, and has many filters.\n- `locate` searches a prebuilt database. It is very fast but may be outdated until you run `sudo updatedb`."
+          ]
+        },
+        {
+          "question": "How do you sort lines and remove duplicates?",
+          "answer": [
+            { "code": ["sort file.txt            # alphabetical", "sort -n numbers.txt       # numeric", "sort -r file.txt          # reverse", "sort -u file.txt          # sort and remove duplicates", "sort file.txt | uniq      # remove adjacent duplicates", "sort file.txt | uniq -c   # count occurrences of each line"] },
+            "`uniq` only removes **adjacent** duplicates, so always `sort` first."
+          ]
+        },
+        {
+          "question": "How do you extract a column from a file? (`cut`, `awk`)",
+          "answer": [
+            { "code": ["cut -d',' -f1 data.csv         # first comma-separated field", "cut -d':' -f1 /etc/passwd       # list all user names", "awk '{print $1}' file.txt        # first whitespace-separated column", "awk -F: '{print $1, $3}' /etc/passwd   # user name and user id"] }
+          ]
+        },
+        {
+          "question": "How do you find and replace text in a file? (`sed`)",
+          "answer": [
+            { "code": ["sed 's/old/new/' file.txt        # replace first match on each line", "sed 's/old/new/g' file.txt       # replace all matches", "sed -i 's/old/new/g' file.txt    # edit the file in place", "sed -n '10,20p' file.txt         # print lines 10 to 20", "sed '5d' file.txt                # delete line 5 (output only)"] }
+          ]
+        },
+        {
+          "question": "How do you show a specific range of lines, for example line 10 to 20?",
+          "answer": [
+            { "code": ["sed -n '10,20p' file.txt", "head -n 20 file.txt | tail -n 11"] }
+          ]
+        },
+        {
+          "question": "How do you count the lines of code in a C++ project?",
+          "answer": [
+            { "code": ["find . -name '*.cpp' -o -name '*.h' | xargs wc -l"] }
+          ]
+        },
+        {
+          "question": "How do you find the biggest files or directories?",
+          "answer": [
+            { "code": ["du -ah . | sort -rh | head -n 10      # 10 biggest files/dirs here", "du -sh *                          # size of each item in the current dir", "find / -type f -size +500M 2>/dev/null   # files over 500 MB"] }
+          ]
+        },
+        {
+          "question": "How do you show the most frequent lines or words in a log?",
+          "answer": [
+            { "code": ["sort app.log | uniq -c | sort -rn | head"] },
+            "Sort so equal lines are adjacent, count them with `uniq -c`, sort by count, and show the top."
+          ]
         }
       ]
     },
     {
       "id": "permissions",
-      "title": "Permissions",
-      "description": "Read, write and execute access.",
+      "title": "Permissions, Users & Groups",
+      "description": "chmod, chown, umask and how Linux controls access.",
       "questions": [
         {
-          "question": "What does chmod 755 mean?",
+          "question": "Explain Linux file permissions (rwx).",
           "answer": [
-            "The owner gets read/write/execute (7); group and others get read/execute (5 each)."
-          ],
-          "code": "chmod 755 script.sh"
+            "Every file has three sets of permissions: **owner (u)**, **group (g)** and **others (o)**. Each set has:",
+            "- `r` read (value 4)\n- `w` write (value 2)\n- `x` execute (value 1)",
+            "For a **directory**: `r` lets you list names, `w` lets you create or delete entries inside, and `x` lets you enter it (`cd`) and access items.",
+            "Example: `rwxr-xr--` means owner `rwx` (7), group `r-x` (5), others `r--` (4), so the number is `754`."
+          ]
+        },
+        {
+          "question": "How do you change permissions? (`chmod`)",
+          "answer": [
+            { "code": ["chmod 755 script.sh        # numeric: rwxr-xr-x", "chmod 644 file.txt         # rw-r--r--", "chmod u+x script.sh       # symbolic: add execute for owner", "chmod g-w file.txt        # remove write from group", "chmod o=r file.txt        # others: read only", "chmod a+r file.txt        # everyone: add read", "chmod -R 755 mydir        # recursively"] }
+          ]
+        },
+        {
+          "question": "What does `chmod 755` and `chmod 644` mean?",
+          "answer": [
+            "- `755` = owner `rwx`, group `r-x`, others `r-x`. Typical for programs, scripts and directories.\n- `644` = owner `rw-`, group `r--`, others `r--`. Typical for normal files.\n- `777` = everyone can read, write and execute. Avoid it, it is unsafe."
+          ]
+        },
+        {
+          "question": "How do you make a script executable and run it?",
+          "answer": [
+            { "code": ["chmod +x script.sh", "./script.sh", "bash script.sh     # works even without execute permission"] },
+            "Use `./` because the current directory is usually not in `PATH`."
+          ]
+        },
+        {
+          "question": "How do you change the owner and group of a file?",
+          "answer": [
+            { "code": ["sudo chown john file.txt          # change owner", "sudo chown john:dev file.txt      # owner and group", "sudo chown -R john:dev mydir     # recursively", "chgrp dev file.txt               # change group only"] }
+          ]
+        },
+        {
+          "question": "What is `umask`?",
+          "answer": [
+            "`umask` sets which permission bits are **removed** from newly created files and directories.",
+            "- Default maximum: files `666`, directories `777`\n- With `umask 022`: files become `644`, directories become `755`",
+            { "code": ["umask          # show current mask", "umask 077      # new files private to the owner"] }
+          ]
+        },
+        {
+          "question": "What are SUID, SGID and the sticky bit?",
+          "answer": [
+            "- **SUID (`4000`):** the program runs with the permissions of the file's **owner** (for example `passwd`).\n- **SGID (`2000`):** runs with the file's **group**; on a directory, new files inherit the directory's group.\n- **Sticky bit (`1000`):** on a directory, only the file's owner can delete their files (for example `/tmp`).",
+            { "code": ["chmod u+s program", "chmod g+s shared_dir", "chmod +t shared_dir", "chmod 1777 /tmp/mydir"] }
+          ]
+        },
+        {
+          "question": "Why can't I delete a file even though I own it?",
+          "answer": [
+            "Deleting a file needs **write permission on the directory** that contains it, not on the file itself. Also check the sticky bit on the directory and whether the file is immutable (`lsattr`)."
+          ]
+        },
+        {
+          "question": "What is the difference between `sudo` and `su`?",
+          "answer": [
+            "- `sudo <command>` runs **one command** as root (or another user), using your own password, if you are allowed in `/etc/sudoers`.\n- `su - username` **switches to another user** completely (needs that user's password). `su -` switches to root.",
+            { "code": ["sudo apt update", "sudo -i          # root shell", "su - john"] }
+          ]
+        },
+        {
+          "question": "Which files store user and group information?",
+          "answer": [
+            "- `/etc/passwd`: user accounts (name, UID, GID, home, shell)\n- `/etc/shadow`: encrypted passwords (root only)\n- `/etc/group`: groups and their members",
+            { "code": ["cat /etc/passwd", "groups john           # groups of a user", "id john"] }
+          ]
+        },
+        {
+          "question": "How do you add a user and set a password?",
+          "answer": [
+            { "code": ["sudo useradd -m john          # create user with home directory", "sudo passwd john              # set password", "sudo usermod -aG dev john      # add to group 'dev'", "sudo userdel -r john          # delete user and home"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "processes",
+      "title": "Processes & Job Control",
+      "description": "Viewing, controlling and killing processes.",
+      "questions": [
+        {
+          "question": "What is the difference between a program, a process and a thread?",
+          "answer": [
+            "- **Program:** an executable file on disk (passive).\n- **Process:** a running instance of a program, with its own PID and its own address space.\n- **Thread:** a unit of execution **inside** a process. Threads of one process share memory (heap, globals) but each has its own stack and registers."
+          ]
+        },
+        {
+          "question": "How do you list running processes? (`ps`)",
+          "answer": [
+            { "code": ["ps                 # processes of the current shell", "ps -ef              # all processes, full format", "ps aux             # all processes with CPU/memory usage", "ps -ef | grep myapp   # find a specific process", "ps -p 1234 -o pid,ppid,cmd   # details for one PID"] }
+          ]
+        },
+        {
+          "question": "How do you monitor processes live? (`top`, `htop`)",
+          "answer": [
+            "`top` shows a live view of CPU, memory and processes. Useful keys inside `top`:",
+            "- `q` quit\n- `k` kill a process (asks for PID)\n- `M` sort by memory\n- `P` sort by CPU\n- `1` show each CPU core",
+            "`htop` is a friendlier version (may need installing)."
+          ]
+        },
+        {
+          "question": "How do you kill a process? What are signals?",
+          "answer": [
+            { "code": ["kill 1234          # send SIGTERM (15), polite request to stop", "kill -9 1234       # SIGKILL, force kill (cannot be caught)", "kill -l            # list all signals", "pkill myapp        # kill by name", "killall myapp      # kill all processes with this name"] },
+            "Common signals:\n- `SIGINT (2)`: Ctrl+C\n- `SIGTERM (15)`: graceful terminate (default for `kill`)\n- `SIGKILL (9)`: immediate kill, no cleanup\n- `SIGSTOP (19)` / `SIGCONT (18)`: pause and resume\n- `SIGHUP (1)`: terminal closed, often used to reload config\n- `SIGSEGV (11)`: invalid memory access (segmentation fault)",
+            "Try `kill` (SIGTERM) first so the program can clean up. Use `kill -9` only as a last resort."
+          ]
+        },
+        {
+          "question": "How do you find a process ID by name?",
+          "answer": [
+            { "code": ["pgrep myapp", "pidof myapp", "ps -ef | grep myapp"] }
+          ]
+        },
+        {
+          "question": "How do you run a command in the background and bring it back?",
+          "answer": [
+            { "code": ["./app &            # start in the background", "jobs               # list background jobs", "fg %1              # bring job 1 to the foreground", "bg %1              # resume a stopped job in the background", "# Ctrl+Z suspends the foreground job, then 'bg' continues it"] }
+          ]
+        },
+        {
+          "question": "How do you keep a program running after you close the terminal? (`nohup`)",
+          "answer": [
+            { "code": ["nohup ./app > out.log 2>&1 &", "disown               # detach a running job from the shell", "tmux / screen         # persistent terminal sessions"] },
+            "`nohup` makes the process ignore the hangup signal (SIGHUP) sent when the terminal closes."
+          ]
+        },
+        {
+          "question": "What is a zombie process? What is an orphan process?",
+          "answer": [
+            "- **Zombie:** a child that has finished, but whose parent has not yet read its exit status with `wait()`. It uses no CPU or memory, only a process table entry, and shows as `Z` or `<defunct>` in `ps`. Fix: make the parent call `wait()`, or kill the parent.\n- **Orphan:** a child whose parent has exited. It is adopted by `init`/`systemd` (PID 1), which cleans it up when it ends."
+          ]
+        },
+        {
+          "question": "What are PID, PPID and PID 1?",
+          "answer": [
+            "- **PID:** unique process ID.\n- **PPID:** ID of the parent process.\n- **PID 1:** the first process started by the kernel (`init` or `systemd`). It is the ancestor of all other processes."
+          ]
+        },
+        {
+          "question": "How does a new process get created? (`fork` and `exec`)",
+          "answer": [
+            "- `fork()` creates a **copy** of the calling process (the child). It returns `0` in the child and the child's PID in the parent.\n- `exec()` **replaces** the current process image with a new program.\n- `wait()` lets the parent collect the child's exit status.",
+            "The shell uses `fork` + `exec` + `wait` to run every command you type.",
+            { "code": ["#include <unistd.h>", "#include <sys/wait.h>", "#include <iostream>", "", "int main() {", "    pid_t pid = fork();", "    if (pid == 0) {", "        execlp(\"ls\", \"ls\", \"-l\", nullptr);   // child runs ls", "    } else {", "        wait(nullptr);                       // parent waits", "        std::cout << \"child finished\" << std::endl;", "    }", "    return 0;", "}"] }
+          ]
+        },
+        {
+          "question": "How do you find which process is using a port?",
+          "answer": [
+            { "code": ["sudo ss -tulnp | grep 8080", "sudo lsof -i :8080", "sudo netstat -tulnp | grep 8080"] }
+          ]
+        },
+        {
+          "question": "How do you check CPU and memory usage of a process?",
+          "answer": [
+            { "code": ["ps -p 1234 -o pid,%cpu,%mem,cmd", "top -p 1234", "cat /proc/1234/status       # detailed info, including VmRSS (memory)"] }
+          ]
+        },
+        {
+          "question": "What is `nice` and `renice`?",
+          "answer": [
+            "They set process **priority**. The nice value ranges from `-20` (highest priority) to `19` (lowest). Default is `0`. Only root can set negative values.",
+            { "code": ["nice -n 10 ./heavy_job         # start with lower priority", "renice -n 5 -p 1234            # change a running process"] }
+          ]
+        },
+        {
+          "question": "What is a daemon?",
+          "answer": [
+            "A daemon is a background process that runs without a controlling terminal and usually starts at boot. Examples: `sshd`, `cron`, `nginx`. Names often end with `d`. Today they are usually managed with `systemctl`."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shell-redirection",
+      "title": "Shell, Redirection & Scripting",
+      "description": "Pipes, redirection, environment variables and basic shell scripts.",
+      "questions": [
+        {
+          "question": "What are stdin, stdout and stderr?",
+          "answer": [
+            "Every process starts with three open file descriptors:",
+            "- `0` **stdin**: standard input (keyboard)\n- `1` **stdout**: standard output (screen)\n- `2` **stderr**: standard error (screen), used for error messages",
+            "In C++: `std::cin` uses stdin, `std::cout` uses stdout, and `std::cerr` uses stderr."
+          ]
+        },
+        {
+          "question": "Explain output redirection: `>`, `>>`, `<`, `2>`, `2>&1`.",
+          "answer": [
+            { "code": ["ls > out.txt            # stdout to file (overwrite)", "ls >> out.txt           # stdout to file (append)", "sort < data.txt         # file as stdin", "./app 2> err.txt        # only errors to file", "./app > out.txt 2>&1    # stdout and stderr to the same file", "./app > /dev/null 2>&1  # throw away all output"] },
+            "`/dev/null` is a special file that discards anything written to it."
+          ]
+        },
+        {
+          "question": "What is a pipe (`|`)? What is `tee`?",
+          "answer": [
+            "A pipe sends the **stdout of one command to the stdin of the next**.",
+            { "code": ["ls -l | grep '.cpp' | wc -l      # how many .cpp files", "ps -ef | grep myapp", "./app | tee output.log         # show on screen AND save to a file"] }
+          ]
+        },
+        {
+          "question": "How do you chain commands? (`;`, `&&`, `||`)",
+          "answer": [
+            { "code": ["cmd1 ; cmd2     # run cmd2 always", "cmd1 && cmd2    # run cmd2 only if cmd1 succeeded", "cmd1 || cmd2    # run cmd2 only if cmd1 failed", "mkdir build && cd build && cmake .."] }
+          ]
+        },
+        {
+          "question": "What is an exit status? What is `$?`",
+          "answer": [
+            "Every command returns a number when it finishes: `0` means **success**, anything else means **failure**. `$?` holds the exit status of the last command.",
+            { "code": ["ls /tmp", "echo $?        # 0", "ls /nonexistent", "echo $?        # non-zero (usually 2)"] },
+            "In C++, the value returned from `main()` (or passed to `exit()`) becomes the exit status."
+          ]
+        },
+        {
+          "question": "What are environment variables? How do you set them?",
+          "answer": [
+            { "code": ["echo $HOME                 # print a variable", "export MYVAR=hello         # set and make available to child processes", "MYVAR=hello                # shell variable only", "env                        # list all environment variables", "unset MYVAR                # remove it", "FOO=bar ./app              # set only for this one command"] },
+            "To keep a variable permanently, add the `export` line to `~/.bashrc` (or `~/.profile`) and run `source ~/.bashrc`.",
+            "In C++, read them with `getenv(\"HOME\")`."
+          ]
+        },
+        {
+          "question": "What is `PATH`? How do you add a directory to it?",
+          "answer": [
+            "`PATH` is a colon-separated list of directories the shell searches when you type a command name.",
+            { "code": ["echo $PATH", "export PATH=$PATH:/home/john/bin"] }
+          ]
+        },
+        {
+          "question": "What is the difference between single quotes and double quotes?",
+          "answer": [
+            "- **Double quotes** `\"...\"`: variables and commands inside are expanded (`$VAR`).\n- **Single quotes** `'...'`: everything is literal, nothing is expanded.",
+            { "code": ["NAME=John", "echo \"Hello $NAME\"     # Hello John", "echo 'Hello $NAME'     # Hello $NAME"] }
+          ]
+        },
+        {
+          "question": "What is an alias?",
+          "answer": [
+            "A shortcut for a longer command.",
+            { "code": ["alias ll='ls -lah'", "alias                  # list aliases", "unalias ll"] },
+            "Add it to `~/.bashrc` to make it permanent."
+          ]
+        },
+        {
+          "question": "How do you write a simple shell script?",
+          "answer": [
+            { "code": ["#!/bin/bash", "# build.sh - compile and run a C++ program", "", "if [ $# -lt 1 ]; then", "    echo \"Usage: $0 file.cpp\"", "    exit 1", "fi", "", "g++ -Wall -o app \"$1\" && ./app"] },
+            "- `#!/bin/bash` (shebang) tells which interpreter to use\n- `$0` script name, `$1`, `$2` ... arguments, `$#` number of arguments, `$@` all arguments\n- Make it executable with `chmod +x build.sh` and run `./build.sh main.cpp`"
+          ]
+        },
+        {
+          "question": "Show a `for` loop and a `while` loop in bash.",
+          "answer": [
+            { "code": ["for i in 1 2 3 4 5; do", "    echo \"Number $i\"", "done", "", "for f in *.cpp; do", "    g++ -c \"$f\"", "done", "", "count=1", "while [ $count -le 3 ]; do", "    echo \"count = $count\"", "    count=$((count + 1))", "done"] }
+          ]
+        },
+        {
+          "question": "How do you use `if` conditions and test operators?",
+          "answer": [
+            { "code": ["if [ -f file.txt ]; then", "    echo \"file exists\"", "elif [ -d mydir ]; then", "    echo \"directory exists\"", "else", "    echo \"not found\"", "fi"] },
+            "Common tests:\n- `-f` regular file exists\n- `-d` directory exists\n- `-e` anything exists\n- `-z` string is empty\n- `-eq`, `-ne`, `-lt`, `-gt` numeric compare\n- `==`, `!=` string compare"
+          ]
+        },
+        {
+          "question": "What is the difference between running `./script.sh` and `source script.sh`?",
+          "answer": [
+            "- `./script.sh` runs in a **new child shell**. Variables it sets disappear when it ends.\n- `source script.sh` (or `. script.sh`) runs in the **current shell**, so variables and `cd` changes stay. That is why you use `source ~/.bashrc`."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "system-admin",
+      "title": "System, Disk, Network & Archives",
+      "description": "Disk usage, memory, networking, tar, ssh and other daily system commands.",
+      "questions": [
+        {
+          "question": "How do you check disk space? (`df`, `du`)",
+          "answer": [
+            { "code": ["df -h               # free/used space per filesystem", "du -sh mydir          # total size of a directory", "du -sh *              # size of each item here", "du -h --max-depth=1   # one level of subdirectories"] },
+            "`df` shows filesystem-level space. `du` shows how much space files and directories use."
+          ]
+        },
+        {
+          "question": "How do you check memory and CPU information?",
+          "answer": [
+            { "code": ["free -h             # RAM and swap usage", "top / htop          # live usage", "lscpu               # CPU details", "nproc               # number of CPU cores", "cat /proc/meminfo   # detailed memory info", "cat /proc/cpuinfo   # detailed CPU info", "uptime              # load average"] }
+          ]
+        },
+        {
+          "question": "How do you create and extract archives? (`tar`, `gzip`, `zip`)",
+          "answer": [
+            { "code": ["tar -cvf archive.tar mydir        # create tar", "tar -czvf archive.tar.gz mydir    # create gzip-compressed tar", "tar -xvf archive.tar             # extract tar", "tar -xzvf archive.tar.gz         # extract tar.gz", "tar -tvf archive.tar             # list contents", "tar -xzvf a.tar.gz -C /tmp       # extract to a directory", "gzip file.txt / gunzip file.txt.gz", "zip -r a.zip mydir / unzip a.zip"] },
+            "Flag memory trick: **c**reate, **x** extract, **t** list, **z** gzip, **v** verbose, **f** file name."
+          ]
+        },
+        {
+          "question": "How do you copy files between machines? (`scp`, `rsync`, `ssh`)",
+          "answer": [
+            { "code": ["ssh user@192.168.1.10                      # log in to a remote machine", "scp file.txt user@192.168.1.10:/home/user/   # copy to remote", "scp user@192.168.1.10:/home/user/file.txt .   # copy from remote", "scp -r mydir user@host:/tmp/                # copy a directory", "rsync -avz mydir/ user@host:/backup/        # sync, copies only changes"] }
+          ]
+        },
+        {
+          "question": "What are the common networking commands?",
+          "answer": [
+            { "code": ["ping google.com           # check connectivity (Ctrl+C to stop)", "ip addr / ifconfig         # show IP addresses", "ss -tuln / netstat -tuln  # listening ports", "curl http://example.com   # fetch a URL", "wget http://example.com/file.zip   # download a file", "nslookup google.com       # DNS lookup", "traceroute google.com     # path to a host"] }
+          ]
+        },
+        {
+          "question": "How do you install software? (package managers)",
+          "answer": [
+            { "code": ["# Debian / Ubuntu", "sudo apt update", "sudo apt install g++ gdb make valgrind", "sudo apt remove g++", "", "# Red Hat / CentOS / Fedora", "sudo yum install gcc-c++", "sudo dnf install gcc-c++"] }
+          ]
+        },
+        {
+          "question": "How do you start and stop services? (`systemctl`)",
+          "answer": [
+            { "code": ["sudo systemctl start nginx", "sudo systemctl stop nginx", "sudo systemctl restart nginx", "sudo systemctl enable nginx     # start at boot", "systemctl status nginx", "journalctl -u nginx             # service logs"] }
+          ]
+        },
+        {
+          "question": "Where are logs stored and how do you read them?",
+          "answer": [
+            "Logs are mostly in `/var/log`.",
+            { "code": ["tail -f /var/log/syslog        # follow system log", "less /var/log/auth.log", "dmesg | tail                 # kernel messages", "journalctl -xe                # recent systemd logs", "journalctl --since '1 hour ago'"] }
+          ]
+        },
+        {
+          "question": "How do you schedule a job? (`cron`)",
+          "answer": [
+            { "code": ["crontab -e      # edit your cron jobs", "crontab -l      # list them"] },
+            "Format: `minute hour day-of-month month day-of-week command`",
+            { "code": ["30 2 * * *   /home/john/backup.sh      # every day at 2:30 AM", "*/5 * * * * /home/john/check.sh       # every 5 minutes", "0 9 * * 1   /home/john/report.sh      # every Monday at 9 AM"] }
+          ]
+        },
+        {
+          "question": "How do you mount and unmount a disk?",
+          "answer": [
+            { "code": ["lsblk                       # list disks and partitions", "sudo mount /dev/sdb1 /mnt    # mount", "sudo umount /mnt            # unmount", "cat /etc/fstab              # filesystems mounted at boot"] }
+          ]
+        },
+        {
+          "question": "How do you shut down or reboot the system?",
+          "answer": [
+            { "code": ["sudo shutdown -h now", "sudo shutdown -r now", "sudo reboot", "sudo poweroff"] }
+          ]
+        },
+        {
+          "question": "What is `ulimit`?",
+          "answer": [
+            "`ulimit` shows or sets per-process resource limits (open files, stack size, core file size, and so on).",
+            { "code": ["ulimit -a              # show all limits", "ulimit -n              # max open files", "ulimit -c unlimited    # allow core dumps", "ulimit -s              # stack size"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-on-linux",
+      "title": "C++ on Linux: Compile, Debug & Build",
+      "description": "g++, make, gdb, valgrind, libraries and other tools a C++ developer uses on Linux.",
+      "questions": [
+        {
+          "question": "How do you compile and run a C++ program on Linux?",
+          "answer": [
+            { "code": ["g++ main.cpp -o app          # compile and link", "./app                        # run", "g++ a.cpp b.cpp c.cpp -o app   # several source files"] },
+            "If you don't give `-o`, the output file is named `a.out`."
+          ]
+        },
+        {
+          "question": "What are the most important `g++` compiler flags?",
+          "answer": [
+            "- `-o name`: output file name\n- `-Wall -Wextra`: enable warnings (always use them)\n- `-Werror`: treat warnings as errors\n- `-g`: include debug symbols (needed for `gdb`)\n- `-O0 / -O2 / -O3`: optimization level\n- `-std=c++17`: choose the language standard\n- `-c`: compile only, do not link (creates `.o`)\n- `-I dir`: add a header search directory\n- `-L dir`: add a library search directory\n- `-l name`: link with `libname`\n- `-pthread`: enable threads\n- `-D NAME`: define a macro\n- `-fsanitize=address`: detect memory errors at runtime",
+            { "code": ["g++ -std=c++17 -Wall -Wextra -g -O0 main.cpp -o app"] }
+          ]
+        },
+        {
+          "question": "What are the stages of compilation?",
+          "answer": [
+            "1. **Preprocessing:** handles `#include`, `#define`, `#ifdef`\n2. **Compilation:** converts C++ to assembly\n3. **Assembly:** converts assembly to an object file (`.o`)\n4. **Linking:** combines object files and libraries into the final executable",
+            { "code": ["g++ -E main.cpp -o main.i    # preprocess only", "g++ -S main.cpp -o main.s    # compile to assembly", "g++ -c main.cpp -o main.o    # assemble to object file", "g++ main.o -o app            # link"] }
+          ]
+        },
+        {
+          "question": "How do you compile a project with multiple files?",
+          "answer": [
+            "Compile each source to an object file, then link. This way, only changed files need to be rebuilt.",
+            { "code": ["g++ -c main.cpp -o main.o", "g++ -c util.cpp -o util.o", "g++ main.o util.o -o app"] }
+          ]
+        },
+        {
+          "question": "What is a Makefile? Show a simple example.",
+          "answer": [
+            "`make` reads a `Makefile` and rebuilds only what changed. A rule has the form `target: dependencies` followed by a **tab-indented** command.",
+            { "code": ["CXX = g++", "CXXFLAGS = -std=c++17 -Wall -Wextra -g", "OBJS = main.o util.o", "", "app: $(OBJS)", "\t$(CXX) $(OBJS) -o app", "", "%.o: %.cpp", "\t$(CXX) $(CXXFLAGS) -c $< -o $@", "", "clean:", "\trm -f $(OBJS) app", "", ".PHONY: clean"] },
+            "- `make` builds the first target, `make clean` runs the clean rule\n- `$@` is the target name, `$<` is the first dependency, `$^` is all dependencies\n- `.PHONY` marks targets that are not real files\n- Commands must start with a **tab**, not spaces"
+          ]
+        },
+        {
+          "question": "What is the difference between `make` and `cmake`?",
+          "answer": [
+            "- `make` is a build tool that runs rules from a `Makefile`.\n- `cmake` is a **build-system generator**: you describe your project in `CMakeLists.txt`, and CMake generates Makefiles (or Ninja files) for your platform.",
+            { "code": ["mkdir build && cd build", "cmake ..", "make -j4          # build using 4 parallel jobs"] }
+          ]
+        },
+        {
+          "question": "What is the difference between static and shared (dynamic) libraries?",
+          "answer": [
+            "- **Static library (`.a`):** code is **copied into** the executable at link time. Bigger executable, no dependency at runtime.\n- **Shared library (`.so`):** code is **loaded at runtime**. Smaller executable, memory is shared between programs, and the library can be updated without rebuilding, but it must be found at runtime.",
+            { "code": ["# static library", "g++ -c util.cpp -o util.o", "ar rcs libutil.a util.o", "g++ main.cpp -L. -lutil -o app", "", "# shared library", "g++ -fPIC -shared util.cpp -o libutil.so", "g++ main.cpp -L. -lutil -o app", "LD_LIBRARY_PATH=. ./app"] }
+          ]
+        },
+        {
+          "question": "What does `ldd` do? What is `LD_LIBRARY_PATH`?",
+          "answer": [
+            "`ldd ./app` lists the shared libraries an executable needs and shows whether each one is found. A `not found` entry explains the error *cannot open shared object file*.",
+            "`LD_LIBRARY_PATH` is a list of extra directories where the dynamic loader searches for `.so` files.",
+            { "code": ["ldd ./app", "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/john/lib", "sudo ldconfig       # refresh the system library cache"] }
+          ]
+        },
+        {
+          "question": "What is `undefined reference` error and how do you fix it?",
+          "answer": [
+            "It is a **linker** error: the function or variable was declared but the linker cannot find its definition.",
+            "Common causes:\n- A `.cpp` file is missing from the compile command\n- A library is not linked (add `-lname`, and `-L` for its path)\n- Function is declared but never defined, or the signature differs\n- C library used in C++ without `extern \"C\"`\n- Wrong order of libraries on the command line (put libraries **after** the source files)",
+            { "code": ["g++ main.cpp util.cpp -o app", "g++ main.cpp -L. -lutil -o app"] }
+          ]
+        },
+        {
+          "question": "How do you debug a C++ program with `gdb`?",
+          "answer": [
+            "Compile with `-g`, then start `gdb`:",
+            { "code": ["g++ -g main.cpp -o app", "gdb ./app"] },
+            "Common commands:\n- `run` (or `r`): start the program (`run arg1 arg2` to pass arguments)\n- `break main` / `break file.cpp:25` (or `b`): set a breakpoint\n- `next` (`n`): run the next line, step over functions\n- `step` (`s`): run the next line, step into functions\n- `continue` (`c`): continue to the next breakpoint\n- `print x` (`p x`): show a variable\n- `bt`: show the call stack (backtrace)\n- `frame 2`: switch to a stack frame\n- `watch x`: stop when `x` changes\n- `info locals`: show local variables\n- `delete 1`: remove breakpoint 1\n- `quit` (`q`): exit gdb"
+          ]
+        },
+        {
+          "question": "What is a segmentation fault? What are common causes?",
+          "answer": [
+            "A segmentation fault (`SIGSEGV`) happens when a program accesses memory it is not allowed to access. The OS kills the process.",
+            "Common causes:\n- Dereferencing a null or uninitialized pointer\n- Using memory after `delete` / `free` (dangling pointer)\n- Array access out of bounds\n- Stack overflow (very deep or infinite recursion)\n- Writing to read-only memory (such as a string literal)\n- Returning a pointer or reference to a local variable",
+            "To find it, run under `gdb` and type `bt` after the crash, or use `valgrind` or `-fsanitize=address`."
+          ]
+        },
+        {
+          "question": "What is a core dump? How do you analyze it?",
+          "answer": [
+            "A core dump is a file with the memory and state of a process at the time it crashed.",
+            { "code": ["ulimit -c unlimited       # enable core dumps in this shell", "./app                     # crash, creating a core file", "gdb ./app core            # open it", "(gdb) bt                  # see where it crashed"] },
+            "Build with `-g` so the backtrace shows function names and line numbers. On some systems, cores are handled by `coredumpctl`."
+          ]
+        },
+        {
+          "question": "How do you find memory leaks? (`valgrind`)",
+          "answer": [
+            { "code": ["g++ -g main.cpp -o app", "valgrind --leak-check=full ./app", "valgrind --leak-check=full --show-leak-kinds=all ./app"] },
+            "Valgrind reports:\n- **definitely lost:** real leaks (memory allocated but never freed)\n- **indirectly lost:** lost because a pointer to it was lost\n- **invalid read/write:** out-of-bounds or use-after-free\n- **uninitialised value:** use of uninitialized memory",
+            "A faster alternative is AddressSanitizer:",
+            { "code": ["g++ -g -fsanitize=address main.cpp -o app", "./app"] }
+          ]
+        },
+        {
+          "question": "What tools inspect binaries and object files? (`nm`, `objdump`, `strings`, `readelf`)",
+          "answer": [
+            { "code": ["nm app                  # list symbols (functions, variables)", "nm -C app               # demangle C++ names", "objdump -d app          # disassemble", "readelf -h app          # ELF header information", "strings app             # printable text inside a binary", "size app                # code/data/bss sizes", "file app                # file type (ELF 64-bit, etc.)"] }
+          ]
+        },
+        {
+          "question": "How do you trace system calls of a program? (`strace`)",
+          "answer": [
+            { "code": ["strace ./app                  # show all system calls", "strace -e open,read ./app      # only selected calls", "strace -p 1234                # attach to a running process", "ltrace ./app                  # trace library calls"] },
+            "Useful when a program hangs, or fails to open a file, and you want to see exactly what it asks the kernel for."
+          ]
+        },
+        {
+          "question": "How do you pass command-line arguments to a C++ program?",
+          "answer": [
+            { "code": ["#include <iostream>", "", "int main(int argc, char* argv[]) {", "    for (int i = 0; i < argc; ++i)", "        std::cout << i << \": \" << argv[i] << std::endl;", "    return 0;", "}"] },
+            "Run `./app hello 42`. Here `argc` is `3`, `argv[0]` is `./app`, `argv[1]` is `hello` and `argv[2]` is `42`."
+          ]
+        },
+        {
+          "question": "How do you compile a program that uses threads?",
+          "answer": [
+            { "code": ["g++ -std=c++17 -pthread main.cpp -o app"] },
+            "Without `-pthread` you may get linker errors such as `undefined reference to pthread_create`."
+          ]
+        },
+        {
+          "question": "What are header guards and include paths on Linux?",
+          "answer": [
+            "Header guards stop a header from being included twice:",
+            { "code": ["#ifndef MYHEADER_H", "#define MYHEADER_H", "// declarations", "#endif", "", "// or simply", "#pragma once"] },
+            "Use `-I` to tell the compiler where to find headers, for example `g++ -I./include main.cpp`. `#include \"x.h\"` searches the current directory first, and `#include <x.h>` searches system paths."
+          ]
+        },
+        {
+          "question": "How do you check the exit code of your C++ program?",
+          "answer": [
+            { "code": ["./app", "echo $?"] },
+            "`return 0;` from `main` means success. Any non-zero value means failure. A crash by signal gives `128 + signal number` (for example `139` for a segmentation fault)."
+          ]
+        },
+        {
+          "question": "How do you measure how long a program runs?",
+          "answer": [
+            { "code": ["time ./app"] },
+            "It prints `real` (wall-clock time), `user` (CPU time in user mode) and `sys` (CPU time in the kernel)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "linux-concepts",
+      "title": "Linux Concepts",
+      "description": "Conceptual questions: kernel, filesystem layout, inodes, system calls, memory and IPC.",
+      "questions": [
+        {
+          "question": "What is Linux? How is it different from Unix and Windows?",
+          "answer": [
+            "Linux is an open-source, Unix-like **kernel** created by Linus Torvalds. Distributions (Ubuntu, Fedora, Debian) combine the kernel with tools and software to make a full operating system.",
+            "- **Unix:** an older, mostly proprietary family of operating systems. Linux follows its design ideas, but is a separate, free implementation.\n- **Windows:** closed source, GUI-first, uses drive letters (`C:\\`). Linux has a single directory tree starting at `/`, is case-sensitive, and is command-line friendly."
+          ]
+        },
+        {
+          "question": "Explain the Linux architecture: kernel, shell and user space.",
+          "answer": [
+            "- **Hardware:** CPU, memory, disks.\n- **Kernel:** manages processes, memory, files, devices and networking. It runs in **kernel space** with full privileges.\n- **System calls:** the interface programs use to ask the kernel for services.\n- **Shell:** a command interpreter (`bash`, `zsh`) that takes your commands and runs programs.\n- **User space:** where applications and libraries run with limited privileges."
+          ]
+        },
+        {
+          "question": "What is the Linux directory structure?",
+          "answer": [
+            "Everything starts at the root `/`.",
+            "- `/bin`, `/usr/bin`: essential commands (`ls`, `cp`)\n- `/sbin`: system administration commands\n- `/etc`: configuration files\n- `/home`: users' home directories\n- `/root`: home of the root user\n- `/var`: variable data such as logs (`/var/log`)\n- `/tmp`: temporary files\n- `/usr`: user programs, libraries and headers\n- `/lib`: shared libraries\n- `/dev`: device files\n- `/proc`: virtual files with process and kernel info\n- `/mnt`, `/media`: mount points\n- `/opt`: optional third-party software"
+          ]
+        },
+        {
+          "question": "What does \"everything is a file\" mean?",
+          "answer": [
+            "Linux treats regular files, directories, devices (`/dev/sda`), pipes, sockets and even process information (`/proc`) as files. They are all accessed with the same calls: `open`, `read`, `write`, `close`.",
+            "This lets the same tools (`cat`, `grep`, redirection) work on very different things."
+          ]
+        },
+        {
+          "question": "What is an inode?",
+          "answer": [
+            "An inode is a data structure that stores a file's **metadata**: owner, permissions, size, timestamps and where the data blocks are. It does **not** store the file name. A directory is a table that maps names to inode numbers.",
+            { "code": ["ls -i file.txt      # show inode number", "stat file.txt       # full inode information", "df -i               # inode usage of filesystems"] },
+            "A filesystem can run out of inodes even when it has free space (many tiny files)."
+          ]
+        },
+        {
+          "question": "What are file descriptors?",
+          "answer": [
+            "A file descriptor is a small non-negative integer the kernel gives to a process for each open file, socket or pipe. `0`, `1` and `2` are stdin, stdout and stderr. The next opened file normally gets `3`.",
+            { "code": ["ls -l /proc/self/fd     # descriptors of the current process", "lsof -p 1234            # files opened by a process", "ulimit -n               # max descriptors per process"] }
+          ]
+        },
+        {
+          "question": "What is a system call? Give examples.",
+          "answer": [
+            "A system call is how a user program asks the kernel to do something privileged. Standard library functions like `printf` or `fopen` call system calls internally.",
+            "- **Files:** `open`, `read`, `write`, `close`, `lseek`\n- **Processes:** `fork`, `exec`, `wait`, `exit`, `kill`\n- **Memory:** `mmap`, `brk`\n- **Network:** `socket`, `bind`, `listen`, `accept`, `connect`\n- **Info:** `getpid`, `stat`",
+            "Use `strace ./app` to see them."
+          ]
+        },
+        {
+          "question": "What is the difference between user space and kernel space?",
+          "answer": [
+            "- **Kernel space:** privileged mode, direct access to hardware and all memory. A bug here can crash the whole system.\n- **User space:** normal applications with restricted access. A crash affects only that process.",
+            "The CPU switches to kernel mode when a program makes a system call or an interrupt happens."
+          ]
+        },
+        {
+          "question": "What is the memory layout of a C++ process on Linux?",
+          "answer": [
+            "From low to high addresses:",
+            "- **Text:** program code (read-only)\n- **Data:** initialized global and static variables\n- **BSS:** uninitialized globals and statics (zeroed)\n- **Heap:** dynamic memory (`new`, `malloc`), grows upward\n- **Stack:** local variables and function calls, grows downward\n- **Memory-mapped area:** shared libraries and `mmap` regions",
+            { "code": ["size app           # sizes of text, data, bss", "cat /proc/1234/maps   # memory map of a running process"] }
+          ]
+        },
+        {
+          "question": "What is virtual memory? What is swap?",
+          "answer": [
+            "Each process sees its own private virtual address space. The kernel and CPU map virtual addresses to physical RAM using page tables. This gives isolation between processes, and lets the system use more memory than the RAM installed.",
+            "**Swap** is disk space used as an extension of RAM. Rarely used pages are moved there when RAM is short, which is much slower."
+          ]
+        },
+        {
+          "question": "What is the difference between a thread and a process on Linux?",
+          "answer": [
+            "- **Process:** has its own address space and resources. Creating one is heavier, and communication needs IPC.\n- **Thread:** shares the address space, open files and globals of its process. It is lighter and communicates through shared memory, so access needs synchronization (mutexes, atomics).",
+            "A crash (for example a segmentation fault) in one thread kills the entire process. In Linux, threads are created with `pthread_create` or `std::thread`, and the kernel implements them with `clone()`."
+          ]
+        },
+        {
+          "question": "What are the IPC (inter-process communication) mechanisms in Linux?",
+          "answer": [
+            "- **Pipes:** one-way byte stream between related processes (`pipe()`, the shell `|`)\n- **Named pipes (FIFO):** pipes with a file name (`mkfifo`)\n- **Message queues:** send structured messages\n- **Shared memory:** fastest, processes map the same memory (needs synchronization)\n- **Semaphores:** synchronization and counting\n- **Signals:** simple asynchronous notifications\n- **Sockets:** between processes on the same or different machines (TCP/UDP, Unix domain sockets)",
+            { "code": ["ipcs               # show shared memory, queues, semaphores", "mkfifo mypipe      # create a named pipe"] }
+          ]
+        },
+        {
+          "question": "What is the `/proc` filesystem?",
+          "answer": [
+            "A virtual filesystem (it does not use disk space) where the kernel exposes information about processes and the system as files.",
+            { "code": ["cat /proc/cpuinfo", "cat /proc/meminfo", "cat /proc/version", "ls /proc/1234/            # info about process 1234", "cat /proc/1234/cmdline     # how it was started", "ls -l /proc/1234/fd        # open files"] }
+          ]
+        },
+        {
+          "question": "What is the Linux boot process (in short)?",
+          "answer": [
+            "1. **BIOS/UEFI:** tests hardware and finds the boot device\n2. **Bootloader (GRUB):** loads the kernel into memory\n3. **Kernel:** initializes hardware and mounts the root filesystem\n4. **init / systemd (PID 1):** starts services\n5. **Login prompt or desktop** appears"
+          ]
+        },
+        {
+          "question": "What is the difference between `/bin` and `/usr/bin`, or `/etc` and `/var`?",
+          "answer": [
+            "- `/bin` and `/usr/bin` both hold executables. `/bin` was for essential commands needed to boot. On modern systems it is often a link to `/usr/bin`.\n- `/etc` holds **configuration** (changes rarely). `/var` holds **variable data** such as logs, caches and spool files (changes constantly)."
+          ]
+        },
+        {
+          "question": "What is the difference between a shell built-in and an external command?",
+          "answer": [
+            "- **Built-in:** implemented inside the shell itself (`cd`, `echo`, `export`, `alias`). It runs in the shell process, which is why `cd` can change the shell's directory.\n- **External:** a separate program found through `PATH` (`ls`, `grep`, `cp`). The shell runs it in a new child process.",
+            { "code": ["type cd      # cd is a shell builtin", "type ls      # ls is /usr/bin/ls or an alias"] }
+          ]
+        },
+        {
+          "question": "What is the difference between `/dev/null`, `/dev/zero` and `/dev/random`?",
+          "answer": [
+            "- `/dev/null`: discards everything written to it; reading gives end-of-file\n- `/dev/zero`: gives an endless stream of zero bytes\n- `/dev/random`, `/dev/urandom`: give random bytes",
+            { "code": ["dd if=/dev/zero of=test.img bs=1M count=10    # create a 10 MB file of zeros"] }
+          ]
         }
       ]
     }

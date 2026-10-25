@@ -30,16 +30,16 @@
                 {
                     "question": "What are the major and minor pillars of OOP?",
                     "answer": [
-                        "Major pillars (without these a language is not object oriented):",
-                        "Abstraction: expose only the essential features of an object and hide the implementation details. In C++ it is achieved with classes and access specifiers (keep data private, expose public getters/setters or methods).",
-                        "Encapsulation: wrapping data and the functions that operate on it into one logical unit (a class).",
-                        "Modularity: partitioning a program into independent components. Physical modularity: .h, .cpp, .rc files. Logical modularity: namespaces, classes.",
-                        "Hierarchy: ranking or ordering of abstractions. Types of hierarchy: Composition (has-a), Inheritance (is-a), Dependency (use-a), Instantiation (creates-a).",
-                        "Minor pillars (useful but not essential):",
-                        "Typing: enforcing the class of an object; polymorphism (compile time and run time) is the typing mechanism.",
-                        "Concurrency: potentially parallel execution of parts of a computation (multithreading).",
-                        "Persistence: the object continues to exist after its creator ceases to exist, e.g. its state is saved to disk or a database for future access.",
-                        "Note: many textbooks list Inheritance and Polymorphism as the 'four pillars' (Abstraction, Encapsulation, Inheritance, Polymorphism). The Grady Booch model above (4 major + 3 minor elements) is the classic one; mention both in an interview."
+                        "**Major pillars (without these a language is not object oriented)**:",
+                        "1.Abstraction: expose only the essential features of an object and hide the implementation details. In C++ it is achieved with classes and access specifiers (keep data private, expose public getters/setters or methods).",
+                        "2.Encapsulation: wrapping data and the functions that operate on it into one logical unit (a class).",
+                        "3.Modularity: partitioning a program into independent components. Physical modularity: .h, .cpp, .rc files. Logical modularity: namespaces, classes.",
+                        "4.Hierarchy: ranking or ordering of abstractions. Types of hierarchy: Composition (has-a), Inheritance (is-a), Dependency (use-a), Instantiation (creates-a).",
+                        "**Minor pillars (useful but not essential)**:",
+                        "1.Typing: enforcing the class of an object; polymorphism (compile time and run time) is the typing mechanism.",
+                        "2.Concurrency: potentially parallel execution of parts of a computation (multithreading).",
+                        "3.Persistence: the object continues to exist after its creator ceases to exist, e.g. its state is saved to disk or a database for future access.",
+                        "*Note: many textbooks list Inheritance and Polymorphism as the 'four pillars' (Abstraction, Encapsulation, Inheritance, Polymorphism). The Grady Booch model above (4 major + 3 minor elements) is the classic one; mention both in an interview.*"
                     ]
                 },
                 {
@@ -52,18 +52,28 @@
                     "code": "#include <iostream>\nusing namespace std;\n\nclass Account {\n    double balance = 0;          // hidden detail\npublic:\n    void deposit(double amt) { if (amt > 0) balance += amt; }\n    double getBalance() const { return balance; }\n};\n\nint main() {\n    Account a;\n    a.deposit(500);\n    cout << a.getBalance() << endl;   // 500\n    // a.balance = 1;                 // error: 'balance' is private\n}"
                 },
                 {
-                    "question": "What C++ version do you use?",
+                    "question": "How many C++ versions are there?",
                     "answer": [
-                        "C++98 (ISO/IEC 14882:1998) is the first standard, C++03 the second (bug-fix release).",
-                        "C++11 is the third edition (a major update), C++14 the fourth, C++17 the fifth, C++20 the sixth and C++23 the seventh.",
+                        "C++98 (ISO/IEC 14882:1998) is the first standard.",
+                        "C++03 the second (bug-fix release).",
+                        "C++11 is the third edition (a major update)", 
+                        "C++14 the fourth",
+                        "C++17 the fifth",
+                        "C++20 the sixth",
+                        "C++23 the seventh",
                         "C++26 is the next standard; compilers expose it experimentally (for example -std=c++2c on GCC/Clang).",
                         "Choose a flag with the compiler, e.g. g++ -std=c++17 main.cpp. Be ready to say which one your project uses and which features (auto, lambdas, smart pointers, move semantics ...) you rely on."
                     ]
                 },
                 {
-                    "question": "What C++ compiler do you use?",
+                    "question": "how many compilers are there in c++ and What C++ compiler do you use?",
                     "answer": [
-                        "The common ones are GCC (g++), Clang and MSVC. Name the one your project uses and its version.",
+                        "There is no official or fixed number of C++ compilers because anyone can write a compiler that complies with the ISO C++ standards",
+                        "The **Big Three** Industry Standards: ",
+                        "**1.GCC (GNU Compiler Collection / g++)**: The open-source standard for Linux and Unix environments. It is highly customizable and heavily used in open-source development, academic research, and cross-platform projects (often via MinGW-w64 on Windows)",
+                        "**2.Clang** *(LLVM: Low Level Virtual Machine (though it is no longer a virtual machine and the name is now just an acronym)*:  A modern, open-source compiler architecture designed for incredibly fast compilation times and highly readable error messages. It is the default compiler backend for Apple's Xcode on macOS and is deeply integrated into Google's Android NDK.",
+                        "**3.MSVC(Microsoft Visual C++)**:  The proprietary, industry-standard compiler for native Windows development. It comes bundled directly with the Microsoft Visual Studio ecosystem.",
+                        "Name the one your project uses and its version.",
                         "Check the installed version with: g++ --version. Release versions change often, so look at the compiler's release page instead of memorising a number."
                     ]
                 }
@@ -77,6 +87,7 @@
                 {
                     "question": "What is internal and external linkage?",
                     "answer": [
+                        "Linkage = visibility across files (.cpp files)\n**1.Internal linkage** → visible only inside the same file\n**2.External linkage** → visible across multiple files",
                         "Linkage = visibility of a name across translation units (.cpp files).",
                         "Internal linkage: the name is visible only inside the same file. Use static (for variables/functions) or an unnamed namespace. const variables at namespace scope also have internal linkage by default.",
                         "External linkage: the name is visible in other files too. Ordinary functions and global variables have external linkage; other files access them with the extern keyword."
@@ -501,6 +512,24 @@
             "title": "Classes",
             "description": "Access specifiers, initializer lists, friend functions and static members.",
             "questions": [
+                 {
+                    "question": "Which C++'s special member functions are provided by compiler?",
+                    "answer": [
+                        "The compiler can generate up to six special member functions for a class if you don’t write them yourself.",
+                        "1.Default constructor : A()\n2.Destructor :  ~A()\n3.Copy constructor : A(const A&)\n4.Assignment operator : A& operator=(const A&)\n5.Move constructor (C++11) : A(A&&)\n6.Move assignment (C++11): A& operator=(A&&)",
+                        "When the compiler does NOT generate them",
+                        "Default constructor: not generated if you write any constructor yourself.",
+                        "Move constructor and move assignment: not generated if you declare a copy constructor, copy assignment, destructor, or the other move function.",
+                        "Copy operations: deleted if you declare a move constructor or move assignment. They are still generated if you only declare a destructor, but that is deprecated, so don’t rely on it.",
+                        "Destructor: always generated if you don’t write one. It is non-virtual unless a base class makes it virtual.",
+                        "***Rules to remember***:",
+                        "**Rule of 0**: if your class doesn’t manage resources directly, write none of them. Use std::string, std::vector, std::unique_ptr and let the compiler generate them correctly.",
+                        "**Rule of 3**: if you write one of destructor, copy constructor or copy assignment, you probably need all three.",
+                        "**Rule of 5**: in C++11 and later, add the move constructor and move assignment to those three.",
+                        "\nMain danger: shallow copy: The generated copy only copies the pointer value, not the data it points to:"
+                    ],
+                    "code": "#include <iostream>\nusing namespace std;\n\nclass A\n{\npublic:\n    A() = default;  // ask the compiler to generate it \n    A(const A&) = delete;  // forbid copying   \n    A& operator=(const A&) = delete;\n    A(A&&) = default; // allow moving \n    A& operator=(A&&) = default;\n};"
+                },
                 {
                     "question": "What is the use of protected?",
                     "answer": [
@@ -1009,7 +1038,7 @@
                 {
                     "question": "What are the C++11 features?",
                     "answer": [
-                        "auto, nullptr, range-based for loops, override and final, strongly-typed enums (enum class), smart pointers, lambdas, non-member begin() and end(), static_assert and type traits, move semantics (rvalue references). Others: constexpr, initializer lists, delegating constructors, = default / = delete, variadic templates, std::thread, unordered containers."
+                        "1.auto\n2.nullptr\n3.range-based for loops\n4.override and final\n5.strongly-typed enums (enum class)\n6.smart pointers\n7.lambdas\n8.non-member begin() and end()\n9.static_assert and type traits\n10.move semantics (rvalue references).\nOthers: constexpr, initializer lists, delegating constructors, = default / = delete, variadic templates, std::thread, unordered containers."
                     ]
                 },
                 {
@@ -1074,8 +1103,8 @@
                 {
                     "question": "What are the new features in C++14?",
                     "answer": [
-                        "New language features: function return type deduction, alternate type deduction on declaration (decltype(auto)), relaxed constexpr restrictions, variable templates, aggregate member initialisation, binary literals, digit separators, generic lambdas, lambda capture expressions (init-capture) and the [[deprecated]] attribute.",
-                        "New library features: shared mutexes and locking (std::shared_timed_mutex), heterogeneous lookup in associative containers, standard user-defined literals, tuple addressing via type and smaller features such as std::make_unique."
+                        "**New language features:** \n1.Function return type deduction\n2.Alternate type deduction on declaration (decltype(auto))\n3.Relaxed constexpr restrictions\n4.Variable templates\n5.Aggregate member initialisation\n6.Binary literals\n7.Digit separators\n8.Generic lambdas\n9.Lambda capture expressions (init-capture) and the [[deprecated]] attribute.",
+                        "**New library features:** \n1.Shared mutexes and locking (std::shared_timed_mutex)\n2.Heterogeneous lookup in associative containers\n3.Standard user-defined literals\n4.tuple addressing via type and smaller features such as std::make_unique."
                     ]
                 },
                 {
