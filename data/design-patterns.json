@@ -1,6 +1,76 @@
 {
   "topics": [
     {
+      "id": "design-patterns-overview",
+      "title": "Design Patterns Overview and Classification",
+      "description": "Start here: categories, all 23 GoF patterns, memory aids, selection and C++ interview approach.",
+      "questions": [
+        {
+          "question": "What is a design pattern, and why use one?",
+          "answer": [
+            "A design pattern is a reusable design idea for a recurring software problem, not a copy-paste library or mandatory rule.",
+            "Patterns provide shared vocabulary, improve extensibility and can reduce coupling.",
+            "Do not add patterns without a real variation point: unnecessary abstractions increase complexity."
+          ]
+        },
+        {
+          "question": "How are the 23 Gang of Four (GoF) patterns classified?",
+          "answer": [
+            "**Creational (5):** Abstract Factory, Builder, Factory Method, Prototype, Singleton — how objects are created.",
+            "**Structural (7):** Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy — how classes and objects are composed.",
+            "**Behavioral (11):** Chain of Responsibility, Command, Interpreter, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor — how behavior and communication are organized.",
+            "**Memory rule:** Create (5), Connect (7), Communicate (11)."
+          ]
+        },
+        {
+          "question": "How can I remember all 23 design patterns?",
+          "answer": [
+            "Creational: **A B F P S** = Abstract Factory, Builder, Factory Method, Prototype, Singleton.",
+            "Structural: **A B C D F F P** = Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy.",
+            "Behavioral: **C C I I M M O S S T V** = Chain, Command, Interpreter, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor.",
+            "Remember the problem first: creation, composition, or interaction. Then associate one concrete example with each pattern."
+          ]
+        },
+        {
+          "question": "What order should an experienced C++ developer study design patterns?",
+          "answer": [
+            "1. Foundations: SOLID, composition vs inheritance, RAII, ownership, interfaces.",
+            "2. Most frequent: Singleton, Factory Method, Abstract Factory, Builder, Strategy, Observer, Decorator.",
+            "3. Next: Adapter, Facade, State, Command, Proxy, Composite, Template Method.",
+            "4. Remaining GoF patterns and trade-offs; then concurrency and architectural patterns.",
+            "For each pattern explain intent, when to use, C++ implementation, ownership, thread safety, drawbacks and an alternative."
+          ]
+        },
+        {
+          "question": "Are Simple Factory and Factory Method the same?",
+          "answer": [
+            "No. Simple Factory is a commonly used creation idiom with a function selecting a concrete type.",
+            "Factory Method is the GoF pattern where subclasses override a virtual creation method.",
+            "Your existing topic named Factory remains unchanged and is treated as the simple/general factory concept."
+          ]
+        },
+        {
+          "question": "What modern C++ features matter when implementing design patterns?",
+          "answer": [
+            "Prefer std::unique_ptr for exclusive polymorphic ownership, std::shared_ptr only for genuinely shared ownership and references for non-owning dependencies.",
+            "Use virtual destructors when deleting derived objects through base pointers.",
+            "Prefer composition, std::function, lambdas, std::variant/std::visit and templates when they simplify classic class-heavy patterns.",
+            "RAII, const-correctness, exception safety and synchronization matter more than pattern names."
+          ]
+        },
+        {
+          "question": "How do you answer a senior-level design pattern interview question?",
+          "answer": [
+            "State the problem and why it changes.",
+            "Explain the pattern and its participants.",
+            "Show a minimal modern C++ design with ownership.",
+            "Discuss runtime cost, concurrency, testability, extensibility and cases where the pattern is unnecessary.",
+            "Compare it with the closest alternative."
+          ]
+        }
+      ]
+    },
+    {
       "id": "singleton",
       "title": "Singleton",
       "description": "A single instance with a shared access point.",
@@ -13,94 +83,1729 @@
           "code": "class Config {\npublic:\n    static Config& instance() {\n        static Config c;\n        return c;\n    }\n    Config(const Config&) = delete;\n    Config& operator=(const Config&) = delete;\nprivate:\n    Config() = default;\n};"
         },
         {
-            "question": "Have you used a singleton class in your project?",
-            "answer": [
-                "Yes. Typical uses: Logger, streaming/connection manager, configuration.",
-                "A singleton allows only one instance: make the constructor private, delete the copy operations and return a single static instance from a static function. Since C++11 a function-local static is initialised thread-safely (Meyers singleton)."
-            ],
-            "code": "#include <iostream>\n\nclass Logger\n{\n    Logger() {}                                    // private constructor\npublic:\n    Logger(const Logger&) = delete;\n    Logger& operator=(const Logger&) = delete;\n\n    static Logger& getInstance()\n    {\n        static Logger instance;                    // created once, thread-safe in C++11\n        return instance;\n    }\n    void log(const char* msg) { std::cout << msg << std::endl; }\n};\n\nint main()\n{\n    Logger::getInstance().log(\"Hello\");\n    std::cout << (&Logger::getInstance() == &Logger::getInstance()) << std::endl;   // 1\n}"
+          "question": "Have you used a singleton class in your project?",
+          "answer": [
+            "Yes. Typical uses: Logger, streaming/connection manager, configuration.",
+            "A singleton allows only one instance: make the constructor private, delete the copy operations and return a single static instance from a static function. Since C++11 a function-local static is initialised thread-safely (Meyers singleton)."
+          ],
+          "code": "#include <iostream>\n\nclass Logger\n{\n    Logger() {}                                    // private constructor\npublic:\n    Logger(const Logger&) = delete;\n    Logger& operator=(const Logger&) = delete;\n\n    static Logger& getInstance()\n    {\n        static Logger instance;                    // created once, thread-safe in C++11\n        return instance;\n    }\n    void log(const char* msg) { std::cout << msg << std::endl; }\n};\n\nint main()\n{\n    Logger::getInstance().log(\"Hello\");\n    std::cout << (&Logger::getInstance() == &Logger::getInstance()) << std::endl;   // 1\n}"
         },
         {
-            "question": "What is a Singleton class? Write an example in C++.",
-            "answer": [
-                "A **Singleton** is a class that allows **only one object** to be created, and gives a **global access point** to that object. It is useful for things like a logger, configuration manager or database connection.",
-                "### How to make a class a Singleton",
-                "1. Make the **constructor private**, so nobody outside can create objects\n2. **Delete the copy constructor and copy assignment**, so the object cannot be copied\n3. Keep a **static instance** inside a static function, usually named `getInstance()`\n4. Return the instance by **reference**",
-                "### Example",
-                { "code": [
-                    "#include <iostream>",
-                    "#include <string>",
-                    "using namespace std;",
-                    "",
-                    "class Logger ",
-                    "{",
-                    "public:",
-                    "    // Global access point",
-                    "    static Logger& getInstance() {",
-                    "        static Logger instance;   // created only once, on the first call",
-                    "        return instance;",
-                    "    }",
-                    "",
-                    "    void log(const string& msg) {",
-                    "        cout << \"[LOG] \" << msg << endl;",
-                    "    }",
-                    "",
-                    "    // Block copying and moving",
-                    "    Logger(const Logger&) = delete;",
-                    "    Logger& operator=(const Logger&) = delete;",
-                    "    Logger(Logger&&) = delete;",
-                    "    Logger& operator=(Logger&&) = delete;",
-                    "",
-                    "private:",
-                    "    Logger() { cout << \"Logger created\" << endl; }      // private constructor",
-                    "    ~Logger() { cout << \"Logger destroyed\" << endl; }",
-                    "};",
-                    "",
-                    "int main()",
-                    "{",
-                    "    Logger::getInstance().log(\"Application started\");",
-                    "",
-                    "    Logger& l1 = Logger::getInstance();",
-                    "    Logger& l2 = Logger::getInstance();",
-                    "",
-                    "    if (&l1 == &l2)",
-                    "        cout << \"Same object\" << endl;",
-                    "    else",
-                    "        cout << \"Different objects\" << endl;",
-                    "",
-                    "    // Logger l3;            // error: constructor is private",
-                    "    // Logger l4 = l1;       // error: copy constructor is deleted",
-                    "    return 0;",
-                    "}"
-                ] },
-                "### Output",
-                { "code": [
-                    "Logger created",
-                    "[LOG] Application started",
-                    "Same object",
-                    "Logger destroyed"
-                ] },
-                "### How it works",
-                "- The constructor runs only **once**, on the first call to `getInstance()`. Later calls return the same object.\n- `l1` and `l2` are references to the same object, so their addresses are equal.\n- The object is destroyed automatically when the program ends.\n- Creating or copying a `Logger` elsewhere gives a **compile error**, which is what makes it a singleton.",
-                "### Is it thread-safe?",
-                "Yes. Since **C++11**, a `static` local variable is initialized in a thread-safe way. If two threads call `getInstance()` at the same time, only one creates the object. This style is called the **Meyers Singleton**. Note that this protects only the creation. If several threads call `log()` at the same time, you still need a `mutex` inside `log()`.",
-                "### Drawbacks",
-                "- It is effectively a **global variable**, which makes code harder to test and to reason about\n- It hides dependencies between classes\n- Use it only when exactly one instance is truly required",
-                "This is Meyers Singleton, it is the simplest correct version and the one most interviewers expect. It needs no new, no delete and no manual locking.",
-                "Compile and run: `g++ -std=c++17 main.cpp -o app && ./app`"
-            ]
-            }
+          "question": "What is a Singleton class? Write an example in C++.",
+          "answer": [
+            "A **Singleton** is a class that allows **only one object** to be created, and gives a **global access point** to that object. It is useful for things like a logger, configuration manager or database connection.",
+            "### How to make a class a Singleton",
+            "1. Make the **constructor private**, so nobody outside can create objects\n2. **Delete the copy constructor and copy assignment**, so the object cannot be copied\n3. Keep a **static instance** inside a static function, usually named `getInstance()`\n4. Return the instance by **reference**",
+            "### Example",
+            {
+              "code": [
+                "#include <iostream>",
+                "#include <string>",
+                "using namespace std;",
+                "",
+                "class Logger ",
+                "{",
+                "public:",
+                "    // Global access point",
+                "    static Logger& getInstance() {",
+                "        static Logger instance;   // created only once, on the first call",
+                "        return instance;",
+                "    }",
+                "",
+                "    void log(const string& msg) {",
+                "        cout << \"[LOG] \" << msg << endl;",
+                "    }",
+                "",
+                "    // Block copying and moving",
+                "    Logger(const Logger&) = delete;",
+                "    Logger& operator=(const Logger&) = delete;",
+                "    Logger(Logger&&) = delete;",
+                "    Logger& operator=(Logger&&) = delete;",
+                "",
+                "private:",
+                "    Logger() { cout << \"Logger created\" << endl; }      // private constructor",
+                "    ~Logger() { cout << \"Logger destroyed\" << endl; }",
+                "};",
+                "",
+                "int main()",
+                "{",
+                "    Logger::getInstance().log(\"Application started\");",
+                "",
+                "    Logger& l1 = Logger::getInstance();",
+                "    Logger& l2 = Logger::getInstance();",
+                "",
+                "    if (&l1 == &l2)",
+                "        cout << \"Same object\" << endl;",
+                "    else",
+                "        cout << \"Different objects\" << endl;",
+                "",
+                "    // Logger l3;            // error: constructor is private",
+                "    // Logger l4 = l1;       // error: copy constructor is deleted",
+                "    return 0;",
+                "}"
+              ]
+            },
+            "### Output",
+            {
+              "code": [
+                "Logger created",
+                "[LOG] Application started",
+                "Same object",
+                "Logger destroyed"
+              ]
+            },
+            "### How it works",
+            "- The constructor runs only **once**, on the first call to `getInstance()`. Later calls return the same object.\n- `l1` and `l2` are references to the same object, so their addresses are equal.\n- The object is destroyed automatically when the program ends.\n- Creating or copying a `Logger` elsewhere gives a **compile error**, which is what makes it a singleton.",
+            "### Is it thread-safe?",
+            "Yes. Since **C++11**, a `static` local variable is initialized in a thread-safe way. If two threads call `getInstance()` at the same time, only one creates the object. This style is called the **Meyers Singleton**. Note that this protects only the creation. If several threads call `log()` at the same time, you still need a `mutex` inside `log()`.",
+            "### Drawbacks",
+            "- It is effectively a **global variable**, which makes code harder to test and to reason about\n- It hides dependencies between classes\n- Use it only when exactly one instance is truly required",
+            "This is Meyers Singleton, it is the simplest correct version and the one most interviewers expect. It needs no new, no delete and no manual locking.",
+            "Compile and run: `g++ -std=c++17 main.cpp -o app && ./app`"
+          ]
+        }
       ]
-    },
+    },    
     {
-      "id": "factory",
-      "title": "Factory",
-      "description": "Separate object creation from usage.",
+      "id": "simple-factory",
+      "title": "Simple Factory",
+      "description": "A creational technique that centralizes object creation in one place. Unlike Factory Method, Simple Factory is not one of the 23 GoF design patterns.",
       "questions": [
+        {
+          "question": "What is a Simple Factory design pattern?",
+          "answer": [
+            "A **Simple Factory** is a class or function responsible for creating objects without exposing the object creation logic to the caller.",
+            "Instead of creating objects directly using `new` or `std::make_unique`, the client asks a factory to create the required object.",
+            "The factory typically uses a condition, enum, or input parameter to decide which concrete class to instantiate.",
+            "**Important:** Simple Factory is a commonly used object creation technique, but it is **not an official GoF design pattern**.",
+            "### Simple example",
+            "Suppose an application supports Email and SMS notifications. Instead of creating them throughout the application, we create a `NotificationFactory` that returns the appropriate notification.",
+            "### Real-world use cases",
+            "- Creating different database connection implementations.",
+            "- Creating different notification handlers.",
+            "- Creating different order-processing implementations in a trading system.",
+            "- Creating different file parsers based on file type.",
+            "### Remember",
+            "**Simple Factory = One place creates different types of objects.**"
+          ]
+        },
         {
           "question": "Why use a Factory?",
           "answer": [
             "A factory centralizes creation logic and can return different concrete implementations through a common interface."
+          ]
+        },
+        {
+          "question": "How do you implement a Simple Factory in modern C++?",
+          "answer": [
+            "We first define a common interface, such as `Notification`.",
+            "Then we create concrete implementations, such as `EmailNotification` and `SmsNotification`.",
+            "Finally, a factory class provides a static `create()` function that returns the requested implementation.",
+            "Use `std::unique_ptr` to manage the created object's lifetime automatically.",
+            "### Complete example",
+            "The following example uses an enum to select the notification type.",
+            "### Output",
+            "Sending Email\nSending SMS",
+            "### Explanation",
+            "- The client calls `NotificationFactory::create()`.",
+            "- The factory checks the requested notification type.",
+            "- It creates and returns the appropriate concrete object.",
+            "- The client works with the common `Notification` interface.",
+            "- The client does not need to know which concrete class was constructed.",
+            "### Interview point",
+            "The factory returns a base-class pointer, allowing the client to use **runtime polymorphism**.",
+            "The base class must have a **virtual destructor** because the concrete objects are destroyed through a base-class pointer."
+          ],
+          "code": "#include <iostream>\n#include <memory>\n#include <stdexcept>\n\nenum class NotificationType { Email, SMS };\n\nclass Notification {\npublic:\n    virtual ~Notification() = default;\n    virtual void send() const = 0;\n};\n\nclass EmailNotification : public Notification {\npublic:\n    void send() const override {\n        std::cout << \"Sending Email\\n\";\n    }\n};\n\nclass SmsNotification : public Notification {\npublic:\n    void send() const override {\n        std::cout << \"Sending SMS\\n\";\n    }\n};\n\nclass NotificationFactory {\npublic:\n    static std::unique_ptr<Notification> create(NotificationType type) {\n        switch (type) {\n            case NotificationType::Email:\n                return std::make_unique<EmailNotification>();\n            case NotificationType::SMS:\n                return std::make_unique<SmsNotification>();\n        }\n        throw std::invalid_argument(\"Unknown notification type\");\n    }\n};\n\nint main() {\n    auto email = NotificationFactory::create(NotificationType::Email);\n    auto sms = NotificationFactory::create(NotificationType::SMS);\n\n    email->send();\n    sms->send();\n}"
+        },
+        {
+          "question": "What are the advantages of Simple Factory?",
+          "answer": [
+            "### Advantages",
+            "1. **Centralized creation:** Object creation logic is maintained in one place.",
+            "2. **Loose coupling:** Client code can depend on a common interface instead of concrete classes.",
+            "3. **Easy maintenance:** Changes to object construction can often be handled inside the factory.",
+            "4. **Code reuse:** Multiple clients can use the same creation logic.",
+            "5. **Testability:** Clients depending on interfaces can receive mock implementations during testing.",
+            "6. **Memory safety:** Modern C++ factories can return `std::unique_ptr` to avoid manual memory management.",
+            "### Example",
+            "A trading application may create different order processors such as MarketOrderProcessor and LimitOrderProcessor. The client can work with a common OrderProcessor interface."
+          ]
+        },
+        {
+          "question": "What are the disadvantages of Simple Factory?",
+          "answer": [
+            "### Disadvantages",
+            "1. **Open/Closed Principle limitation:** Adding a new type usually requires modifying the factory.",
+            "2. **Growing conditions:** A large number of supported types can produce a long switch or if-else chain.",
+            "3. **Centralized dependency:** The factory may need to know about every concrete implementation.",
+            "4. **Complexity:** A factory adds unnecessary abstraction when only one simple object type exists.",
+            "### Example",
+            "If a NotificationFactory supports Email and SMS, adding PushNotification usually requires adding a new condition to its create() function.",
+            "### Interview point",
+            "Simple Factory centralizes object creation, but it does not automatically satisfy the Open/Closed Principle."
+          ]
+        },
+        {
+          "question": "What is the difference between Simple Factory and Factory Method?",
+          "answer": [
+            "Both separate object creation from object usage, but they use different approaches.",
+            "### Simple Factory",
+            "- Usually one factory class or function.",
+            "- Object selection is commonly performed using if-else or switch.",
+            "- Factory inheritance is not required.",
+            "- Adding new types often requires modifying existing factory code.",
+            "### Factory Method",
+            "- Defines an object creation method in a creator abstraction.",
+            "- Subclasses decide which concrete product to instantiate.",
+            "- Uses inheritance and polymorphism in the classic GoF implementation.",
+            "- New product types can often be supported by introducing new creator subclasses.",
+            "### Example",
+            "Simple Factory: `NotificationFactory::create(NotificationType::Email)`.",
+            "Factory Method: `EmailNotificationCreator::create()` overrides a virtual creation method.",
+            "### Remember",
+            "**Simple Factory = One factory chooses the object.**",
+            "**Factory Method = Subclasses choose the object.**"
+          ]
+        },
+        {
+          "question": "What is the difference between Simple Factory, Factory Method, and Abstract Factory?",
+          "answer": [
+            "### Simple Factory",
+            "One factory selects and creates different concrete objects.",
+            "Example: NotificationFactory creates EmailNotification or SmsNotification.",
+            "### Factory Method",
+            "A creator defines a factory method, and subclasses override it to create a specific product.",
+            "Example: EmailCreator creates EmailNotification, while SmsCreator creates SmsNotification.",
+            "### Abstract Factory",
+            "Provides an interface for creating families of related objects without specifying their concrete classes.",
+            "Example: WindowsUIFactory creates WindowsButton and WindowsCheckbox, while MacUIFactory creates MacButton and MacCheckbox.",
+            "### Important distinction",
+            "Simple Factory is not an official GoF pattern. Factory Method and Abstract Factory are GoF creational patterns.",
+            "### Remember",
+            "**Simple Factory = Choose one object.**",
+            "**Factory Method = Let a subclass create an object.**",
+            "**Abstract Factory = Create a family of related objects.**"
+          ]
+        },
+        {
+          "question": "When should you use a Simple Factory instead of Factory Method?",
+          "answer": [
+            "Use **Simple Factory** when object creation is straightforward and the supported types are relatively stable.",
+            "Use **Factory Method** when subclasses need to control creation or new implementations should be added without changing existing creator logic.",
+            "### Example",
+            "If a small application supports only CSV and JSON parsers, a Simple Factory may be sufficient.",
+            "If different application modules need specialized parser creators and creation behavior, Factory Method may be more appropriate.",
+            "### Interview point",
+            "Do not introduce Factory Method inheritance unnecessarily. Prefer the simplest design that satisfies the requirements."
+          ]
+        },
+        {
+          "question": "Should a Simple Factory return a raw pointer, unique_ptr, or shared_ptr in C++?",
+          "answer": [
+            "Prefer **std::unique_ptr** when the factory creates an object and transfers exclusive ownership to the caller.",
+            "Use **std::shared_ptr** only when shared ownership is genuinely required.",
+            "A raw pointer can represent a non-owning reference, but returning an owning raw pointer makes lifetime management less clear.",
+            "A factory may also return an object by value when polymorphism and dynamic allocation are unnecessary.",
+            "### Example",
+            "`std::unique_ptr<Notification> create(NotificationType type);`",
+            "### Remember",
+            "**Default to unique_ptr for dynamically allocated, exclusively owned polymorphic objects.**"
+          ]
+        },
+        {
+          "question": "Can a Simple Factory be implemented without a class?",
+          "answer": [
+            "Yes. A Simple Factory can be implemented as a standalone function.",
+            "A dedicated factory class is not mandatory.",
+            "For small applications, a free function may be simpler and more readable.",
+            "### Example",
+            "A `createNotification()` function can return a `std::unique_ptr<Notification>` based on a NotificationType parameter.",
+            "### Interview point",
+            "A factory describes a responsibility, not necessarily a particular class structure."
+          ],
+          "code": "std::unique_ptr<Notification> createNotification(NotificationType type) {\n    switch (type) {\n        case NotificationType::Email:\n            return std::make_unique<EmailNotification>();\n        case NotificationType::SMS:\n            return std::make_unique<SmsNotification>();\n    }\n    throw std::invalid_argument(\"Unknown notification type\");\n}"
+        },
+        {
+          "question": "How can you avoid a large switch statement in a Simple Factory?",
+          "answer": [
+            "Use a **registration-based factory** when many implementations must be supported.",
+            "Maintain a map from a type identifier to a callable that constructs the corresponding object.",
+            "New implementations can register their creation functions without modifying a central switch statement.",
+            "### Example",
+            "A plugin-based trading system may register different order processors by name.",
+            "### Advantages",
+            "- Avoids a large switch statement.",
+            "- Allows dynamic registration of implementations.",
+            "- Supports extensible architectures.",
+            "### Important considerations",
+            "- Registration must happen before creation.",
+            "- Duplicate registrations and unknown types need defined behavior.",
+            "- Concurrent registration and lookup require appropriate synchronization.",
+            "### Interview point",
+            "A registry-based factory is a useful extension of Simple Factory, but it is not automatically the GoF Factory Method pattern."
+          ]
+        },
+        {
+          "question": "Does using a Simple Factory automatically make an application loosely coupled?",
+          "answer": [
+            "No. A factory can reduce coupling between client code and concrete implementations, but it does not guarantee loose coupling.",
+            "If the client still depends on concrete classes or global factory state, significant coupling may remain.",
+            "Using interfaces and dependency injection can further reduce coupling.",
+            "### Example",
+            "Instead of making a trading service call a global factory whenever it needs an OrderProcessor, inject an OrderProcessor interface into the service.",
+            "### Interview point",
+            "Factories manage object creation. Dependency injection manages how dependencies are supplied to consumers. They can be used together."
+          ]
+        },
+        {
+          "question": "Is Simple Factory thread-safe?",
+          "answer": [
+            "Thread safety depends on the implementation.",
+            "A stateless factory that only constructs and returns independent objects can generally be called concurrently.",
+            "A factory maintaining shared mutable state, caches, counters, or a registration map may require synchronization.",
+            "### Example",
+            "A factory that reads a shared registry while another thread modifies it must synchronize those operations.",
+            "### Remember",
+            "**Factory is not automatically thread-safe; shared mutable state determines the synchronization requirements.**"
+          ]
+        },
+        {
+          "question": "Explain a real-world Simple Factory use case in a C++ trading system.",
+          "answer": [
+            "Consider a trading system supporting Market Orders and Limit Orders.",
+            "Both order types share an `OrderProcessor` interface, but their processing rules differ.",
+            "A factory creates the appropriate processor based on the order type.",
+            "### Example flow",
+            "1. Client submits an order with its type.",
+            "2. OrderProcessorFactory receives the order type.",
+            "3. Factory creates MarketOrderProcessor or LimitOrderProcessor.",
+            "4. Client calls `process()` using the common OrderProcessor interface.",
+            "### Benefits",
+            "- Order creation logic stays centralized.",
+            "- Client code works through a common interface.",
+            "- Each processor contains its own processing behavior.",
+            "### Important distinction",
+            "The factory chooses which processor to construct. The **Strategy pattern** may also be relevant because the processors provide interchangeable order-processing algorithms.",
+            "### Interview tip",
+            "Explain why you need the factory, not just how to implement it. Mention ownership, extensibility, and testing."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "factory-method",
+      "title": "Factory Method",
+      "description": "Let subclasses decide which concrete object to create.",
+      "questions": [
+        {
+          "question": "What is the Factory Method pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Let subclasses decide which concrete object to create.",
+            "**Simple example:** A trading feed parser creates FIX or CSV parsers through a virtual creation method.",
+            "**When to use:** Use when extensions should choose concrete products without changing client logic.",
+            "**How it works:** Virtual creator method; subclasses override creation."
+          ]
+        },
+        {
+          "question": "When should you use Factory Method, and when should you avoid it?",
+          "answer": [
+            "Use when extensions should choose concrete products without changing client logic.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Factory Method in modern C++?",
+          "answer": [
+            "Virtual creator method; subclasses override creation.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Factory Method?",
+          "answer": [
+            "A virtual factory method is an extension point; a simple factory is a conditional creation function.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Factory Method?",
+          "answer": [
+            "A virtual factory method is an extension point; a simple factory is a conditional creation function.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Factory Method?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\n#include <string>\nstruct Parser { virtual ~Parser() = default; virtual std::string parse() const = 0; };\nstruct CsvParser : Parser { std::string parse() const override { return \"CSV\"; } };\nstruct Creator {\n    virtual ~Creator() = default;\n    virtual std::unique_ptr<Parser> create() const = 0;\n    std::string run() const { return create()->parse(); }\n};\nstruct CsvCreator : Creator {\n    std::unique_ptr<Parser> create() const override { return std::make_unique<CsvParser>(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "abstract-factory",
+      "title": "Abstract Factory",
+      "description": "Create families of compatible objects.",
+      "questions": [
+        {
+          "question": "What is the Abstract Factory pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Create families of compatible objects.",
+            "**Simple example:** Create matching live-trading order sender and market-data reader, or matching simulated versions.",
+            "**When to use:** Use when products must belong to the same family or environment.",
+            "**How it works:** Factory interface exposes multiple related creation methods."
+          ]
+        },
+        {
+          "question": "When should you use Abstract Factory, and when should you avoid it?",
+          "answer": [
+            "Use when products must belong to the same family or environment.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Abstract Factory in modern C++?",
+          "answer": [
+            "Factory interface exposes multiple related creation methods.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Abstract Factory?",
+          "answer": [
+            "Abstract Factory creates families; Factory Method creates one product through inheritance.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Abstract Factory?",
+          "answer": [
+            "Abstract Factory creates families; Factory Method creates one product through inheritance.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Abstract Factory?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\nstruct Sender { virtual ~Sender() = default; virtual bool send() = 0; };\nstruct Feed { virtual ~Feed() = default; virtual int quote() = 0; };\nstruct SimSender : Sender { bool send() override { return true; } };\nstruct SimFeed : Feed { int quote() override { return 100; } };\nstruct EnvironmentFactory {\n    virtual ~EnvironmentFactory() = default;\n    virtual std::unique_ptr<Sender> sender() const = 0;\n    virtual std::unique_ptr<Feed> feed() const = 0;\n};\nstruct SimFactory : EnvironmentFactory {\n    std::unique_ptr<Sender> sender() const override { return std::make_unique<SimSender>(); }\n    std::unique_ptr<Feed> feed() const override { return std::make_unique<SimFeed>(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "builder",
+      "title": "Builder",
+      "description": "Build a complex object step by step.",
+      "questions": [
+        {
+          "question": "What is the Builder pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Build a complex object step by step.",
+            "**Simple example:** Construct an order request with instrument, quantity, venue and optional limits.",
+            "**When to use:** Use when many optional parameters or construction stages make constructors unwieldy.",
+            "**How it works:** Fluent setters or staged builders ending in build()."
+          ]
+        },
+        {
+          "question": "When should you use Builder, and when should you avoid it?",
+          "answer": [
+            "Use when many optional parameters or construction stages make constructors unwieldy.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Builder in modern C++?",
+          "answer": [
+            "Fluent setters or staged builders ending in build().",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Builder?",
+          "answer": [
+            "Builder assembles one complex object; Abstract Factory creates related objects.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Builder?",
+          "answer": [
+            "Builder assembles one complex object; Abstract Factory creates related objects.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Builder?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <string>\n#include <utility>\nstruct Order { std::string symbol; int qty = 0; double limit = 0; };\nclass OrderBuilder {\n    Order o;\npublic:\n    OrderBuilder& symbol(std::string s) { o.symbol = std::move(s); return *this; }\n    OrderBuilder& quantity(int q) { o.qty = q; return *this; }\n    OrderBuilder& limit(double p) { o.limit = p; return *this; }\n    Order build() const { return o; } // production: validate required fields\n};\n// auto order = OrderBuilder{}.symbol(\"ABC\").quantity(10).limit(99.5).build();"
+        }
+      ]
+    },
+    {
+      "id": "prototype",
+      "title": "Prototype",
+      "description": "Create new objects by copying an existing configured object.",
+      "questions": [
+        {
+          "question": "What is the Prototype pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Create new objects by copying an existing configured object.",
+            "**Simple example:** Clone a preconfigured pricing scenario and adjust its parameters.",
+            "**When to use:** Use when construction/configuration is expensive or concrete type is unknown.",
+            "**How it works:** Polymorphic clone() returns std::unique_ptr<Base>."
+          ]
+        },
+        {
+          "question": "When should you use Prototype, and when should you avoid it?",
+          "answer": [
+            "Use when construction/configuration is expensive or concrete type is unknown.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Prototype in modern C++?",
+          "answer": [
+            "Polymorphic clone() returns std::unique_ptr<Base>.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Prototype?",
+          "answer": [
+            "Decide whether clone is deep or shallow; copying raw owning pointers is dangerous.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Prototype?",
+          "answer": [
+            "Decide whether clone is deep or shallow; copying raw owning pointers is dangerous.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Prototype?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\nstruct Scenario {\n    virtual ~Scenario() = default;\n    virtual std::unique_ptr<Scenario> clone() const = 0;\n};\nstruct PricingScenario : Scenario {\n    double volatility = 0.2;\n    std::unique_ptr<Scenario> clone() const override {\n        return std::make_unique<PricingScenario>(*this);\n    }\n};"
+        }
+      ]
+    },
+    {
+      "id": "adapter",
+      "title": "Adapter",
+      "description": "Convert one interface into another expected interface.",
+      "questions": [
+        {
+          "question": "What is the Adapter pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Convert one interface into another expected interface.",
+            "**Simple example:** Wrap a legacy market-data API behind a new QuoteProvider interface.",
+            "**When to use:** Use to integrate legacy or third-party code without modifying it.",
+            "**How it works:** Adapter implements target and delegates to adaptee."
+          ]
+        },
+        {
+          "question": "When should you use Adapter, and when should you avoid it?",
+          "answer": [
+            "Use to integrate legacy or third-party code without modifying it.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Adapter in modern C++?",
+          "answer": [
+            "Adapter implements target and delegates to adaptee.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Adapter?",
+          "answer": [
+            "Adapter changes interface; Decorator keeps interface while adding behavior.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Adapter?",
+          "answer": [
+            "Adapter changes interface; Decorator keeps interface while adding behavior.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Adapter?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct LegacyFeed { int getPx() const { return 101; } };\nstruct QuoteProvider { virtual ~QuoteProvider() = default; virtual int price() const = 0; };\nclass FeedAdapter : public QuoteProvider {\n    LegacyFeed& feed;\npublic:\n    explicit FeedAdapter(LegacyFeed& f) : feed(f) {}\n    int price() const override { return feed.getPx(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "title": "Bridge",
+      "description": "Separate abstraction from implementation so both vary independently.",
+      "questions": [
+        {
+          "question": "What is the Bridge pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Separate abstraction from implementation so both vary independently.",
+            "**Simple example:** Order reports can be formatted as PDF or HTML and sent by email or file transport.",
+            "**When to use:** Use when two independent dimensions would otherwise create many subclasses.",
+            "**How it works:** Abstraction holds an implementation interface via composition."
+          ]
+        },
+        {
+          "question": "When should you use Bridge, and when should you avoid it?",
+          "answer": [
+            "Use when two independent dimensions would otherwise create many subclasses.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Bridge in modern C++?",
+          "answer": [
+            "Abstraction holds an implementation interface via composition.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Bridge?",
+          "answer": [
+            "Bridge is designed upfront to vary dimensions; Adapter connects incompatible existing interfaces.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Bridge?",
+          "answer": [
+            "Bridge is designed upfront to vary dimensions; Adapter connects incompatible existing interfaces.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Bridge?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct Transport { virtual ~Transport() = default; virtual void send() = 0; };\nstruct Email : Transport { void send() override {} };\nclass Report {\n    Transport& transport;\npublic:\n    explicit Report(Transport& t):transport(t){}\n    void publish() { transport.send(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "composite",
+      "title": "Composite",
+      "description": "Treat individual objects and groups uniformly.",
+      "questions": [
+        {
+          "question": "What is the Composite pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Treat individual objects and groups uniformly.",
+            "**Simple example:** A portfolio contains securities and nested sub-portfolios; all expose marketValue().",
+            "**When to use:** Use for tree structures with recursive operations.",
+            "**How it works:** Component interface, Leaf and Composite containing children."
+          ]
+        },
+        {
+          "question": "When should you use Composite, and when should you avoid it?",
+          "answer": [
+            "Use for tree structures with recursive operations.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Composite in modern C++?",
+          "answer": [
+            "Component interface, Leaf and Composite containing children.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Composite?",
+          "answer": [
+            "Composite models part-whole trees; Decorator wraps a single component.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Composite?",
+          "answer": [
+            "Composite models part-whole trees; Decorator wraps a single component.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Composite?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\n#include <vector>\nstruct Holding { virtual ~Holding() = default; virtual double value() const = 0; };\nstruct Stock : Holding { double amount; explicit Stock(double a): amount(a) {} double value() const override { return amount; } };\nstruct Portfolio : Holding {\n    std::vector<std::unique_ptr<Holding>> items;\n    double value() const override { double sum=0; for (const auto& h:items) sum+=h->value(); return sum; }\n};"
+        }
+      ]
+    },
+    {
+      "id": "decorator",
+      "title": "Decorator",
+      "description": "Add behavior by wrapping an object without changing its interface.",
+      "questions": [
+        {
+          "question": "What is the Decorator pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Add behavior by wrapping an object without changing its interface.",
+            "**Simple example:** Wrap an order gateway with logging, metrics and retry behavior.",
+            "**When to use:** Use for optional stackable cross-cutting features.",
+            "**How it works:** Wrapper implements same interface and delegates to wrapped object."
+          ]
+        },
+        {
+          "question": "When should you use Decorator, and when should you avoid it?",
+          "answer": [
+            "Use for optional stackable cross-cutting features.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Decorator in modern C++?",
+          "answer": [
+            "Wrapper implements same interface and delegates to wrapped object.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Decorator?",
+          "answer": [
+            "Decorator adds behavior; Proxy controls access; Adapter changes interface.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Decorator?",
+          "answer": [
+            "Decorator adds behavior; Proxy controls access; Adapter changes interface.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Decorator?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\n#include <utility>\nstruct Gateway { virtual ~Gateway() = default; virtual void send() = 0; };\nstruct RealGateway : Gateway { void send() override {} };\nstruct LoggingGateway : Gateway {\n    std::unique_ptr<Gateway> next;\n    explicit LoggingGateway(std::unique_ptr<Gateway> g) : next(std::move(g)) {}\n    void send() override { /* log */ next->send(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "facade",
+      "title": "Facade",
+      "description": "Expose one simple interface to a complicated subsystem.",
+      "questions": [
+        {
+          "question": "What is the Facade pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Expose one simple interface to a complicated subsystem.",
+            "**Simple example:** TradeService.placeOrder() coordinates risk checks, persistence and exchange gateway.",
+            "**When to use:** Use to simplify subsystem access and reduce coupling.",
+            "**How it works:** Facade delegates to multiple subsystem services."
+          ]
+        },
+        {
+          "question": "When should you use Facade, and when should you avoid it?",
+          "answer": [
+            "Use to simplify subsystem access and reduce coupling.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Facade in modern C++?",
+          "answer": [
+            "Facade delegates to multiple subsystem services.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Facade?",
+          "answer": [
+            "Facade simplifies a subsystem; Adapter translates an interface.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Facade?",
+          "answer": [
+            "Facade simplifies a subsystem; Adapter translates an interface.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Facade?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct Risk { bool allowed() const { return true; } };\nstruct Store { void save() {} };\nstruct Exchange { void send() {} };\nclass TradeFacade {\n    Risk risk; Store store; Exchange exchange;\npublic:\n    bool placeOrder() { if (!risk.allowed()) return false; store.save(); exchange.send(); return true; }\n};"
+        }
+      ]
+    },
+    {
+      "id": "flyweight",
+      "title": "Flyweight",
+      "description": "Share immutable intrinsic state among many lightweight objects.",
+      "questions": [
+        {
+          "question": "What is the Flyweight pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Share immutable intrinsic state among many lightweight objects.",
+            "**Simple example:** Thousands of positions share immutable instrument metadata by instrument ID.",
+            "**When to use:** Use when many objects repeat large identical immutable data.",
+            "**How it works:** Flyweight cache stores shared metadata; per-position quantity stays external."
+          ]
+        },
+        {
+          "question": "When should you use Flyweight, and when should you avoid it?",
+          "answer": [
+            "Use when many objects repeat large identical immutable data.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Flyweight in modern C++?",
+          "answer": [
+            "Flyweight cache stores shared metadata; per-position quantity stays external.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Flyweight?",
+          "answer": [
+            "Shared flyweight state must be safe to share; separate mutable per-instance state.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Flyweight?",
+          "answer": [
+            "Shared flyweight state must be safe to share; separate mutable per-instance state.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Flyweight?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\n#include <string>\n#include <unordered_map>\nstruct InstrumentInfo { std::string symbol; std::string currency; };\nusing InfoPtr = std::shared_ptr<const InstrumentInfo>;\nclass InstrumentCache {\n    std::unordered_map<int, InfoPtr> data;\npublic:\n    InfoPtr get(int id) {\n        auto [it, inserted] = data.try_emplace(id);\n        if (inserted) it->second = std::make_shared<InstrumentInfo>(InstrumentInfo{\"ABC\", \"USD\"});\n        return it->second;\n    }\n};"
+        }
+      ]
+    },
+    {
+      "id": "proxy",
+      "title": "Proxy",
+      "description": "Stand in for an object to control access or creation.",
+      "questions": [
+        {
+          "question": "What is the Proxy pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Stand in for an object to control access or creation.",
+            "**Simple example:** A market-data proxy lazily connects and enforces entitlement checks.",
+            "**When to use:** Use for lazy loading, caching, authorization or remote access.",
+            "**How it works:** Proxy exposes same interface and forwards selectively."
+          ]
+        },
+        {
+          "question": "When should you use Proxy, and when should you avoid it?",
+          "answer": [
+            "Use for lazy loading, caching, authorization or remote access.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Proxy in modern C++?",
+          "answer": [
+            "Proxy exposes same interface and forwards selectively.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Proxy?",
+          "answer": [
+            "Proxy controls access; Decorator enhances behavior.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Proxy?",
+          "answer": [
+            "Proxy controls access; Decorator enhances behavior.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Proxy?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\nstruct Feed { virtual ~Feed() = default; virtual int price() = 0; };\nstruct RemoteFeed : Feed { int price() override { return 100; } };\nclass LazyFeed : public Feed {\n    std::unique_ptr<RemoteFeed> remote;\npublic:\n    int price() override { if (!remote) remote=std::make_unique<RemoteFeed>(); return remote->price(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "chain-of-responsibility",
+      "title": "Chain of Responsibility",
+      "description": "Pass a request through handlers until one handles or rejects it.",
+      "questions": [
+        {
+          "question": "What is the Chain of Responsibility pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Pass a request through handlers until one handles or rejects it.",
+            "**Simple example:** Order validation flows through format, entitlement, limits and risk checks.",
+            "**When to use:** Use for configurable processing pipelines.",
+            "**How it works:** Each handler processes then optionally invokes next."
+          ]
+        },
+        {
+          "question": "When should you use Chain of Responsibility, and when should you avoid it?",
+          "answer": [
+            "Use for configurable processing pipelines.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Chain of Responsibility in modern C++?",
+          "answer": [
+            "Each handler processes then optionally invokes next.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Chain of Responsibility?",
+          "answer": [
+            "Define whether handlers stop on failure or continue; order matters.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Chain of Responsibility?",
+          "answer": [
+            "Define whether handlers stop on failure or continue; order matters.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Chain of Responsibility?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\n#include <utility>\nstruct Handler {\n    std::unique_ptr<Handler> next;\n    virtual ~Handler() = default;\n    bool check(int qty) { return validate(qty) && (!next || next->check(qty)); }\n    virtual bool validate(int qty) const = 0;\n};\nstruct PositiveQty : Handler { bool validate(int qty) const override { return qty > 0; } };"
+        }
+      ]
+    },
+    {
+      "id": "command",
+      "title": "Command",
+      "description": "Represent an action as an object.",
+      "questions": [
+        {
+          "question": "What is the Command pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Represent an action as an object.",
+            "**Simple example:** SubmitOrderCommand supports queueing, audit logging and retry.",
+            "**When to use:** Use for queues, undo, logging, scheduling or remote invocation.",
+            "**How it works:** Command encapsulates receiver, arguments and execute()."
+          ]
+        },
+        {
+          "question": "When should you use Command, and when should you avoid it?",
+          "answer": [
+            "Use for queues, undo, logging, scheduling or remote invocation.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Command in modern C++?",
+          "answer": [
+            "Command encapsulates receiver, arguments and execute().",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Command?",
+          "answer": [
+            "Command wraps a request; Strategy wraps an interchangeable algorithm.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Command?",
+          "answer": [
+            "Command wraps a request; Strategy wraps an interchangeable algorithm.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Command?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\nstruct OrderGateway { void submit(int quantity) {} };\nstruct Command { virtual ~Command() = default; virtual void execute() = 0; };\nclass SubmitOrder : public Command {\n    OrderGateway& gateway; int qty;\npublic:\n    SubmitOrder(OrderGateway& g, int q) : gateway(g), qty(q) {}\n    void execute() override { gateway.submit(qty); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "interpreter",
+      "title": "Interpreter",
+      "description": "Represent grammar rules and evaluate expressions.",
+      "questions": [
+        {
+          "question": "What is the Interpreter pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Represent grammar rules and evaluate expressions.",
+            "**Simple example:** Evaluate simple risk rules such as exposure > limit AND enabled.",
+            "**When to use:** Use for small, stable domain-specific languages.",
+            "**How it works:** Expression nodes implement evaluate(context)."
+          ]
+        },
+        {
+          "question": "When should you use Interpreter, and when should you avoid it?",
+          "answer": [
+            "Use for small, stable domain-specific languages.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Interpreter in modern C++?",
+          "answer": [
+            "Expression nodes implement evaluate(context).",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Interpreter?",
+          "answer": [
+            "For complex grammars use a parser library instead of many expression classes.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Interpreter?",
+          "answer": [
+            "For complex grammars use a parser library instead of many expression classes.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Interpreter?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct Context { int exposure; int limit; };\nstruct Expression { virtual ~Expression() = default; virtual bool eval(const Context&) const = 0; };\nstruct UnderLimit : Expression { bool eval(const Context& c) const override { return c.exposure < c.limit; } };"
+        }
+      ]
+    },
+    {
+      "id": "iterator",
+      "title": "Iterator",
+      "description": "Traverse a collection without exposing its internal representation.",
+      "questions": [
+        {
+          "question": "What is the Iterator pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Traverse a collection without exposing its internal representation.",
+            "**Simple example:** Iterate through a portfolio container using begin() and end().",
+            "**When to use:** Use to decouple traversal from storage.",
+            "**How it works:** C++ iterators and ranges already provide this pattern."
+          ]
+        },
+        {
+          "question": "When should you use Iterator, and when should you avoid it?",
+          "answer": [
+            "Use to decouple traversal from storage.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Iterator in modern C++?",
+          "answer": [
+            "C++ iterators and ranges already provide this pattern.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Iterator?",
+          "answer": [
+            "Iterator traverses; Visitor performs operations over a type hierarchy.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Iterator?",
+          "answer": [
+            "Iterator traverses; Visitor performs operations over a type hierarchy.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Iterator?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <vector>\nint total(const std::vector<int>& values) {\n    int sum = 0;\n    for (auto it = values.begin(); it != values.end(); ++it) sum += *it;\n    return sum;\n}"
+        }
+      ]
+    },
+    {
+      "id": "mediator",
+      "title": "Mediator",
+      "description": "Centralize interactions among collaborating objects.",
+      "questions": [
+        {
+          "question": "What is the Mediator pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Centralize interactions among collaborating objects.",
+            "**Simple example:** A trading dashboard coordinator synchronizes ticket, positions and risk widgets.",
+            "**When to use:** Use when many peers directly reference one another.",
+            "**How it works:** Colleagues communicate through a mediator interface."
+          ]
+        },
+        {
+          "question": "When should you use Mediator, and when should you avoid it?",
+          "answer": [
+            "Use when many peers directly reference one another.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Mediator in modern C++?",
+          "answer": [
+            "Colleagues communicate through a mediator interface.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Mediator?",
+          "answer": [
+            "Mediator centralizes peer coordination; Observer broadcasts change notifications.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Mediator?",
+          "answer": [
+            "Mediator centralizes peer coordination; Observer broadcasts change notifications.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Mediator?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <functional>\nstruct DashboardMediator {\n    std::function<void(int)> updateRisk;\n    std::function<void(int)> updateTicket;\n    void onQuantityChanged(int qty) { if (updateRisk) updateRisk(qty); if (updateTicket) updateTicket(qty); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "memento",
+      "title": "Memento",
+      "description": "Capture state for later restoration without exposing internals.",
+      "questions": [
+        {
+          "question": "What is the Memento pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Capture state for later restoration without exposing internals.",
+            "**Simple example:** Save portfolio allocation drafts before user edits and restore on cancel.",
+            "**When to use:** Use for undo, snapshots or checkpoints.",
+            "**How it works:** Originator creates snapshot; caretaker stores it."
+          ]
+        },
+        {
+          "question": "When should you use Memento, and when should you avoid it?",
+          "answer": [
+            "Use for undo, snapshots or checkpoints.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Memento in modern C++?",
+          "answer": [
+            "Originator creates snapshot; caretaker stores it.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Memento?",
+          "answer": [
+            "Snapshots may be costly; define ownership and retention limits.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Memento?",
+          "answer": [
+            "Snapshots may be costly; define ownership and retention limits.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Memento?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <string>\nstruct Snapshot { std::string draft; };\nclass AllocationEditor {\n    std::string draft;\npublic:\n    Snapshot save() const { return {draft}; }\n    void restore(const Snapshot& s) { draft = s.draft; }\n    void edit(std::string value) { draft = std::move(value); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "observer",
+      "title": "Observer",
+      "description": "Notify subscribers when a subject changes.",
+      "questions": [
+        {
+          "question": "What is the Observer pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Notify subscribers when a subject changes.",
+            "**Simple example:** A market-data publisher notifies risk, charts and alert subscribers.",
+            "**When to use:** Use for event-driven one-to-many updates.",
+            "**How it works:** Subject holds subscriptions and notifies callbacks/observers."
+          ]
+        },
+        {
+          "question": "When should you use Observer, and when should you avoid it?",
+          "answer": [
+            "Use for event-driven one-to-many updates.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Observer in modern C++?",
+          "answer": [
+            "Subject holds subscriptions and notifies callbacks/observers.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Observer?",
+          "answer": [
+            "Manage lifetime, reentrancy and thread safety; avoid dangling callbacks.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Observer?",
+          "answer": [
+            "Manage lifetime, reentrancy and thread safety; avoid dangling callbacks.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Observer?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <functional>\n#include <vector>\nclass PricePublisher {\n    std::vector<std::function<void(int)>> listeners;\npublic:\n    void subscribe(std::function<void(int)> fn) { listeners.push_back(std::move(fn)); }\n    void publish(int px) { for (auto& fn : listeners) fn(px); }\n};\n// Simplified: production code needs unsubscribe and lifetime/thread safety."
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "title": "State",
+      "description": "Change object behavior according to its current state.",
+      "questions": [
+        {
+          "question": "What is the State pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Change object behavior according to its current state.",
+            "**Simple example:** An order transitions New -> PartiallyFilled -> Filled or Cancelled.",
+            "**When to use:** Use when state-specific behavior creates many conditionals.",
+            "**How it works:** Context delegates operations to current state object."
+          ]
+        },
+        {
+          "question": "When should you use State, and when should you avoid it?",
+          "answer": [
+            "Use when state-specific behavior creates many conditionals.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement State in modern C++?",
+          "answer": [
+            "Context delegates operations to current state object.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of State?",
+          "answer": [
+            "State represents lifecycle behavior; Strategy chooses interchangeable algorithms.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with State?",
+          "answer": [
+            "State represents lifecycle behavior; Strategy chooses interchangeable algorithms.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of State?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <memory>\nstruct Order;\nstruct OrderState { virtual ~OrderState() = default; virtual bool canCancel() const = 0; };\nstruct NewState : OrderState { bool canCancel() const override { return true; } };\nstruct FilledState : OrderState { bool canCancel() const override { return false; } };\nstruct Order {\n    std::unique_ptr<OrderState> state = std::make_unique<NewState>();\n    bool cancelAllowed() const { return state->canCancel(); }\n};"
+        }
+      ]
+    },
+    {
+      "id": "strategy",
+      "title": "Strategy",
+      "description": "Swap algorithms behind a stable interface.",
+      "questions": [
+        {
+          "question": "What is the Strategy pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Swap algorithms behind a stable interface.",
+            "**Simple example:** Choose proportional or highest-redeemable-first portfolio redemption allocation.",
+            "**When to use:** Use when several algorithms solve the same problem.",
+            "**How it works:** Context owns/injects a strategy or callable."
+          ]
+        },
+        {
+          "question": "When should you use Strategy, and when should you avoid it?",
+          "answer": [
+            "Use when several algorithms solve the same problem.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Strategy in modern C++?",
+          "answer": [
+            "Context owns/injects a strategy or callable.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Strategy?",
+          "answer": [
+            "Strategy changes how work is done; State changes behavior based on lifecycle.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Strategy?",
+          "answer": [
+            "Strategy changes how work is done; State changes behavior based on lifecycle.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Strategy?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "#include <iostream>\n#include <memory>\nstruct Allocation { virtual ~Allocation() = default; virtual int amount(int total) const = 0; };\nstruct Half : Allocation { int amount(int total) const override { return total / 2; } };\nstruct Full : Allocation { int amount(int total) const override { return total; } };\nclass Redeemer {\n    std::unique_ptr<Allocation> policy;\npublic:\n    explicit Redeemer(std::unique_ptr<Allocation> p) : policy(std::move(p)) {}\n    int redeem(int total) const { return policy->amount(total); }\n};\nint main() { Redeemer r(std::make_unique<Half>()); std::cout << r.redeem(100); }"
+        }
+      ]
+    },
+    {
+      "id": "template-method",
+      "title": "Template Method",
+      "description": "Define an algorithm skeleton with customizable steps.",
+      "questions": [
+        {
+          "question": "What is the Template Method pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Define an algorithm skeleton with customizable steps.",
+            "**Simple example:** End-of-day report pipeline fixes load -> validate -> calculate -> publish while subclasses customize calculation.",
+            "**When to use:** Use when workflow sequence is fixed but certain steps vary.",
+            "**How it works:** Base method calls protected virtual hooks."
+          ]
+        },
+        {
+          "question": "When should you use Template Method, and when should you avoid it?",
+          "answer": [
+            "Use when workflow sequence is fixed but certain steps vary.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Template Method in modern C++?",
+          "answer": [
+            "Base method calls protected virtual hooks.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Template Method?",
+          "answer": [
+            "Template Method uses inheritance; Strategy uses composition.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Template Method?",
+          "answer": [
+            "Template Method uses inheritance; Strategy uses composition.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Template Method?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct ReportPipeline {\n    virtual ~ReportPipeline() = default;\n    void run() { load(); calculate(); publish(); }\n    void load() {}\n    virtual void calculate() = 0;\n    void publish() {}\n};\nstruct RiskReport : ReportPipeline { void calculate() override { /* risk */ } };"
+        }
+      ]
+    },
+    {
+      "id": "visitor",
+      "title": "Visitor",
+      "description": "Add operations to a stable set of element types.",
+      "questions": [
+        {
+          "question": "What is the Visitor pattern? Explain with a simple real-world C++ example.",
+          "answer": [
+            "**Intent:** Add operations to a stable set of element types.",
+            "**Simple example:** Compute valuation and compliance checks across Equity, Bond and Fund objects.",
+            "**When to use:** Use when element types rarely change but new operations are frequent.",
+            "**How it works:** Elements accept visitor; visitor overloads visit for each concrete type."
+          ]
+        },
+        {
+          "question": "When should you use Visitor, and when should you avoid it?",
+          "answer": [
+            "Use when element types rarely change but new operations are frequent.",
+            "Avoid it when straightforward code already handles the requirement; patterns introduce abstractions, indirection and maintenance costs.",
+            "Senior interview tip: identify the actual change point and test whether the abstraction makes that change easier."
+          ]
+        },
+        {
+          "question": "How would you implement Visitor in modern C++?",
+          "answer": [
+            "Elements accept visitor; visitor overloads visit for each concrete type.",
+            "Choose explicit ownership and lifetime: std::unique_ptr for exclusive ownership, references for non-owning dependencies.",
+            "Prefer small interfaces and composition; consider templates, lambdas, std::function or std::variant where they simplify the design."
+          ]
+        },
+        {
+          "question": "What are the key trade-offs and pitfalls of Visitor?",
+          "answer": [
+            "Adding element types requires changing visitors; std::variant/std::visit is an alternative.",
+            "Consider allocations, virtual dispatch, dependency direction, object lifetime, exceptions, and synchronization where shared mutable state exists.",
+            "Avoid adding interfaces that have only one stable implementation unless a real test or extension seam is needed."
+          ]
+        },
+        {
+          "question": "Which other pattern is commonly confused with Visitor?",
+          "answer": [
+            "Adding element types requires changing visitors; std::variant/std::visit is an alternative.",
+            "Explain the difference using what changes: creation, interface, behavior, object structure or lifecycle."
+          ]
+        },
+        {
+          "question": "Can you show a minimal C++ example of Visitor?",
+          "answer": [
+            "This is a compact teaching example illustrating the main participants.",
+            "In production, add validation, error handling and synchronization when appropriate."
+          ],
+          "code": "struct Equity; struct Bond;\nstruct Visitor { virtual ~Visitor() = default; virtual void visit(const Equity&) = 0; virtual void visit(const Bond&) = 0; };\nstruct Asset { virtual ~Asset() = default; virtual void accept(Visitor&) const = 0; };\nstruct Equity : Asset { void accept(Visitor& v) const override { v.visit(*this); } };\nstruct Bond : Asset { void accept(Visitor& v) const override { v.visit(*this); } };"
+        }
+      ]
+    },
+    {
+      "id": "senior-cpp-pattern-interview",
+      "title": "Senior C++ Design Pattern Interview Scenarios",
+      "description": "Frequently asked comparisons, code design questions and production trade-offs.",
+      "questions": [
+        {
+          "question": "Singleton vs dependency injection?",
+          "answer": [
+            "Dependency injection exposes dependencies and allows easy substitution in tests. Singleton gives globally accessible shared state and can hide coupling. Prefer injection unless one globally unique instance is a real requirement."
+          ]
+        },
+        {
+          "question": "Is a Meyers Singleton fully thread-safe?",
+          "answer": [
+            "Since C++11 initialization of a function-local static is thread-safe, but later operations on its mutable state are not automatically thread-safe. Use mutexes or immutable state as needed."
+          ]
+        },
+        {
+          "question": "Factory Method vs Abstract Factory vs Builder?",
+          "answer": [
+            "Factory Method delegates creation of one product to subclasses; Abstract Factory creates compatible product families; Builder assembles a complex object step by step."
+          ]
+        },
+        {
+          "question": "Strategy vs State?",
+          "answer": [
+            "Both use delegation. Strategy selects a replaceable algorithm; State models behavior and transitions of a lifecycle."
+          ]
+        },
+        {
+          "question": "Decorator vs Proxy vs Adapter?",
+          "answer": [
+            "Decorator adds responsibilities, Proxy controls access, Adapter translates interfaces."
+          ]
+        },
+        {
+          "question": "Observer vs Mediator vs event bus?",
+          "answer": [
+            "Observer manages one-to-many notifications; Mediator centralizes colleague coordination; an event bus is an architectural messaging mechanism often built on publish-subscribe."
+          ]
+        },
+        {
+          "question": "Template Method vs Strategy?",
+          "answer": [
+            "Template Method fixes a skeleton using inheritance; Strategy injects a complete algorithm through composition."
+          ]
+        },
+        {
+          "question": "Why prefer composition over inheritance?",
+          "answer": [
+            "Composition avoids deep class hierarchies, allows runtime replacement and usually reduces coupling. Inheritance is appropriate for genuine substitutable is-a relationships and stable extension hooks."
+          ]
+        },
+        {
+          "question": "How do you avoid object slicing in polymorphic patterns?",
+          "answer": [
+            "Do not copy derived objects into base objects by value. Pass Base& or Base* and own polymorphic objects via smart pointers; use virtual clone() when polymorphic copying is required."
+          ]
+        },
+        {
+          "question": "Why does a polymorphic base need a virtual destructor?",
+          "answer": [
+            "Deleting a derived object through a base pointer requires a virtual base destructor for correct destruction. Otherwise behavior is undefined."
+          ]
+        },
+        {
+          "question": "How can std::function replace a Strategy class?",
+          "answer": [
+            "Inject a callable taking the required inputs. This reduces boilerplate for small algorithms, but interfaces may be better when strategies have multiple methods or substantial state."
+          ]
+        },
+        {
+          "question": "How can std::variant and std::visit replace Visitor?",
+          "answer": [
+            "A closed set of types in std::variant can be visited with std::visit, often without inheritance. It trades easy runtime extension for compile-time exhaustiveness."
+          ]
+        },
+        {
+          "question": "How should ownership work in Decorator chains?",
+          "answer": [
+            "Each decorator can own the wrapped interface via std::unique_ptr<Base>. Avoid cycles; use references only when the wrapped object outlives the decorator."
+          ]
+        },
+        {
+          "question": "What can go wrong with Observer callbacks?",
+          "answer": [
+            "Dangling subscribers, reentrant notifications, callback exceptions, race conditions and deadlocks. Use explicit unsubscribe tokens, weak ownership where appropriate and avoid invoking callbacks while holding internal locks."
+          ]
+        },
+        {
+          "question": "How do you implement undo using Command and Memento?",
+          "answer": [
+            "Command stores actions and optional inverse operations; Memento stores snapshots of prior state. Choose inverse commands for cheap reversible operations, snapshots for complex restoration."
+          ]
+        },
+        {
+          "question": "Which pattern would you use for order processing validation?",
+          "answer": [
+            "Chain of Responsibility or a pipeline for ordered validation stages; Strategy for selectable risk algorithms; State for order lifecycle; Observer for fill notifications."
+          ]
+        },
+        {
+          "question": "How do design patterns relate to SOLID?",
+          "answer": [
+            "Patterns can support dependency inversion, open-closed design and single responsibility, but patterns do not guarantee SOLID. Poorly chosen abstractions can violate these principles."
+          ]
+        },
+        {
+          "question": "How do you decide between runtime and compile-time polymorphism?",
+          "answer": [
+            "Virtual interfaces support runtime substitution and ABI boundaries; templates offer compile-time customization and possible inlining, but increase compile time and code generation. Choose based on extension and deployment needs."
+          ]
+        },
+        {
+          "question": "What is the difference between thread-safe initialization and thread-safe use?",
+          "answer": [
+            "A safely constructed shared object can still have data races when methods mutate shared state. Define synchronization separately for each shared operation."
+          ]
+        },
+        {
+          "question": "Can design patterns harm low-latency C++ code?",
+          "answer": [
+            "Yes: virtual calls, heap allocations, shared ownership and locking can add costs. Measure first; consider static polymorphism, preallocation, value types and explicit lifetimes on critical paths."
+          ]
+        },
+        {
+          "question": "How would you design a configurable portfolio redemption allocator?",
+          "answer": [
+            "Use Strategy for proportional-weight versus highest-redeemable-first algorithms. Inject risk/limit policies separately, validate inputs, and make failure/fallback behavior explicit."
+          ]
+        },
+        {
+          "question": "How would you design a market-data fan-out service?",
+          "answer": [
+            "Use Observer or publish-subscribe for consumers, Adapter for vendor feeds, Facade for client API and Flyweight for shared instrument metadata. Define backpressure, threading and unsubscribe semantics."
+          ]
+        },
+        {
+          "question": "How do you test a design pattern implementation?",
+          "answer": [
+            "Test behavior and edge cases rather than class names. Inject fakes, verify ownership/lifetime and error handling, test concurrency when applicable, and benchmark only relevant hot paths."
+          ]
+        },
+        {
+          "question": "Which patterns are not among the 23 GoF patterns?",
+          "answer": [
+            "Simple Factory, dependency injection, Repository, MVC, Reactor, Active Object, Object Pool and CQRS are common idioms or architectural/concurrency patterns, but not members of the original 23 GoF set."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "modern-cpp-patterns",
+      "title": "Modern C++ and Non-GoF Design Patterns",
+      "description": "Useful additional idioms, clearly distinguished from the 23 GoF patterns.",
+      "questions": [
+        {
+          "question": "What is RAII and why is it fundamental in C++?",
+          "answer": [
+            "Resource Acquisition Is Initialization binds resource ownership to object lifetime. Destructors release resources on every exit path, including exceptions. std::unique_ptr and std::lock_guard are examples."
+          ]
+        },
+        {
+          "question": "What is the Pimpl idiom?",
+          "answer": [
+            "Pointer to implementation hides private implementation details behind an opaque pointer, reducing header dependencies and helping ABI stability. It introduces indirection and allocation."
+          ]
+        },
+        {
+          "question": "What is the Object Pool pattern?",
+          "answer": [
+            "Reuse preallocated objects to reduce repeated allocation cost. Ensure returned objects are reset, bound pool growth and thread-safe access if shared."
+          ]
+        },
+        {
+          "question": "What is dependency injection?",
+          "answer": [
+            "Pass dependencies into constructors or functions rather than constructing them internally. It improves testability and makes ownership explicit."
+          ]
+        },
+        {
+          "question": "What is the Reactor pattern?",
+          "answer": [
+            "An event loop waits for I/O readiness and dispatches handlers. It is common in high-performance network servers and is not a GoF pattern."
+          ]
+        },
+        {
+          "question": "What is the Active Object pattern?",
+          "answer": [
+            "Separate method invocation from execution using a queue and worker thread; consider ordering, cancellation, shutdown and backpressure."
+          ]
+        },
+        {
+          "question": "What is CRTP and how does it relate to patterns?",
+          "answer": [
+            "Curiously Recurring Template Pattern is a compile-time polymorphism idiom: a base template receives the derived type. It can remove virtual dispatch at the cost of template complexity."
+          ]
+        },
+        {
+          "question": "What is type erasure?",
+          "answer": [
+            "Type erasure stores different concrete types behind a uniform runtime interface, e.g. std::function. It can avoid exposing templates at API boundaries."
           ]
         }
       ]
