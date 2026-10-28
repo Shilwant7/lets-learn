@@ -1,1 +1,109 @@
-{"topics":[{"id":"singleton","title":"Singleton","description":"A single instance with a shared access point.","questions":[{"question":"How can you implement a thread-safe local-static Singleton in modern C++?","answer":["Function-local static initialization is thread-safe since C++11. Avoid Singleton when explicit dependency injection is more appropriate."],"code":"class Config {\npublic:\n    static Config& instance() {\n        static Config c;\n        return c;\n    }\n    Config(const Config&) = delete;\n    Config& operator=(const Config&) = delete;\nprivate:\n    Config() = default;\n};"}]},{"id":"factory","title":"Factory","description":"Separate object creation from usage.","questions":[{"question":"Why use a Factory?","answer":["A factory centralizes creation logic and can return different concrete implementations through a common interface."]}]}]}
+{
+  "topics": [
+    {
+      "id": "singleton",
+      "title": "Singleton",
+      "description": "A single instance with a shared access point.",
+      "questions": [
+        {
+          "question": "How can you implement a thread-safe local-static Singleton in modern C++?",
+          "answer": [
+            "Function-local static initialization is thread-safe since C++11. Avoid Singleton when explicit dependency injection is more appropriate."
+          ],
+          "code": "class Config {\npublic:\n    static Config& instance() {\n        static Config c;\n        return c;\n    }\n    Config(const Config&) = delete;\n    Config& operator=(const Config&) = delete;\nprivate:\n    Config() = default;\n};"
+        },
+        {
+            "question": "Have you used a singleton class in your project?",
+            "answer": [
+                "Yes. Typical uses: Logger, streaming/connection manager, configuration.",
+                "A singleton allows only one instance: make the constructor private, delete the copy operations and return a single static instance from a static function. Since C++11 a function-local static is initialised thread-safely (Meyers singleton)."
+            ],
+            "code": "#include <iostream>\n\nclass Logger\n{\n    Logger() {}                                    // private constructor\npublic:\n    Logger(const Logger&) = delete;\n    Logger& operator=(const Logger&) = delete;\n\n    static Logger& getInstance()\n    {\n        static Logger instance;                    // created once, thread-safe in C++11\n        return instance;\n    }\n    void log(const char* msg) { std::cout << msg << std::endl; }\n};\n\nint main()\n{\n    Logger::getInstance().log(\"Hello\");\n    std::cout << (&Logger::getInstance() == &Logger::getInstance()) << std::endl;   // 1\n}"
+        },
+        {
+            "question": "What is a Singleton class? Write an example in C++.",
+            "answer": [
+                "A **Singleton** is a class that allows **only one object** to be created, and gives a **global access point** to that object. It is useful for things like a logger, configuration manager or database connection.",
+                "### How to make a class a Singleton",
+                "1. Make the **constructor private**, so nobody outside can create objects\n2. **Delete the copy constructor and copy assignment**, so the object cannot be copied\n3. Keep a **static instance** inside a static function, usually named `getInstance()`\n4. Return the instance by **reference**",
+                "### Example",
+                { "code": [
+                    "#include <iostream>",
+                    "#include <string>",
+                    "using namespace std;",
+                    "",
+                    "class Logger ",
+                    "{",
+                    "public:",
+                    "    // Global access point",
+                    "    static Logger& getInstance() {",
+                    "        static Logger instance;   // created only once, on the first call",
+                    "        return instance;",
+                    "    }",
+                    "",
+                    "    void log(const string& msg) {",
+                    "        cout << \"[LOG] \" << msg << endl;",
+                    "    }",
+                    "",
+                    "    // Block copying and moving",
+                    "    Logger(const Logger&) = delete;",
+                    "    Logger& operator=(const Logger&) = delete;",
+                    "    Logger(Logger&&) = delete;",
+                    "    Logger& operator=(Logger&&) = delete;",
+                    "",
+                    "private:",
+                    "    Logger() { cout << \"Logger created\" << endl; }      // private constructor",
+                    "    ~Logger() { cout << \"Logger destroyed\" << endl; }",
+                    "};",
+                    "",
+                    "int main()",
+                    "{",
+                    "    Logger::getInstance().log(\"Application started\");",
+                    "",
+                    "    Logger& l1 = Logger::getInstance();",
+                    "    Logger& l2 = Logger::getInstance();",
+                    "",
+                    "    if (&l1 == &l2)",
+                    "        cout << \"Same object\" << endl;",
+                    "    else",
+                    "        cout << \"Different objects\" << endl;",
+                    "",
+                    "    // Logger l3;            // error: constructor is private",
+                    "    // Logger l4 = l1;       // error: copy constructor is deleted",
+                    "    return 0;",
+                    "}"
+                ] },
+                "### Output",
+                { "code": [
+                    "Logger created",
+                    "[LOG] Application started",
+                    "Same object",
+                    "Logger destroyed"
+                ] },
+                "### How it works",
+                "- The constructor runs only **once**, on the first call to `getInstance()`. Later calls return the same object.\n- `l1` and `l2` are references to the same object, so their addresses are equal.\n- The object is destroyed automatically when the program ends.\n- Creating or copying a `Logger` elsewhere gives a **compile error**, which is what makes it a singleton.",
+                "### Is it thread-safe?",
+                "Yes. Since **C++11**, a `static` local variable is initialized in a thread-safe way. If two threads call `getInstance()` at the same time, only one creates the object. This style is called the **Meyers Singleton**. Note that this protects only the creation. If several threads call `log()` at the same time, you still need a `mutex` inside `log()`.",
+                "### Drawbacks",
+                "- It is effectively a **global variable**, which makes code harder to test and to reason about\n- It hides dependencies between classes\n- Use it only when exactly one instance is truly required",
+                "This is Meyers Singleton, it is the simplest correct version and the one most interviewers expect. It needs no new, no delete and no manual locking.",
+                "Compile and run: `g++ -std=c++17 main.cpp -o app && ./app`"
+            ]
+            }
+      ]
+    },
+    {
+      "id": "factory",
+      "title": "Factory",
+      "description": "Separate object creation from usage.",
+      "questions": [
+        {
+          "question": "Why use a Factory?",
+          "answer": [
+            "A factory centralizes creation logic and can return different concrete implementations through a common interface."
+          ]
+        }
+      ]
+    }
+  ]
+}
