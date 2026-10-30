@@ -3,6 +3,7 @@ const subjects = [
   { id: "cpp", name: "C++", file: "cpp.json" },
   { id: "data-structures", name: "Data Structures", file: "data-structures.json", },
   { id: "design-patterns", name: "Design Patterns", file: "design-patterns.json", },
+  { id: "IPC", name: "IPC", file: "IPC.json", },
   { id: "linux", name: "Linux", file: "linux.json" },
   { id: "database", name: "Database", file: "database.json" },
   { id: "Debugging", name: "Debugging", file: "Debugging.json" },
