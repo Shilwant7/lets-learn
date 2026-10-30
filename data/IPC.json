@@ -124,6 +124,139 @@
       ]
     },
     {
+      "id": "sockets-tcp",
+      "title": "Socket Programming: TCP Client and Server",
+      "category": "Sockets",
+      "frequency": "Very High",
+      "description": "Two-way communication between processes on the same machine or over a network.",
+      "questions": [
+        {
+          "question": "What is a socket? Where is socket programming used?",
+          "answer": [
+            "A **socket** is an **endpoint of two-way communication**. In Unix a socket is a **file descriptor**, so you use `read/write` or `send/recv` on it.",
+            "**Analogy:** a telephone. You get a phone (`socket`), assign it a number (`bind`), switch it on to receive calls (`listen`), pick up (`accept`). The caller dials (`connect`).",
+            "**Where used:** web servers, databases, chat, games, microservices, any communication **over a network**, and also IPC on the **same machine** (use `127.0.0.1` or Unix domain sockets).",
+            "**Socket types:** `SOCK_STREAM` (**TCP**, reliable byte stream), `SOCK_DGRAM` (**UDP**, separate datagrams), `SOCK_RAW` (raw packets).",
+            "**Address families:** `AF_INET` (IPv4), `AF_INET6` (IPv6), `AF_UNIX` (local, same machine)."
+          ]
+        },
+        {
+          "question": "What are the steps of a TCP server and a TCP client? (very common question)",
+          "answer": [
+            "### Server",
+            "- 1. `socket()` create the endpoint\n- 2. `bind()` attach an IP address and port\n- 3. `listen()` mark it as a passive socket, set the backlog queue\n- 4. `accept()` wait for a client, returns a **new socket** for that client\n- 5. `recv()` / `send()` talk to the client\n- 6. `close()`",
+            "### Client",
+            "- 1. `socket()`\n- 2. `connect()` to server IP and port (TCP 3-way handshake happens here)\n- 3. `send()` / `recv()`\n- 4. `close()`",
+            "**Remember:** *Server = Socket, Bind, Listen, Accept. Client = Socket, Connect.* (**S-B-L-A** and **S-C**).",
+            "**Important:** the server has **two kinds of sockets**: the **listening socket** (accepts new connections) and a **connected socket per client** (returned by `accept`)."
+          ]
+        },
+        {
+          "question": "Write a simple TCP server in C++ (server.cpp).",
+          "answer": [
+            "It waits for one client, reads a message and replies. Compile: `g++ server.cpp -o server`."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int server_fd = socket(AF_INET, SOCK_STREAM, 0);              // 1. create\n    if (server_fd == -1) { perror(\"socket\"); return 1; }\n\n    int opt = 1;\n    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));   // restart without waiting\n\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;                            // all network interfaces\n    addr.sin_port = htons(5050);                                  // host -> network byte order\n\n    if (bind(server_fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }  // 2. bind\n    listen(server_fd, 5);                                         // 3. listen\n    std::cout << \"Server waiting on port 5050...\\n\";\n\n    int client_fd = accept(server_fd, nullptr, nullptr);          // 4. accept (blocks)\n    char buf[256];\n    ssize_t n = recv(client_fd, buf, sizeof(buf) - 1, 0);         // 5. receive\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"Server got: \" << buf << \"\\n\";\n        const char* reply = \"Hello from server\";\n        send(client_fd, reply, strlen(reply), 0);                 //    reply\n    }\n    close(client_fd);                                             // 6. close\n    close(server_fd);\n}"
+        },
+        {
+          "question": "Write a simple TCP client in C++ (client.cpp).",
+          "answer": [
+            "Start the server first, then run the client."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_STREAM, 0);                     // 1. create\n    if (fd == -1) { perror(\"socket\"); return 1; }\n\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(5050);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);            // text IP -> binary\n\n    if (connect(fd, (sockaddr*)&server, sizeof(server)) == -1) {  // 2. connect\n        perror(\"connect\");\n        return 1;\n    }\n    const char* msg = \"Hello from client\";\n    send(fd, msg, strlen(msg), 0);                                // 3. send\n\n    char buf[256];\n    ssize_t n = recv(fd, buf, sizeof(buf) - 1, 0);                //    receive reply\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Client got: \" << buf << \"\\n\"; }\n    close(fd);                                                    // 4. close\n}"
+        },
+        {
+          "question": "TCP socket follow-up questions: byte order, partial send/recv, TIME_WAIT, SO_REUSEADDR, TCP is a stream.",
+          "answer": [
+            "- **Byte order:** the network uses **big-endian**. Use `htons/htonl` (host -> network) and `ntohs/ntohl` (network -> host) for ports and integers you send. Strings do not need it.\n- **TCP is a byte stream, not messages:** one `send(100 bytes)` can arrive as two `recv` of 60 + 40, or two sends can arrive in one `recv`. You must define **message framing**: length prefix, delimiter (`\\n`), or fixed size.\n- **Partial `send`/`recv`:** `send` may send fewer bytes than asked, so **loop until everything is sent**. `recv` returns **0** when the peer closed the connection, **-1** on error.\n- **`SO_REUSEADDR`:** lets the server rebind to the port immediately after restart. Without it you get `Address already in use` because of **TIME_WAIT**.\n- **TIME_WAIT:** after closing, the side that closes first keeps the connection in this state for about 60 s so late packets are not mixed into a new connection.\n- **`bind` vs `connect`:** server binds to a known port. Client usually does not bind, the OS picks a random (ephemeral) port.\n- **`backlog` in `listen`:** size of the queue of connections waiting for `accept`.\n- **`SIGPIPE`:** writing to a socket closed by the peer raises `SIGPIPE`. Use `send(fd, buf, n, MSG_NOSIGNAL)` or ignore the signal.\n- **Blocking vs non-blocking:** by default `accept`, `recv`, `connect` block. Use `O_NONBLOCK` + `poll/epoll` for many connections.\n- **Half close:** `shutdown(fd, SHUT_WR)` says 'I will send no more' but you can still receive.\n- **Graceful close and 'Connection reset by peer':** `ECONNRESET` is a normal error you must handle."
+          ]
+        },
+        {
+          "question": "Show a helper that sends and receives exactly N bytes (handles partial sends and receives).",
+          "answer": [
+            "A real network program needs these two helpers. They also handle `EINTR`."
+          ],
+          "code": "#include <cerrno>\n#include <cstddef>\n#include <sys/socket.h>\n#include <sys/types.h>\n\n// Send exactly 'len' bytes. Returns 0 on success, -1 on error.\nint sendAll(int fd, const void* data, size_t len) {\n    const char* p = static_cast<const char*>(data);\n    while (len > 0) {\n        ssize_t n = send(fd, p, len, MSG_NOSIGNAL);\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\n// Receive exactly 'len' bytes. Returns 0 on success, 0-length close = -2, error = -1.\nint recvAll(int fd, void* data, size_t len) {\n    char* p = static_cast<char*>(data);\n    while (len > 0) {\n        ssize_t n = recv(fd, p, len, 0);\n        if (n == 0) return -2;                      // peer closed the connection\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\nint main() { return 0; }"
+        },
+        {
+          "question": "How can a TCP server handle many clients at the same time?",
+          "answer": [
+            "- **Process per client:** `fork()` after `accept()`. Simple and isolated, but heavy (used by old servers such as early Apache).\n- **Thread per client:** a thread (or thread pool) per connection. Simple, but thousands of threads cost memory.\n- **I/O multiplexing:** one thread uses **`select` / `poll` / `epoll`** to watch many sockets (see the I/O Multiplexing topic). Scales to tens of thousands of clients.\n- **Thread pool + epoll (reactor):** what nginx, Redis and modern servers do.",
+            "**Interview tip:** mention the **C10K problem** (handling 10,000 clients) and say `epoll` (Linux), `kqueue` (BSD/macOS), `IOCP` (Windows)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sockets-udp",
+      "title": "Socket Programming: UDP",
+      "category": "Sockets",
+      "frequency": "High",
+      "description": "Connectionless, fast, message-based communication without guarantees.",
+      "questions": [
+        {
+          "question": "What is UDP? TCP vs UDP (very popular question)",
+          "answer": [
+            "- **TCP:** **connection** oriented (handshake), **reliable** (retransmits lost packets), **ordered**, **byte stream**, flow and congestion control. Slower, more overhead.\n- **UDP:** **connectionless**, **no guarantee** (packets can be lost, duplicated, reordered), **keeps message boundaries** (one `sendto` = one datagram), very light and fast.",
+            "**Analogy:** TCP = a phone call (connection, you hear the other side). UDP = sending postcards (fast, but some may get lost or arrive in a different order).",
+            "**Use TCP for:** web (HTTP), email, file transfer, databases, anything that must be correct.",
+            "**Use UDP for:** video/voice streaming, online games, DNS, DHCP, logging/metrics (StatsD), broadcast/multicast, **when speed is more important than perfect delivery** or when you build your own reliability (QUIC)."
+          ]
+        },
+        {
+          "question": "Write a simple UDP server (udp_server.cpp).",
+          "answer": [
+            "No `listen` and no `accept`. The server just `bind`s and receives datagrams together with the sender's address."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);                      // SOCK_DGRAM = UDP\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;\n    addr.sin_port = htons(6060);\n    if (bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }\n\n    char buf[256];\n    sockaddr_in client{};\n    socklen_t len = sizeof(client);\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, (sockaddr*)&client, &len);   // who sent it?\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"UDP server got: \" << buf << \"\\n\";\n        const char* reply = \"ACK from UDP server\";\n        sendto(fd, reply, strlen(reply), 0, (sockaddr*)&client, len);              // reply to sender\n    }\n    close(fd);\n}"
+        },
+        {
+          "question": "Write a simple UDP client (udp_client.cpp).",
+          "answer": [
+            "The client does not `connect`. It just sends a datagram to the server address."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(6060);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);\n\n    const char* msg = \"Hello UDP\";\n    sendto(fd, msg, strlen(msg), 0, (sockaddr*)&server, sizeof(server));\n\n    char buf[256];\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, nullptr, nullptr);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"UDP client got: \" << buf << \"\\n\"; }\n    close(fd);\n}"
+        },
+        {
+          "question": "UDP follow-up questions: loss, size, connect() on UDP, broadcast and multicast.",
+          "answer": [
+            "- **No delivery guarantee:** if you need reliability add sequence numbers, ACKs and retries yourself.\n- **Datagram size:** max about 65,507 bytes, but keep it **below the MTU (about 1472 bytes)** to avoid IP fragmentation, which increases loss.\n- **`recvfrom` with a small buffer** truncates the datagram. The rest is **lost**, not kept for the next call.\n- **`connect()` on a UDP socket** does not create a connection. It only stores the peer address, so you can use `send/recv` and get ICMP errors.\n- **Broadcast:** one to all on the local network, needs `SO_BROADCAST`. **Multicast:** one to a group of subscribers (`IP_ADD_MEMBERSHIP`).\n- **Message boundaries are kept**, unlike TCP."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unix-domain-sockets",
+      "title": "Unix Domain Sockets and socketpair",
+      "category": "Sockets",
+      "frequency": "High",
+      "description": "Fast, two-way sockets for processes on the same machine.",
+      "questions": [
+        {
+          "question": "What is a Unix domain socket? How is it different from a TCP socket on localhost?",
+          "answer": [
+            "A **Unix domain socket** (`AF_UNIX`) works like a normal socket but the address is a **file path** (for example `/tmp/app.sock`) and the data **never goes through the network stack**. Works for **unrelated processes on the same machine**.",
+            "- **Faster** than TCP on `127.0.0.1` (no TCP/IP processing, no checksums, fewer copies).\n- **Two-way**, supports `SOCK_STREAM` (like TCP) and `SOCK_DGRAM` (like UDP).\n- **File permissions** control who can connect (real security).\n- **Can pass file descriptors** between processes (`SCM_RIGHTS`) and **verify the sender's identity** (`SO_PEERCRED`: PID, UID).\n- **Remove the socket file** with `unlink()` before `bind` and after use.",
+            "**Where used:** X11, Docker (`/var/run/docker.sock`), systemd, D-Bus, PostgreSQL, MySQL local connections, nginx to PHP-FPM."
+          ]
+        },
+        {
+          "question": "Write a simple Unix domain socket example (server and client).",
+          "answer": [
+            "The parent is the server and the child is the client. In real use these are two separate programs that use the same socket path."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/un.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* path = \"/tmp/demo.sock\";\n    unlink(path);                                          // remove old socket file\n\n    int server = socket(AF_UNIX, SOCK_STREAM, 0);\n    sockaddr_un addr{};\n    addr.sun_family = AF_UNIX;\n    strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);\n    bind(server, (sockaddr*)&addr, sizeof(addr));\n    listen(server, 5);                                     // ready before the client starts\n\n    if (fork() == 0) {                                     // client\n        int c = socket(AF_UNIX, SOCK_STREAM, 0);\n        connect(c, (sockaddr*)&addr, sizeof(addr));\n        const char* msg = \"Hello via Unix socket\";\n        send(c, msg, strlen(msg), 0);\n        close(c);\n        std::cout.flush(); _exit(0);\n    }\n    int client = accept(server, nullptr, nullptr);         // server\n    char buf[100];\n    ssize_t n = recv(client, buf, sizeof(buf) - 1, 0);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Server got: \" << buf << \"\\n\"; }\n    close(client); close(server);\n    wait(nullptr);\n    unlink(path);\n}"
+        },
+        {
+          "question": "What is socketpair()? Write a simple two-way example between parent and child.",
+          "answer": [
+            "`socketpair()` creates **two already connected sockets** in one call. It is like a **two-way pipe** (full duplex) and the easiest way to talk both directions between a parent and a child."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int sv[2];\n    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) { perror(\"socketpair\"); return 1; }\n\n    if (fork() == 0) {                                   // child uses sv[1]\n        close(sv[0]);\n        char buf[64];\n        ssize_t n = read(sv[1], buf, sizeof(buf) - 1);\n        buf[n] = '\\0';\n        std::cout << \"Child got: \" << buf << \"\\n\";\n        const char* reply = \"pong\";\n        if (write(sv[1], reply, strlen(reply)) == -1) perror(\"write\");\n        close(sv[1]);\n        std::cout.flush(); _exit(0);\n    }\n    close(sv[1]);                                        // parent uses sv[0]\n    if (write(sv[0], \"ping\", 4) == -1) perror(\"write\");\n    char buf[64];\n    ssize_t n = read(sv[0], buf, sizeof(buf) - 1);\n    buf[n] = '\\0';\n    std::cout << \"Parent got: \" << buf << \"\\n\";\n    close(sv[0]);\n    wait(nullptr);\n}"
+        }
+      ]
+    },
+    {
       "id": "pipes",
       "title": "Pipes (Anonymous Pipes)",
       "category": "Data Transfer",
@@ -396,139 +529,6 @@
           "answer": [
             "- **`signal()` vs `sigaction()`:** `signal()` behaviour differs between systems (handler may reset, system calls may or may not restart). **`sigaction()`** is well-defined, gives `SA_RESTART`, signal masks and extra info (`SA_SIGINFO`). Always use `sigaction`.\n- **Async-signal-safe functions only:** a handler can interrupt your program at **any** point (even inside `malloc` or `printf`). So **do not call `printf`, `malloc`, `new`, or lock mutexes** in a handler. Use `write()`, `_exit()`, or just set a `volatile sig_atomic_t` flag / write to a self-pipe.\n- **Cannot be caught:** `SIGKILL`, `SIGSTOP`.\n- **Signal mask:** `sigprocmask` / `pthread_sigmask` **blocks** (delays) signals during a critical section. A blocked signal stays **pending**.\n- **Standard signals are not queued:** 5 `SIGUSR1` sent quickly may arrive as 1. **Real-time signals** (`SIGRTMIN..SIGRTMAX`) **are queued**, ordered and can carry data (`sigqueue`).\n- **Race `while(!flag) pause();`:** a signal arriving between the test and `pause()` is lost. The correct way is **`sigsuspend()`** with the signal blocked before.\n- **`EINTR`:** a signal can interrupt a slow system call (`read`, `sem_wait`), which then returns `-1` with `errno = EINTR`. Retry it or use `SA_RESTART`.\n- **Signals and threads:** a process-directed signal is delivered to **any thread** that does not block it. Common design: block signals in all threads and use one thread with `sigwait()` (or `signalfd` on Linux).\n- **Alternative:** `eventfd`, pipes or sockets are easier and safer for event notification than signals."
           ]
-        }
-      ]
-    },
-    {
-      "id": "sockets-tcp",
-      "title": "Socket Programming: TCP Client and Server",
-      "category": "Sockets",
-      "frequency": "Very High",
-      "description": "Two-way communication between processes on the same machine or over a network.",
-      "questions": [
-        {
-          "question": "What is a socket? Where is socket programming used?",
-          "answer": [
-            "A **socket** is an **endpoint of two-way communication**. In Unix a socket is a **file descriptor**, so you use `read/write` or `send/recv` on it.",
-            "**Analogy:** a telephone. You get a phone (`socket`), assign it a number (`bind`), switch it on to receive calls (`listen`), pick up (`accept`). The caller dials (`connect`).",
-            "**Where used:** web servers, databases, chat, games, microservices, any communication **over a network**, and also IPC on the **same machine** (use `127.0.0.1` or Unix domain sockets).",
-            "**Socket types:** `SOCK_STREAM` (**TCP**, reliable byte stream), `SOCK_DGRAM` (**UDP**, separate datagrams), `SOCK_RAW` (raw packets).",
-            "**Address families:** `AF_INET` (IPv4), `AF_INET6` (IPv6), `AF_UNIX` (local, same machine)."
-          ]
-        },
-        {
-          "question": "What are the steps of a TCP server and a TCP client? (very common question)",
-          "answer": [
-            "### Server",
-            "- 1. `socket()` create the endpoint\n- 2. `bind()` attach an IP address and port\n- 3. `listen()` mark it as a passive socket, set the backlog queue\n- 4. `accept()` wait for a client, returns a **new socket** for that client\n- 5. `recv()` / `send()` talk to the client\n- 6. `close()`",
-            "### Client",
-            "- 1. `socket()`\n- 2. `connect()` to server IP and port (TCP 3-way handshake happens here)\n- 3. `send()` / `recv()`\n- 4. `close()`",
-            "**Remember:** *Server = Socket, Bind, Listen, Accept. Client = Socket, Connect.* (**S-B-L-A** and **S-C**).",
-            "**Important:** the server has **two kinds of sockets**: the **listening socket** (accepts new connections) and a **connected socket per client** (returned by `accept`)."
-          ]
-        },
-        {
-          "question": "Write a simple TCP server in C++ (server.cpp).",
-          "answer": [
-            "It waits for one client, reads a message and replies. Compile: `g++ server.cpp -o server`."
-          ],
-          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int server_fd = socket(AF_INET, SOCK_STREAM, 0);              // 1. create\n    if (server_fd == -1) { perror(\"socket\"); return 1; }\n\n    int opt = 1;\n    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));   // restart without waiting\n\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;                            // all network interfaces\n    addr.sin_port = htons(5050);                                  // host -> network byte order\n\n    if (bind(server_fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }  // 2. bind\n    listen(server_fd, 5);                                         // 3. listen\n    std::cout << \"Server waiting on port 5050...\\n\";\n\n    int client_fd = accept(server_fd, nullptr, nullptr);          // 4. accept (blocks)\n    char buf[256];\n    ssize_t n = recv(client_fd, buf, sizeof(buf) - 1, 0);         // 5. receive\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"Server got: \" << buf << \"\\n\";\n        const char* reply = \"Hello from server\";\n        send(client_fd, reply, strlen(reply), 0);                 //    reply\n    }\n    close(client_fd);                                             // 6. close\n    close(server_fd);\n}"
-        },
-        {
-          "question": "Write a simple TCP client in C++ (client.cpp).",
-          "answer": [
-            "Start the server first, then run the client."
-          ],
-          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_STREAM, 0);                     // 1. create\n    if (fd == -1) { perror(\"socket\"); return 1; }\n\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(5050);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);            // text IP -> binary\n\n    if (connect(fd, (sockaddr*)&server, sizeof(server)) == -1) {  // 2. connect\n        perror(\"connect\");\n        return 1;\n    }\n    const char* msg = \"Hello from client\";\n    send(fd, msg, strlen(msg), 0);                                // 3. send\n\n    char buf[256];\n    ssize_t n = recv(fd, buf, sizeof(buf) - 1, 0);                //    receive reply\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Client got: \" << buf << \"\\n\"; }\n    close(fd);                                                    // 4. close\n}"
-        },
-        {
-          "question": "TCP socket follow-up questions: byte order, partial send/recv, TIME_WAIT, SO_REUSEADDR, TCP is a stream.",
-          "answer": [
-            "- **Byte order:** the network uses **big-endian**. Use `htons/htonl` (host -> network) and `ntohs/ntohl` (network -> host) for ports and integers you send. Strings do not need it.\n- **TCP is a byte stream, not messages:** one `send(100 bytes)` can arrive as two `recv` of 60 + 40, or two sends can arrive in one `recv`. You must define **message framing**: length prefix, delimiter (`\\n`), or fixed size.\n- **Partial `send`/`recv`:** `send` may send fewer bytes than asked, so **loop until everything is sent**. `recv` returns **0** when the peer closed the connection, **-1** on error.\n- **`SO_REUSEADDR`:** lets the server rebind to the port immediately after restart. Without it you get `Address already in use` because of **TIME_WAIT**.\n- **TIME_WAIT:** after closing, the side that closes first keeps the connection in this state for about 60 s so late packets are not mixed into a new connection.\n- **`bind` vs `connect`:** server binds to a known port. Client usually does not bind, the OS picks a random (ephemeral) port.\n- **`backlog` in `listen`:** size of the queue of connections waiting for `accept`.\n- **`SIGPIPE`:** writing to a socket closed by the peer raises `SIGPIPE`. Use `send(fd, buf, n, MSG_NOSIGNAL)` or ignore the signal.\n- **Blocking vs non-blocking:** by default `accept`, `recv`, `connect` block. Use `O_NONBLOCK` + `poll/epoll` for many connections.\n- **Half close:** `shutdown(fd, SHUT_WR)` says 'I will send no more' but you can still receive.\n- **Graceful close and 'Connection reset by peer':** `ECONNRESET` is a normal error you must handle."
-          ]
-        },
-        {
-          "question": "Show a helper that sends and receives exactly N bytes (handles partial sends and receives).",
-          "answer": [
-            "A real network program needs these two helpers. They also handle `EINTR`."
-          ],
-          "code": "#include <cerrno>\n#include <cstddef>\n#include <sys/socket.h>\n#include <sys/types.h>\n\n// Send exactly 'len' bytes. Returns 0 on success, -1 on error.\nint sendAll(int fd, const void* data, size_t len) {\n    const char* p = static_cast<const char*>(data);\n    while (len > 0) {\n        ssize_t n = send(fd, p, len, MSG_NOSIGNAL);\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\n// Receive exactly 'len' bytes. Returns 0 on success, 0-length close = -2, error = -1.\nint recvAll(int fd, void* data, size_t len) {\n    char* p = static_cast<char*>(data);\n    while (len > 0) {\n        ssize_t n = recv(fd, p, len, 0);\n        if (n == 0) return -2;                      // peer closed the connection\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\nint main() { return 0; }"
-        },
-        {
-          "question": "How can a TCP server handle many clients at the same time?",
-          "answer": [
-            "- **Process per client:** `fork()` after `accept()`. Simple and isolated, but heavy (used by old servers such as early Apache).\n- **Thread per client:** a thread (or thread pool) per connection. Simple, but thousands of threads cost memory.\n- **I/O multiplexing:** one thread uses **`select` / `poll` / `epoll`** to watch many sockets (see the I/O Multiplexing topic). Scales to tens of thousands of clients.\n- **Thread pool + epoll (reactor):** what nginx, Redis and modern servers do.",
-            "**Interview tip:** mention the **C10K problem** (handling 10,000 clients) and say `epoll` (Linux), `kqueue` (BSD/macOS), `IOCP` (Windows)."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sockets-udp",
-      "title": "Socket Programming: UDP",
-      "category": "Sockets",
-      "frequency": "High",
-      "description": "Connectionless, fast, message-based communication without guarantees.",
-      "questions": [
-        {
-          "question": "What is UDP? TCP vs UDP (very popular question)",
-          "answer": [
-            "- **TCP:** **connection** oriented (handshake), **reliable** (retransmits lost packets), **ordered**, **byte stream**, flow and congestion control. Slower, more overhead.\n- **UDP:** **connectionless**, **no guarantee** (packets can be lost, duplicated, reordered), **keeps message boundaries** (one `sendto` = one datagram), very light and fast.",
-            "**Analogy:** TCP = a phone call (connection, you hear the other side). UDP = sending postcards (fast, but some may get lost or arrive in a different order).",
-            "**Use TCP for:** web (HTTP), email, file transfer, databases, anything that must be correct.",
-            "**Use UDP for:** video/voice streaming, online games, DNS, DHCP, logging/metrics (StatsD), broadcast/multicast, **when speed is more important than perfect delivery** or when you build your own reliability (QUIC)."
-          ]
-        },
-        {
-          "question": "Write a simple UDP server (udp_server.cpp).",
-          "answer": [
-            "No `listen` and no `accept`. The server just `bind`s and receives datagrams together with the sender's address."
-          ],
-          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);                      // SOCK_DGRAM = UDP\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;\n    addr.sin_port = htons(6060);\n    if (bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }\n\n    char buf[256];\n    sockaddr_in client{};\n    socklen_t len = sizeof(client);\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, (sockaddr*)&client, &len);   // who sent it?\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"UDP server got: \" << buf << \"\\n\";\n        const char* reply = \"ACK from UDP server\";\n        sendto(fd, reply, strlen(reply), 0, (sockaddr*)&client, len);              // reply to sender\n    }\n    close(fd);\n}"
-        },
-        {
-          "question": "Write a simple UDP client (udp_client.cpp).",
-          "answer": [
-            "The client does not `connect`. It just sends a datagram to the server address."
-          ],
-          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(6060);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);\n\n    const char* msg = \"Hello UDP\";\n    sendto(fd, msg, strlen(msg), 0, (sockaddr*)&server, sizeof(server));\n\n    char buf[256];\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, nullptr, nullptr);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"UDP client got: \" << buf << \"\\n\"; }\n    close(fd);\n}"
-        },
-        {
-          "question": "UDP follow-up questions: loss, size, connect() on UDP, broadcast and multicast.",
-          "answer": [
-            "- **No delivery guarantee:** if you need reliability add sequence numbers, ACKs and retries yourself.\n- **Datagram size:** max about 65,507 bytes, but keep it **below the MTU (about 1472 bytes)** to avoid IP fragmentation, which increases loss.\n- **`recvfrom` with a small buffer** truncates the datagram. The rest is **lost**, not kept for the next call.\n- **`connect()` on a UDP socket** does not create a connection. It only stores the peer address, so you can use `send/recv` and get ICMP errors.\n- **Broadcast:** one to all on the local network, needs `SO_BROADCAST`. **Multicast:** one to a group of subscribers (`IP_ADD_MEMBERSHIP`).\n- **Message boundaries are kept**, unlike TCP."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "unix-domain-sockets",
-      "title": "Unix Domain Sockets and socketpair",
-      "category": "Sockets",
-      "frequency": "High",
-      "description": "Fast, two-way sockets for processes on the same machine.",
-      "questions": [
-        {
-          "question": "What is a Unix domain socket? How is it different from a TCP socket on localhost?",
-          "answer": [
-            "A **Unix domain socket** (`AF_UNIX`) works like a normal socket but the address is a **file path** (for example `/tmp/app.sock`) and the data **never goes through the network stack**. Works for **unrelated processes on the same machine**.",
-            "- **Faster** than TCP on `127.0.0.1` (no TCP/IP processing, no checksums, fewer copies).\n- **Two-way**, supports `SOCK_STREAM` (like TCP) and `SOCK_DGRAM` (like UDP).\n- **File permissions** control who can connect (real security).\n- **Can pass file descriptors** between processes (`SCM_RIGHTS`) and **verify the sender's identity** (`SO_PEERCRED`: PID, UID).\n- **Remove the socket file** with `unlink()` before `bind` and after use.",
-            "**Where used:** X11, Docker (`/var/run/docker.sock`), systemd, D-Bus, PostgreSQL, MySQL local connections, nginx to PHP-FPM."
-          ]
-        },
-        {
-          "question": "Write a simple Unix domain socket example (server and client).",
-          "answer": [
-            "The parent is the server and the child is the client. In real use these are two separate programs that use the same socket path."
-          ],
-          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/un.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* path = \"/tmp/demo.sock\";\n    unlink(path);                                          // remove old socket file\n\n    int server = socket(AF_UNIX, SOCK_STREAM, 0);\n    sockaddr_un addr{};\n    addr.sun_family = AF_UNIX;\n    strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);\n    bind(server, (sockaddr*)&addr, sizeof(addr));\n    listen(server, 5);                                     // ready before the client starts\n\n    if (fork() == 0) {                                     // client\n        int c = socket(AF_UNIX, SOCK_STREAM, 0);\n        connect(c, (sockaddr*)&addr, sizeof(addr));\n        const char* msg = \"Hello via Unix socket\";\n        send(c, msg, strlen(msg), 0);\n        close(c);\n        std::cout.flush(); _exit(0);\n    }\n    int client = accept(server, nullptr, nullptr);         // server\n    char buf[100];\n    ssize_t n = recv(client, buf, sizeof(buf) - 1, 0);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Server got: \" << buf << \"\\n\"; }\n    close(client); close(server);\n    wait(nullptr);\n    unlink(path);\n}"
-        },
-        {
-          "question": "What is socketpair()? Write a simple two-way example between parent and child.",
-          "answer": [
-            "`socketpair()` creates **two already connected sockets** in one call. It is like a **two-way pipe** (full duplex) and the easiest way to talk both directions between a parent and a child."
-          ],
-          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int sv[2];\n    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) { perror(\"socketpair\"); return 1; }\n\n    if (fork() == 0) {                                   // child uses sv[1]\n        close(sv[0]);\n        char buf[64];\n        ssize_t n = read(sv[1], buf, sizeof(buf) - 1);\n        buf[n] = '\\0';\n        std::cout << \"Child got: \" << buf << \"\\n\";\n        const char* reply = \"pong\";\n        if (write(sv[1], reply, strlen(reply)) == -1) perror(\"write\");\n        close(sv[1]);\n        std::cout.flush(); _exit(0);\n    }\n    close(sv[1]);                                        // parent uses sv[0]\n    if (write(sv[0], \"ping\", 4) == -1) perror(\"write\");\n    char buf[64];\n    ssize_t n = read(sv[0], buf, sizeof(buf) - 1);\n    buf[n] = '\\0';\n    std::cout << \"Parent got: \" << buf << \"\\n\";\n    close(sv[0]);\n    wait(nullptr);\n}"
         }
       ]
     },
