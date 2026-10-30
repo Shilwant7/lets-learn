@@ -1,0 +1,798 @@
+{
+  "topics": [
+    {
+      "id": "overview",
+      "title": "Overview: What is IPC, All Methods and How to Remember Them",
+      "category": "Overview",
+      "frequency": "Very High",
+      "description": "Start here: what IPC is, the list of all IPC methods, easy memory tricks, how to choose one, and the most-asked questions.",
+      "questions": [
+        {
+          "question": "What is Inter Process Communication (IPC) and why do we need it?",
+          "answer": [
+            "**IPC** is the set of mechanisms an operating system gives so that **separate processes can exchange data and coordinate** with each other.",
+            "**Why is it needed?** Every process has its **own private virtual address space**. Process A cannot simply read a variable of process B (the OS protects it). If they must cooperate, they need an IPC mechanism.",
+            "**Simple analogy:** processes are people in different locked rooms. IPC is the way they talk: a pipe in the wall, a post box, a shared whiteboard window, a doorbell or a telephone.",
+            "- **Information sharing:** many programs need the same data (a database server and its clients)\n- **Modularity:** split a big system into small cooperating processes (UI, logger, worker)\n- **Speed / parallelism:** use many CPU cores with several processes\n- **Safety / isolation:** a crash in one process does not kill the others"
+          ]
+        },
+        {
+          "question": "What are all the IPC methods? (complete list)",
+          "answer": [
+            "The classic list used in interviews (Linux/Unix names, Windows equivalents in brackets):",
+            "- **1. Pipe** (anonymous pipe): one-way byte stream between **related** processes (parent and child). [Windows: anonymous pipe]\n- **2. FIFO / Named pipe:** pipe with a name in the file system, works between **unrelated** processes. [Windows: named pipe]\n- **3. Message Queue:** a queue of separate messages (POSIX `mq_*` and System V `msg*`). [Windows: mailslot / message queue]\n- **4. Shared Memory:** processes map the **same physical memory**. Fastest IPC. (POSIX `shm_open`, System V `shmget`). [Windows: file mapping]\n- **5. Memory-mapped file (mmap):** a file mapped in memory, can be shared. [Windows: `CreateFileMapping`]\n- **6. Semaphore:** counter used for **synchronisation** (POSIX and System V). [Windows: semaphore, mutex, event]\n- **7. Signal:** small asynchronous notification (`SIGUSR1`, `SIGTERM`). [Windows: events]\n- **8. Socket:** two-way communication, on the same machine (Unix domain) or **over a network** (TCP/UDP).\n- **9. Others:** file locks (`flock`), `eventfd`, `signalfd`, D-Bus, RPC / gRPC, ZeroMQ, Boost.Interprocess (C++ library)"
+          ]
+        },
+        {
+          "question": "How are IPC methods divided into categories?",
+          "answer": [
+            "Divide by **what the method is used for**. Four groups:",
+            "### 1. Data transfer (data is copied through the kernel)",
+            "- Pipe, FIFO, Message Queue, Socket",
+            "### 2. Shared memory (no copy, both see the same memory)",
+            "- Shared memory (POSIX / System V), mmap",
+            "### 3. Synchronisation (control who goes first, protect shared data)",
+            "- Semaphore, mutex and condition variable (process-shared), file lock",
+            "### 4. Signalling (just 'something happened')",
+            "- Signals, eventfd",
+            "Another useful split: **Message passing** (pipe, FIFO, queue, socket: OS copies data) vs **Shared memory** (fast, but you must synchronise yourself)."
+          ]
+        },
+        {
+          "question": "How can I remember the IPC methods easily?",
+          "answer": [
+            "### Trick 1: the 7 classic ones in a story order",
+            "**P**ipe -> **F**IFO -> **M**essage queue -> **S**hared memory -> **S**emaphore -> **S**ignal -> **S**ocket",
+            "Sentence: *'Please Find My Super Smart Signal Socket'* (P F M S S S S).",
+            "### Trick 2: one picture for each",
+            "- **Pipe** = water pipe from the parent room to the child room (one way)\n- **FIFO** = the same pipe, but with a **name board** on the wall so strangers can use it\n- **Message queue** = a **post box**: letters are separate, each has a type/priority\n- **Shared memory** = a **whiteboard** that two people can both read and write (fast, but you must not write at the same time)\n- **Semaphore** = the **traffic light / key** for the whiteboard room\n- **Signal** = a **doorbell**: tells you something happened, carries almost no data\n- **Socket** = a **telephone**: two-way, can call another city (network)\n- **mmap** = a shared **notebook** (a file) that everybody maps\n- **RPC / gRPC** = ordering by phone and getting the result delivered: you call a function that runs in another process",
+            "### Trick 3: three questions to pick one",
+            "- Do I need to go over a **network**? -> **Socket**\n- Do I need the **fastest** speed for large data? -> **Shared memory** (+ semaphore)\n- Do I only need a simple **parent -> child** stream? -> **Pipe**"
+          ]
+        },
+        {
+          "question": "How do I choose the right IPC method? (quick cheat sheet)",
+          "answer": [
+            "- Parent and child, simple one-way data -> **Pipe**\n- Two unrelated programs on the same machine, simple stream -> **FIFO** or **Unix domain socket**\n- Separate messages with priority/types -> **Message queue**\n- Large data or very high speed (video, market data, shared cache) -> **Shared memory + semaphore/mutex**\n- Share a file in memory or map a big file -> **mmap**\n- Protect shared data / order of execution -> **Semaphore / mutex**\n- Just notify or stop a process -> **Signal**\n- Machines on a network, or flexible client/server -> **TCP/UDP socket**\n- Many clients on the same machine, bidirectional, simple -> **Unix domain socket**\n- Call a function in another service (microservices) -> **gRPC / RPC**"
+          ]
+        },
+        {
+          "question": "What are the most frequently asked IPC interview questions in C/C++?",
+          "answer": [
+            "Ranked by how often they are asked:",
+            "- 1. What is IPC? Name and compare all IPC mechanisms\n- 2. **Shared memory:** why is it the fastest, how do you synchronise it? Write an example\n- 3. **Pipe vs FIFO vs message queue**\n- 4. **Socket programming:** steps of TCP server and client, TCP vs UDP, `select/poll/epoll`\n- 5. **Semaphore vs mutex**, binary vs counting semaphore, producer-consumer problem\n- 6. **Signals:** how to handle them, `signal()` vs `sigaction()`, what is safe in a signal handler\n- 7. **fork():** what is copied, zombie and orphan processes, `wait()`\n- 8. POSIX vs System V IPC, Unix domain socket vs TCP loopback\n- 9. Process vs thread, and when to use multiple processes instead of threads\n- 10. Race condition, deadlock, priority inversion\n- 11. Debugging: `ipcs`, `ipcrm`, `ls /dev/shm`, `ss`, `lsof`, `strace`\n- 12. Scenario: 'Design a logger service / chat server / high-speed data sharing between two processes'",
+            "Every topic in this file follows the same order: **What it is -> simple example -> follow-up interview questions.**"
+          ]
+        },
+        {
+          "question": "What is the difference between IPC and ITC (thread communication)? Process vs thread?",
+          "answer": [
+            "- **Threads** of one process share the **same address space** (globals, heap). They communicate through shared variables + mutex/condition variable. Cheap, but one bad thread can crash the whole process.\n- **Processes** have **separate address spaces**. They need IPC (pipe, shared memory, socket...). Heavier, but **isolated and safer**.\n- **Use processes** for isolation, security, using different languages/programs, crash safety (browser tabs). **Use threads** for fast, fine-grained sharing of data inside one program."
+          ]
+        },
+        {
+          "question": "Is the C code in this file also valid in C++? How should I compile the examples?",
+          "answer": [
+            "Yes. All IPC system calls (`pipe`, `fork`, `shm_open`, `socket`...) are **C functions from POSIX**, and C++ programs call them directly. The examples are written in simple C++ (`std::cout`) but use plain C-style calls, so they translate to C by replacing `std::cout` with `printf`.",
+            "Compile on Linux with: `g++ -std=c++17 file.cpp -o app -pthread -lrt` (`-lrt` is needed on older glibc for `shm_open`, `mq_open`, `sem_open`). For C use `gcc file.c -o app -pthread -lrt`.",
+            "**Always check return values** (`-1` means error, then read `errno` / `perror()`). The examples skip some checks only to stay short.",
+            "**Note:** child processes in the examples end with `_exit()`, which does **not** flush C++ output buffers. That is why they call `std::cout.flush()` first. Otherwise, when the output is redirected to a file or pipe, the child's text can be lost."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "process-basics",
+      "title": "Process Basics for IPC: fork, exec, wait",
+      "category": "Basics",
+      "frequency": "Very High",
+      "description": "What you must know about processes before IPC: fork, copy-on-write, zombie, orphan, wait.",
+      "questions": [
+        {
+          "question": "What does fork() do? What is copied and what is shared?",
+          "answer": [
+            "`fork()` creates a **new child process** that is a copy of the parent. It returns **twice**: `0` in the child, the child's **PID** in the parent, `-1` on error.",
+            "- **Copied (separate after fork):** variables, stack, heap (using **copy-on-write**, so the copy is cheap)\n- **Shared:** open **file descriptors** (pipe ends, sockets, files, their file offsets), **memory created with `MAP_SHARED`** (shared memory), semaphores in shared memory\n- Child gets a **new PID**, the parent's PID becomes the child's `getppid()`",
+            "That is why a normal variable changed in the child does **not** change in the parent. You need IPC for that."
+          ],
+          "code": "#include <iostream>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int x = 10;\n    pid_t pid = fork();\n    if (pid == 0) {                               // child\n        x = 99;                                   // changes only the child's copy\n        std::cout << \"Child:  x = \" << x << \"\\n\";\n        std::cout.flush(); _exit(0);\n    }\n    wait(nullptr);                                // parent waits for the child\n    std::cout << \"Parent: x = \" << x << \"\\n\";     // still 10\n}"
+        },
+        {
+          "question": "What is a zombie process and an orphan process? How do you avoid zombies?",
+          "answer": [
+            "- **Zombie:** a child that has **finished** but the parent has **not called `wait()`** yet. Only its small entry in the process table remains (state `Z` in `ps`). It wastes a PID slot.\n- **Orphan:** a child whose **parent died first**. It is adopted by `init`/`systemd` (PID 1) which cleans it up.\n- **Avoid zombies:** call `wait()` / `waitpid()`, or handle `SIGCHLD`, or set `SIGCHLD` to `SIG_IGN`, or double-fork for daemons."
+          ]
+        },
+        {
+          "question": "What is the difference between fork(), vfork(), exec() and system()? What is the fork + exec pattern?",
+          "answer": [
+            "- **fork():** duplicate the current process.\n- **vfork():** old, child borrows the parent's memory until `exec` or `_exit` (rarely used now, `posix_spawn` is better).\n- **exec family** (`execl`, `execvp`...): **replace** the current process image with a new program. Same PID. Does not return on success.\n- **fork + exec:** the way shells start programs: `fork()`, then the child calls `exec()` to become another program, the parent `wait()`s.\n- **system():** runs a shell command (`fork` + `exec` + `wait` inside). Convenient, but slow and risky with user input (shell injection)."
+          ]
+        },
+        {
+          "question": "What is the difference between exit() and _exit()? Why does the child use _exit() after fork()?",
+          "answer": [
+            "- **`exit()`** runs `atexit` handlers, destroys static C++ objects and **flushes stdio / `std::cout` buffers**, then ends the process.\n- **`_exit()`** ends the process **immediately** without those steps.\n- **In a forked child use `_exit()`** (when you do not call `exec`): the child has a **copy of the parent's buffers and objects**, so `exit()` could flush the parent's unflushed output twice or run destructors on resources the parent still owns (for example delete a shared file).\n- **Rule:** flush what the child itself printed (`std::cout.flush()`), then call `_exit()`."
+          ]
+        },
+        {
+          "question": "Why use fork() with IPC? How do related and unrelated processes get the same IPC object?",
+          "answer": [
+            "- **Related processes** (parent/child): the child **inherits** open descriptors, so an anonymous `pipe`, a `socketpair` or an `mmap(MAP_SHARED | MAP_ANONYMOUS)` created before `fork()` is automatically shared.\n- **Unrelated processes:** they need a **well-known name**: a FIFO path, a POSIX name like `/my_shm`, a System V key from `ftok()`, or a socket address (IP:port or path)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pipes",
+      "title": "Pipes (Anonymous Pipes)",
+      "category": "Data Transfer",
+      "frequency": "Very High",
+      "description": "One-way byte stream between related processes. Simplest IPC.",
+      "questions": [
+        {
+          "question": "What is a pipe? Where is it used?",
+          "answer": [
+            "A **pipe** is a **one-way (half-duplex) byte stream** kept in the kernel. One process writes to the **write end**, another reads from the **read end**. Created with `pipe(int fd[2])`: `fd[0]` = read end, `fd[1]` = write end.",
+            "**Analogy:** a water pipe. Water goes in one end and comes out the other end in the same order (FIFO).",
+            "**Works only between related processes** (parent-child, siblings) because they must inherit the descriptors through `fork()`.",
+            "**Where used:** shell pipelines (`ls | grep txt | wc -l`), parent collecting output of a child, simple worker communication."
+          ]
+        },
+        {
+          "question": "Write a simple pipe example: parent sends a message to child.",
+          "answer": [
+            "Rule: **close the ends you do not use**. Otherwise the reader never sees end-of-file."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int fd[2];                                    // fd[0] = read, fd[1] = write\n    if (pipe(fd) == -1) { perror(\"pipe\"); return 1; }\n\n    pid_t pid = fork();\n    if (pid == 0) {                               // child = reader\n        close(fd[1]);                             // close unused write end\n        char buf[100];\n        ssize_t n = read(fd[0], buf, sizeof(buf) - 1);\n        if (n > 0) { buf[n] = '\\0'; std::cout << \"Child got: \" << buf << \"\\n\"; }\n        close(fd[0]);\n        std::cout.flush(); _exit(0);\n    }\n    close(fd[0]);                                 // parent = writer, close unused read end\n    const char* msg = \"Hello from parent\";\n    if (write(fd[1], msg, strlen(msg)) == -1) perror(\"write\");\n    close(fd[1]);                                 // tells the reader: no more data (EOF)\n    wait(nullptr);\n}"
+        },
+        {
+          "question": "How do you do two-way communication with pipes?",
+          "answer": [
+            "A pipe is **one-way**, so use **two pipes**: one for parent -> child, one for child -> parent. (Or use a `socketpair`, which is two-way in one call.)"
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int p2c[2], c2p[2];                           // parent->child, child->parent\n    pipe(p2c); pipe(c2p);\n\n    if (fork() == 0) {                            // child\n        close(p2c[1]); close(c2p[0]);\n        char buf[64];\n        ssize_t n = read(p2c[0], buf, sizeof(buf) - 1);\n        buf[n] = '\\0';\n        std::cout << \"Child received: \" << buf << \"\\n\";\n        const char* reply = \"pong\";\n        if (write(c2p[1], reply, strlen(reply)) == -1) perror(\"write\");\n        std::cout.flush(); _exit(0);\n    }\n    close(p2c[0]); close(c2p[1]);                 // parent\n    if (write(p2c[1], \"ping\", 4) == -1) perror(\"write\");\n    char buf[64];\n    ssize_t n = read(c2p[0], buf, sizeof(buf) - 1);\n    buf[n] = '\\0';\n    std::cout << \"Parent received: \" << buf << \"\\n\";\n    wait(nullptr);\n}"
+        },
+        {
+          "question": "How does the shell run 'ls | wc -l'? (very popular: pipe + fork + dup2 + exec)",
+          "answer": [
+            "The shell creates a pipe, forks two children. Child 1 makes its **stdout** the pipe's write end (`dup2`), then `exec`s `ls`. Child 2 makes its **stdin** the pipe's read end, then `exec`s `wc -l`. `dup2(old, new)` copies a descriptor onto another number."
+          ],
+          "code": "#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int fd[2];\n    pipe(fd);\n\n    if (fork() == 0) {                            // child 1: ls\n        dup2(fd[1], STDOUT_FILENO);               // stdout -> pipe write end\n        close(fd[0]); close(fd[1]);\n        execlp(\"ls\", \"ls\", nullptr);\n        _exit(1);\n    }\n    if (fork() == 0) {                            // child 2: wc -l\n        dup2(fd[0], STDIN_FILENO);                // stdin <- pipe read end\n        close(fd[0]); close(fd[1]);\n        execlp(\"wc\", \"wc\", \"-l\", nullptr);\n        _exit(1);\n    }\n    close(fd[0]); close(fd[1]);                   // parent must close both, or wc never ends\n    wait(nullptr); wait(nullptr);\n}"
+        },
+        {
+          "question": "Pipe interview follow-up questions: capacity, blocking, EOF, SIGPIPE, atomic writes.",
+          "answer": [
+            "- **Capacity:** a kernel buffer, **64 KB by default on Linux** (changeable with `fcntl(F_SETPIPE_SZ)`).\n- **Blocking:** `read()` blocks if the pipe is empty (while a writer exists). `write()` blocks if the pipe is full.\n- **EOF:** `read()` returns **0** when **all write ends are closed** and the pipe is empty. If you forget to close an unused write end, the reader waits forever.\n- **SIGPIPE:** writing to a pipe with **no reader** raises `SIGPIPE` (kills the process by default) and `write` fails with `EPIPE`.\n- **Atomic writes:** a write of up to **`PIPE_BUF` bytes (4096 on Linux)** is atomic, so messages from several writers are not mixed.\n- **Message boundaries:** a pipe is a **byte stream**, so two writes may be read as one. You need your own framing (length prefix, delimiter).\n- **Non-blocking:** use `pipe2(fd, O_NONBLOCK)`; then `read` returns `-1` with `EAGAIN` when empty.\n- **Half-duplex:** data flows only one way. (Some old Unix systems had full-duplex pipes; not portable.)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fifo",
+      "title": "FIFO (Named Pipes)",
+      "category": "Data Transfer",
+      "frequency": "High",
+      "description": "A pipe with a name in the file system, so unrelated processes can use it.",
+      "questions": [
+        {
+          "question": "What is a FIFO (named pipe)? How is it different from an anonymous pipe?",
+          "answer": [
+            "A **FIFO** is a pipe that has a **name (a special file)** in the file system. Any process that knows the path can open it, so **unrelated processes** can communicate.",
+            "Created with `mkfifo(path, mode)` or the shell command `mkfifo /tmp/myfifo`. Opened with normal `open()`, used with `read()`/`write()`.",
+            "- **Anonymous pipe:** no name, only related processes, disappears when closed.\n- **FIFO:** has a name, unrelated processes, **file stays** until you `unlink()` it. Still one-way, data is **not stored on disk**, only in the kernel buffer.",
+            "**Where used:** simple local logging, command channel to a daemon, shell scripts (`echo hi > /tmp/myfifo`)."
+          ]
+        },
+        {
+          "question": "Write a simple FIFO example (writer and reader).",
+          "answer": [
+            "Here the parent writes and the child reads, but the reader and writer can be **two separate programs** that open the same path."
+          ],
+          "code": "#include <fcntl.h>\n#include <iostream>\n#include <sys/stat.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* path = \"/tmp/demo_fifo\";\n    mkfifo(path, 0666);                           // create the named pipe\n\n    if (fork() == 0) {                            // reader\n        int fd = open(path, O_RDONLY);            // blocks until a writer opens\n        char buf[100];\n        ssize_t n = read(fd, buf, sizeof(buf) - 1);\n        if (n > 0) { buf[n] = '\\0'; std::cout << \"Reader got: \" << buf << \"\\n\"; }\n        close(fd);\n        std::cout.flush(); _exit(0);\n    }\n    int fd = open(path, O_WRONLY);                // writer\n    const char* msg = \"Hello through FIFO\";\n    if (write(fd, msg, 18) == -1) perror(\"write\");\n    close(fd);\n    wait(nullptr);\n    unlink(path);                                 // remove the FIFO file\n}"
+        },
+        {
+          "question": "FIFO follow-up questions: blocking open, two-way, many writers.",
+          "answer": [
+            "- **open() blocks:** opening for read blocks until someone opens for write (and the other way round). Use `O_NONBLOCK` to avoid that (reading side then succeeds immediately).\n- **Two-way:** use **two FIFOs** (one per direction). Do not open one FIFO `O_RDWR` for normal IPC (undefined by POSIX; Linux allows it).\n- **Many writers, one reader:** works. Writes up to `PIPE_BUF` bytes are atomic, so messages do not mix.\n- **Cleanup:** the FIFO file stays after the program ends. Call `unlink()` when finished.\n- **Security:** set proper permissions (`mode`), otherwise another user may read or write it."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-queues",
+      "title": "Message Queues (POSIX and System V)",
+      "category": "Data Transfer",
+      "frequency": "High",
+      "description": "Kernel-managed queue of separate messages with type or priority.",
+      "questions": [
+        {
+          "question": "What is a message queue? Where is it used?",
+          "answer": [
+            "A **message queue** is a list of **messages** stored in the kernel. A process **sends** a message, another process **receives** it later (they do not need to run at the same time). Messages keep their **boundaries** (unlike a pipe) and can have a **priority or type**.",
+            "**Analogy:** a post box. Each letter is separate. You can take the urgent letter first.",
+            "**Two APIs:** **POSIX** (`mq_open`, `mq_send`, `mq_receive`, `mq_close`, `mq_unlink`), modern and recommended. **System V** (`msgget`, `msgsnd`, `msgrcv`, `msgctl`), older.",
+            "**Where used:** task/job queues between processes, command messages to a daemon, event notification, decoupling a producer from a slow consumer."
+          ]
+        },
+        {
+          "question": "Write a simple POSIX message queue example.",
+          "answer": [
+            "The name must start with `/`. The receive buffer must be **at least `mq_msgsize`** bytes. Compile with `-lrt` on older systems."
+          ],
+          "code": "#include <fcntl.h>\n#include <iostream>\n#include <mqueue.h>\n#include <sys/stat.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* name = \"/demo_queue\";\n    mq_attr attr{};\n    attr.mq_maxmsg  = 10;                         // max messages in the queue\n    attr.mq_msgsize = 128;                        // max size of one message\n\n    mqd_t mq = mq_open(name, O_CREAT | O_RDWR, 0644, &attr);\n    if (mq == (mqd_t)-1) { perror(\"mq_open\"); return 1; }\n\n    if (fork() == 0) {                            // receiver\n        char buf[128];\n        unsigned prio;\n        ssize_t n = mq_receive(mq, buf, sizeof(buf), &prio);   // blocks until a message arrives\n        if (n >= 0) std::cout << \"Got: \" << buf << \" (priority \" << prio << \")\\n\";\n        std::cout.flush(); _exit(0);\n    }\n    mq_send(mq, \"Hello queue\", 12, 5);            // sender, priority 5\n    wait(nullptr);\n    mq_close(mq);\n    mq_unlink(name);                              // remove the queue from the system\n}"
+        },
+        {
+          "question": "Write a simple System V message queue example.",
+          "answer": [
+            "System V messages must start with a `long` **type** field. The receiver can ask for a particular type."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/ipc.h>\n#include <sys/msg.h>\n\nstruct Message {\n    long type;                                    // must be > 0\n    char text[100];\n};\n\nint main() {\n    key_t key = ftok(\"/tmp\", 'A');                // same key = same queue for every process\n    int id = msgget(key, 0666 | IPC_CREAT);\n\n    Message out{1, \"\"};\n    strcpy(out.text, \"Hello System V queue\");\n    msgsnd(id, &out, sizeof(out.text), 0);        // size = payload only, not the type\n\n    Message in{};\n    msgrcv(id, &in, sizeof(in.text), 1, 0);       // receive first message of type 1\n    std::cout << \"Got: \" << in.text << \"\\n\";\n\n    msgctl(id, IPC_RMID, nullptr);                // delete the queue\n}"
+        },
+        {
+          "question": "Message queue follow-up questions: POSIX vs System V, pipe vs queue, limits.",
+          "answer": [
+            "- **Message boundaries:** a queue keeps each message separate, a pipe is a stream.\n- **Priority:** POSIX queues deliver the **highest priority first**. System V selects by **message type**.\n- **Persistence:** queues live in the **kernel until removed** (`mq_unlink` / `IPC_RMID`) or reboot, even if all processes exit. Forgotten queues leak. Check with `ipcs -q` (System V) or `ls /dev/mqueue` (POSIX).\n- **Limits:** max messages and size per queue (`/proc/sys/fs/mqueue/*`, `ulimit -q`). A full queue makes `mq_send` block (or `EAGAIN` with `O_NONBLOCK`).\n- **Notification:** POSIX `mq_notify()` can send a signal or start a thread when a message arrives, and queue descriptors work with `select/poll/epoll` on Linux.\n- **POSIX vs System V:** POSIX has a cleaner API, names, priority, notification. System V is older, uses keys/ids, available everywhere. Prefer **POSIX**.\n- **Speed:** each message is copied twice (user -> kernel -> user), so it is slower than shared memory for big data."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared-memory",
+      "title": "Shared Memory (POSIX and System V)",
+      "category": "Shared Memory",
+      "frequency": "Very High",
+      "description": "Processes map the same physical memory. The fastest IPC.",
+      "questions": [
+        {
+          "question": "What is shared memory? Why is it the fastest IPC? Where is it used?",
+          "answer": [
+            "**Shared memory** is a memory region that **two or more processes map into their own address space**. A write by one process is **immediately visible** to the others.",
+            "**Why fastest?** With pipes, queues and sockets the data is copied **user -> kernel -> user**. With shared memory there is **no copy and no system call per message**. After the setup, access is just normal memory read/write.",
+            "**Analogy:** a whiteboard in a room that two people can both see. Very fast, but if both write at the same time it becomes a mess, so you need a **lock (semaphore/mutex)**.",
+            "**Where used:** video/audio buffers, market data feeds, game servers, databases (PostgreSQL buffers), browsers, caches, big data exchange between processes.",
+            "**Two APIs:** **POSIX** (`shm_open`, `ftruncate`, `mmap`, `shm_unlink`), recommended. **System V** (`shmget`, `shmat`, `shmdt`, `shmctl`)."
+          ]
+        },
+        {
+          "question": "Write a simple POSIX shared memory example.",
+          "answer": [
+            "Steps: `shm_open` (create a named object) -> `ftruncate` (set size) -> `mmap` (map into memory) -> use like a pointer -> `munmap` -> `shm_unlink`. Here the child writes and the parent reads. In real programs the two sides are often **separate programs** using the same name."
+          ],
+          "code": "#include <cstring>\n#include <fcntl.h>\n#include <iostream>\n#include <sys/mman.h>\n#include <sys/stat.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* name = \"/demo_shm\";\n    const size_t size = 4096;\n\n    int fd = shm_open(name, O_CREAT | O_RDWR, 0666);     // 1. create shared object\n    if (fd == -1) { perror(\"shm_open\"); return 1; }\n    ftruncate(fd, size);                                 // 2. set its size\n    char* mem = static_cast<char*>(\n        mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));   // 3. map it\n\n    if (fork() == 0) {                                   // child = writer\n        strcpy(mem, \"Hello from child via shared memory\");\n        std::cout.flush(); _exit(0);\n    }\n    wait(nullptr);                                       // here wait() is the synchronisation\n    std::cout << \"Parent read: \" << mem << \"\\n\";\n\n    munmap(mem, size);                                   // 4. unmap\n    close(fd);\n    shm_unlink(name);                                    // 5. remove the object\n}"
+        },
+        {
+          "question": "Write a simple System V shared memory example.",
+          "answer": [
+            "System V uses a **key** (`ftok`) to find the segment. `shmat` attaches it, `shmdt` detaches it, `shmctl(IPC_RMID)` deletes it."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/ipc.h>\n#include <sys/shm.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    key_t key = ftok(\"/tmp\", 'S');\n    int id = shmget(key, 4096, 0666 | IPC_CREAT);        // create / open segment\n    char* mem = static_cast<char*>(shmat(id, nullptr, 0));   // attach\n\n    if (fork() == 0) {\n        strcpy(mem, \"Hello from System V shm\");\n        shmdt(mem);                                      // detach\n        std::cout.flush(); _exit(0);\n    }\n    wait(nullptr);\n    std::cout << \"Parent read: \" << mem << \"\\n\";\n    shmdt(mem);\n    shmctl(id, IPC_RMID, nullptr);                       // delete segment\n}"
+        },
+        {
+          "question": "Shared memory follow-up questions: synchronisation, pointers, cleanup, POSIX vs System V.",
+          "answer": [
+            "- **Synchronisation is YOUR job.** The OS does not protect the data. Use a **process-shared semaphore or mutex** (see the Semaphores topic). Without it you get race conditions.\n- **Do not store raw pointers** inside shared memory: the segment may be mapped at a **different address** in each process. Use **offsets** or `boost::interprocess::offset_ptr`.\n- **Do not put `std::string`, `std::vector`, virtual-function objects** in shared memory (they contain pointers to the private heap, and vtable pointers differ). Use fixed-size arrays/PODs, or Boost.Interprocess containers.\n- **Persistence:** the object stays until `shm_unlink` / `IPC_RMID` or reboot. A crash leaves it behind: check `ls /dev/shm` or `ipcs -m`, remove with `rm /dev/shm/name` or `ipcrm -m id`.\n- **POSIX vs System V:** POSIX uses names + file descriptors and `mmap` (works with `fstat`, `ftruncate`). System V uses keys and ids. **Prefer POSIX.**\n- **Size:** `ftruncate` sets the size. Accessing beyond the size gives `SIGBUS`. Total size is limited by `/dev/shm` (tmpfs) size.\n- **Cache effects:** two processes writing to variables on the same cache line cause **false sharing**. Align hot variables to 64 bytes.\n- **Atomic variables:** `std::atomic<T>` works across processes in shared memory if it is **lock-free** (`is_always_lock_free`).\n- **Permissions:** the `mode` (0666, 0600) controls who can attach. Use the narrowest one."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mmap",
+      "title": "Memory-Mapped Files (mmap)",
+      "category": "Shared Memory",
+      "frequency": "High",
+      "description": "Map a file (or anonymous memory) into the address space, optionally shared between processes.",
+      "questions": [
+        {
+          "question": "What is mmap? What are the types of mappings? Where is it used?",
+          "answer": [
+            "`mmap()` maps a **file or device into memory**, so you read/write the file like an ordinary array, and the OS loads and saves pages on demand.",
+            "### Mapping types",
+            "- **`MAP_SHARED` + file:** changes are visible to **other processes** that map the same file and are written back to the file. Used for IPC and fast file I/O.\n- **`MAP_PRIVATE` + file:** **copy-on-write**, changes are private and never written to the file (how the loader maps executables/libraries).\n- **`MAP_SHARED | MAP_ANONYMOUS`:** no file, just fresh shared memory that **child processes inherit after `fork()`**. Easiest shared memory between parent and children.\n- **`MAP_PRIVATE | MAP_ANONYMOUS`:** what `malloc` uses internally for large blocks.",
+            "**Where used:** shared memory IPC, loading large files without `read()` copies, databases (LMDB, SQLite option), shared libraries, memory-mapped I/O."
+          ]
+        },
+        {
+          "question": "Write a simple mmap example (file-backed shared mapping).",
+          "answer": [
+            "The file is mapped, edited like memory, and `msync` makes sure the change reaches the disk."
+          ],
+          "code": "#include <cstring>\n#include <fcntl.h>\n#include <iostream>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* path = \"/tmp/mmap_demo.dat\";\n    int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);\n    ftruncate(fd, 4096);                                  // file must have the size first\n    char* p = static_cast<char*>(mmap(nullptr, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));\n\n    if (fork() == 0) {\n        strcpy(p, \"written by child\");                    // writes into the file via memory\n        std::cout.flush(); _exit(0);\n    }\n    wait(nullptr);\n    std::cout << \"Parent sees: \" << p << \"\\n\";\n    msync(p, 4096, MS_SYNC);                              // flush to disk\n    munmap(p, 4096);\n    close(fd);\n    unlink(path);\n}"
+        },
+        {
+          "question": "Write the simplest shared memory between parent and child: anonymous mmap.",
+          "answer": [
+            "No names, no files, no cleanup. The mapping exists before `fork()`, so both processes share it."
+          ],
+          "code": "#include <iostream>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int* counter = static_cast<int*>(mmap(nullptr, sizeof(int), PROT_READ | PROT_WRITE,\n                                          MAP_SHARED | MAP_ANONYMOUS, -1, 0));\n    *counter = 0;\n    if (fork() == 0) {\n        *counter = 42;                                    // child changes it\n        std::cout.flush(); _exit(0);\n    }\n    wait(nullptr);\n    std::cout << \"counter = \" << *counter << \"\\n\";        // 42 (with normal memory it would be 0)\n    munmap(counter, sizeof(int));\n}"
+        },
+        {
+          "question": "mmap vs read/write, and shm_open vs mmap: common questions.",
+          "answer": [
+            "- **mmap vs read():** `read()` copies data kernel -> user buffer. `mmap` avoids the copy and loads pages lazily (page faults). Good for big files and random access. For small sequential reads `read()` can be as fast.\n- **shm_open + mmap:** `shm_open` only creates the named object, `mmap` is what gives you the memory. They always go together.\n- **Page size:** the offset must be a multiple of the page size (`sysconf(_SC_PAGESIZE)`, usually 4096).\n- **Danger:** if another process truncates the file while you read it, you get `SIGBUS`. Errors on I/O show as signals, not return codes.\n- **msync / munmap:** `msync` forces write-back, `munmap` removes the mapping. Closing the fd does **not** unmap.\n- **Huge pages / locking:** `madvise`, `mlock`, `MAP_HUGETLB` for performance tuning."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "semaphores",
+      "title": "Semaphores, Mutex and Synchronisation",
+      "category": "Synchronization",
+      "frequency": "Very High",
+      "description": "Control access to shared resources and order of execution between processes.",
+      "questions": [
+        {
+          "question": "What is a semaphore? Binary vs counting semaphore? Where is it used?",
+          "answer": [
+            "A **semaphore** is an integer counter managed by the OS with two atomic operations:",
+            "- **wait / P / down** (`sem_wait`): if the counter is > 0, decrement it and continue, **otherwise block**.\n- **post / V / up** (`sem_post`): increment the counter and wake one waiting process.",
+            "- **Binary semaphore** (0 or 1): works like a lock, protects one resource.\n- **Counting semaphore** (0..N): counts available resources, for example 5 free connections in a pool.",
+            "**Analogy:** a parking lot with N places. A car enters (`wait`) only if a place is free, and leaving (`post`) frees one place.",
+            "**Where used:** protecting shared memory, producer-consumer, limiting the number of simultaneous users of a resource, signalling between processes.",
+            "**Types:** POSIX **named** (`sem_open`, `sem_close`, `sem_unlink`, for unrelated processes), POSIX **unnamed** (`sem_init(sem, pshared=1, value)` placed in shared memory), **System V** (`semget`, `semop`, `semctl`, semaphore sets)."
+          ]
+        },
+        {
+          "question": "Protect a shared counter with a semaphore (avoid a race condition).",
+          "answer": [
+            "Two processes add 1 to the same counter 50,000 times each. **Without** the semaphore the result is less than 100,000 (lost updates). **With** the semaphore it is always correct."
+          ],
+          "code": "#include <iostream>\n#include <semaphore.h>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nstruct Shared {\n    sem_t lock;\n    int counter;\n};\n\nint main() {\n    auto* s = static_cast<Shared*>(mmap(nullptr, sizeof(Shared), PROT_READ | PROT_WRITE,\n                                        MAP_SHARED | MAP_ANONYMOUS, -1, 0));\n    s->counter = 0;\n    sem_init(&s->lock, 1, 1);                    // pshared = 1 (between processes), start value 1\n\n    for (int p = 0; p < 2; ++p) {\n        if (fork() == 0) {\n            for (int i = 0; i < 50000; ++i) {\n                sem_wait(&s->lock);              // enter critical section\n                s->counter++;\n                sem_post(&s->lock);              // leave critical section\n            }\n            std::cout.flush(); _exit(0);\n        }\n    }\n    wait(nullptr); wait(nullptr);\n    std::cout << \"counter = \" << s->counter << \"\\n\";   // 100000\n    sem_destroy(&s->lock);\n}"
+        },
+        {
+          "question": "Solve the classic Producer-Consumer problem with two semaphores and shared memory.",
+          "answer": [
+            "`empty` counts free slots, `full` counts filled slots. The producer waits for `empty`, writes, then posts `full`. The consumer does the opposite. This is one of the **most asked IPC coding questions**."
+          ],
+          "code": "#include <iostream>\n#include <semaphore.h>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nstruct Shared {\n    sem_t empty;       // free slots\n    sem_t full;        // filled slots\n    int value;         // one-slot buffer\n};\n\nint main() {\n    auto* s = static_cast<Shared*>(mmap(nullptr, sizeof(Shared), PROT_READ | PROT_WRITE,\n                                        MAP_SHARED | MAP_ANONYMOUS, -1, 0));\n    sem_init(&s->empty, 1, 1);                   // one free slot at start\n    sem_init(&s->full, 1, 0);                    // nothing to consume at start\n\n    if (fork() == 0) {                           // consumer\n        for (int i = 0; i < 5; ++i) {\n            sem_wait(&s->full);                  // wait until data is there\n            std::cout << \"Consumer got \" << s->value << \"\\n\";\n            sem_post(&s->empty);                 // slot is free again\n        }\n        std::cout.flush(); _exit(0);\n    }\n    for (int i = 1; i <= 5; ++i) {               // producer\n        sem_wait(&s->empty);                     // wait for a free slot\n        s->value = i * 10;\n        sem_post(&s->full);                      // tell consumer: data ready\n    }\n    wait(nullptr);\n    sem_destroy(&s->empty); sem_destroy(&s->full);\n}"
+        },
+        {
+          "question": "Semaphore vs mutex: what is the difference? (very popular question)",
+          "answer": [
+            "- **Mutex:** a **lock with an owner**. Only the thread/process that locked it may unlock it. Used for **mutual exclusion** (one at a time). Binary.\n- **Semaphore:** a **counter without an owner**. Any process may `post`. Used for mutual exclusion **and for signalling/counting** ('data is ready', 'N slots free').\n- **Mutex** = a key to a toilet (only the holder gives it back). **Semaphore** = N identical tokens at a counter, anyone can return a token.\n- **Priority inversion:** mutexes can support priority inheritance (`PTHREAD_PRIO_INHERIT`). Semaphores generally cannot.\n- **Rule of thumb:** to protect data use a **mutex**. To order events or count resources use a **semaphore**."
+          ]
+        },
+        {
+          "question": "How do you use a mutex and condition variable between processes? What is a robust mutex?",
+          "answer": [
+            "A `pthread_mutex_t` can be shared between processes if it is placed in **shared memory** and initialised with the attribute **`PTHREAD_PROCESS_SHARED`**. Same for `pthread_cond_t`.",
+            "**Robust mutex** (`PTHREAD_MUTEX_ROBUST`): if the process holding the lock **crashes**, the next `lock()` returns **`EOWNERDEAD`** instead of waiting forever, so you can repair the data and call `pthread_mutex_consistent()`."
+          ],
+          "code": "#include <cerrno>\n#include <iostream>\n#include <pthread.h>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nstruct Shared {\n    pthread_mutex_t m;\n    int counter;\n};\n\nint main() {\n    auto* s = static_cast<Shared*>(mmap(nullptr, sizeof(Shared), PROT_READ | PROT_WRITE,\n                                        MAP_SHARED | MAP_ANONYMOUS, -1, 0));\n    pthread_mutexattr_t attr;\n    pthread_mutexattr_init(&attr);\n    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);   // works across processes\n    pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);      // survives owner crash\n    pthread_mutex_init(&s->m, &attr);\n    s->counter = 0;\n\n    for (int p = 0; p < 2; ++p) {\n        if (fork() == 0) {\n            for (int i = 0; i < 50000; ++i) {\n                if (pthread_mutex_lock(&s->m) == EOWNERDEAD)\n                    pthread_mutex_consistent(&s->m);              // previous owner died\n                s->counter++;\n                pthread_mutex_unlock(&s->m);\n            }\n            std::cout.flush(); _exit(0);\n        }\n    }\n    wait(nullptr); wait(nullptr);\n    std::cout << \"counter = \" << s->counter << \"\\n\";               // 100000\n    pthread_mutex_destroy(&s->m);\n}"
+        },
+        {
+          "question": "Semaphore follow-up questions: named vs unnamed, System V vs POSIX, deadlock.",
+          "answer": [
+            "- **Named POSIX semaphore** (`sem_open(\"/name\", O_CREAT, 0644, 1)`): visible in `/dev/shm` as `sem.name`, for **unrelated** processes. Remove with `sem_unlink`.\n- **Unnamed** (`sem_init`): lives in memory you provide, must be in **shared memory** with `pshared=1` for IPC.\n- **System V semaphores:** created in **sets**, operations are atomic on the whole set (`semop`), have **`SEM_UNDO`** to undo if the process dies. More powerful but harder to use.\n- **`sem_trywait` / `sem_timedwait`:** non-blocking and time-limited wait to avoid waiting forever.\n- **`EINTR`:** `sem_wait` can be interrupted by a signal, so retry in a loop `while (sem_wait(&s) == -1 && errno == EINTR);`.\n- **Deadlock:** happens when processes wait for each other (A holds 1 wants 2, B holds 2 wants 1). Prevent it with a **fixed lock order**, timeouts, or fewer locks.\n- **Forgotten `sem_post`** (for example after an early `return`) blocks everybody. Wrap in an RAII guard in C++."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "signals",
+      "title": "Signals",
+      "category": "Signalling",
+      "frequency": "Very High",
+      "description": "Small asynchronous notifications sent to a process.",
+      "questions": [
+        {
+          "question": "What is a signal? Name common signals. Where are signals used as IPC?",
+          "answer": [
+            "A **signal** is a **software interrupt** sent to a process to tell it that an event happened. It carries almost no data (only the signal number, and with `sigqueue` one small value).",
+            "**Analogy:** a doorbell. It says 'someone is here' but not who or why.",
+            "- `SIGINT` (2): Ctrl+C\n- `SIGTERM` (15): polite request to terminate (default of `kill`)\n- `SIGKILL` (9): kill now, **cannot be caught or ignored**\n- `SIGSTOP`: pause, **cannot be caught**\n- `SIGSEGV` (11): invalid memory access\n- `SIGCHLD`: a child process ended\n- `SIGPIPE`: write to a pipe/socket with no reader\n- `SIGALRM`: timer from `alarm()`\n- `SIGUSR1` / `SIGUSR2`: free for your own use (simple IPC)\n- `SIGHUP`: terminal closed, often used to 're-read the config file'",
+            "**Where used:** stopping/reloading daemons (`kill -HUP`), telling the parent that a child finished (`SIGCHLD`), simple wake-up events, timers, graceful shutdown."
+          ]
+        },
+        {
+          "question": "Write a simple signal example: parent sends SIGUSR1 to the child (using sigaction).",
+          "answer": [
+            "Use **`sigaction`** (portable and reliable), not the old `signal()`. The handler only sets a flag of type `volatile sig_atomic_t`."
+          ],
+          "code": "#include <csignal>\n#include <iostream>\n#include <sys/wait.h>\n#include <unistd.h>\n\nvolatile sig_atomic_t got_signal = 0;\n\nvoid handler(int) { got_signal = 1; }            // keep handlers tiny\n\nint main() {\n    struct sigaction sa{};\n    sa.sa_handler = handler;\n    sigemptyset(&sa.sa_mask);\n    sigaction(SIGUSR1, &sa, nullptr);            // installed before fork, child inherits it\n\n    pid_t pid = fork();\n    if (pid == 0) {                              // child waits for the signal\n        while (!got_signal) pause();             // sleep until a signal arrives\n        std::cout << \"Child: got SIGUSR1\\n\";\n        std::cout.flush(); _exit(0);\n    }\n    sleep(1);                                    // give the child time to start waiting\n    kill(pid, SIGUSR1);                          // parent sends the signal\n    wait(nullptr);\n}"
+        },
+        {
+          "question": "Signal follow-up questions: signal() vs sigaction(), safe functions in a handler, masks, real-time signals.",
+          "answer": [
+            "- **`signal()` vs `sigaction()`:** `signal()` behaviour differs between systems (handler may reset, system calls may or may not restart). **`sigaction()`** is well-defined, gives `SA_RESTART`, signal masks and extra info (`SA_SIGINFO`). Always use `sigaction`.\n- **Async-signal-safe functions only:** a handler can interrupt your program at **any** point (even inside `malloc` or `printf`). So **do not call `printf`, `malloc`, `new`, or lock mutexes** in a handler. Use `write()`, `_exit()`, or just set a `volatile sig_atomic_t` flag / write to a self-pipe.\n- **Cannot be caught:** `SIGKILL`, `SIGSTOP`.\n- **Signal mask:** `sigprocmask` / `pthread_sigmask` **blocks** (delays) signals during a critical section. A blocked signal stays **pending**.\n- **Standard signals are not queued:** 5 `SIGUSR1` sent quickly may arrive as 1. **Real-time signals** (`SIGRTMIN..SIGRTMAX`) **are queued**, ordered and can carry data (`sigqueue`).\n- **Race `while(!flag) pause();`:** a signal arriving between the test and `pause()` is lost. The correct way is **`sigsuspend()`** with the signal blocked before.\n- **`EINTR`:** a signal can interrupt a slow system call (`read`, `sem_wait`), which then returns `-1` with `errno = EINTR`. Retry it or use `SA_RESTART`.\n- **Signals and threads:** a process-directed signal is delivered to **any thread** that does not block it. Common design: block signals in all threads and use one thread with `sigwait()` (or `signalfd` on Linux).\n- **Alternative:** `eventfd`, pipes or sockets are easier and safer for event notification than signals."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sockets-tcp",
+      "title": "Socket Programming: TCP Client and Server",
+      "category": "Sockets",
+      "frequency": "Very High",
+      "description": "Two-way communication between processes on the same machine or over a network.",
+      "questions": [
+        {
+          "question": "What is a socket? Where is socket programming used?",
+          "answer": [
+            "A **socket** is an **endpoint of two-way communication**. In Unix a socket is a **file descriptor**, so you use `read/write` or `send/recv` on it.",
+            "**Analogy:** a telephone. You get a phone (`socket`), assign it a number (`bind`), switch it on to receive calls (`listen`), pick up (`accept`). The caller dials (`connect`).",
+            "**Where used:** web servers, databases, chat, games, microservices, any communication **over a network**, and also IPC on the **same machine** (use `127.0.0.1` or Unix domain sockets).",
+            "**Socket types:** `SOCK_STREAM` (**TCP**, reliable byte stream), `SOCK_DGRAM` (**UDP**, separate datagrams), `SOCK_RAW` (raw packets).",
+            "**Address families:** `AF_INET` (IPv4), `AF_INET6` (IPv6), `AF_UNIX` (local, same machine)."
+          ]
+        },
+        {
+          "question": "What are the steps of a TCP server and a TCP client? (very common question)",
+          "answer": [
+            "### Server",
+            "- 1. `socket()` create the endpoint\n- 2. `bind()` attach an IP address and port\n- 3. `listen()` mark it as a passive socket, set the backlog queue\n- 4. `accept()` wait for a client, returns a **new socket** for that client\n- 5. `recv()` / `send()` talk to the client\n- 6. `close()`",
+            "### Client",
+            "- 1. `socket()`\n- 2. `connect()` to server IP and port (TCP 3-way handshake happens here)\n- 3. `send()` / `recv()`\n- 4. `close()`",
+            "**Remember:** *Server = Socket, Bind, Listen, Accept. Client = Socket, Connect.* (**S-B-L-A** and **S-C**).",
+            "**Important:** the server has **two kinds of sockets**: the **listening socket** (accepts new connections) and a **connected socket per client** (returned by `accept`)."
+          ]
+        },
+        {
+          "question": "Write a simple TCP server in C++ (server.cpp).",
+          "answer": [
+            "It waits for one client, reads a message and replies. Compile: `g++ server.cpp -o server`."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int server_fd = socket(AF_INET, SOCK_STREAM, 0);              // 1. create\n    if (server_fd == -1) { perror(\"socket\"); return 1; }\n\n    int opt = 1;\n    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));   // restart without waiting\n\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;                            // all network interfaces\n    addr.sin_port = htons(5050);                                  // host -> network byte order\n\n    if (bind(server_fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }  // 2. bind\n    listen(server_fd, 5);                                         // 3. listen\n    std::cout << \"Server waiting on port 5050...\\n\";\n\n    int client_fd = accept(server_fd, nullptr, nullptr);          // 4. accept (blocks)\n    char buf[256];\n    ssize_t n = recv(client_fd, buf, sizeof(buf) - 1, 0);         // 5. receive\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"Server got: \" << buf << \"\\n\";\n        const char* reply = \"Hello from server\";\n        send(client_fd, reply, strlen(reply), 0);                 //    reply\n    }\n    close(client_fd);                                             // 6. close\n    close(server_fd);\n}"
+        },
+        {
+          "question": "Write a simple TCP client in C++ (client.cpp).",
+          "answer": [
+            "Start the server first, then run the client."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_STREAM, 0);                     // 1. create\n    if (fd == -1) { perror(\"socket\"); return 1; }\n\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(5050);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);            // text IP -> binary\n\n    if (connect(fd, (sockaddr*)&server, sizeof(server)) == -1) {  // 2. connect\n        perror(\"connect\");\n        return 1;\n    }\n    const char* msg = \"Hello from client\";\n    send(fd, msg, strlen(msg), 0);                                // 3. send\n\n    char buf[256];\n    ssize_t n = recv(fd, buf, sizeof(buf) - 1, 0);                //    receive reply\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Client got: \" << buf << \"\\n\"; }\n    close(fd);                                                    // 4. close\n}"
+        },
+        {
+          "question": "TCP socket follow-up questions: byte order, partial send/recv, TIME_WAIT, SO_REUSEADDR, TCP is a stream.",
+          "answer": [
+            "- **Byte order:** the network uses **big-endian**. Use `htons/htonl` (host -> network) and `ntohs/ntohl` (network -> host) for ports and integers you send. Strings do not need it.\n- **TCP is a byte stream, not messages:** one `send(100 bytes)` can arrive as two `recv` of 60 + 40, or two sends can arrive in one `recv`. You must define **message framing**: length prefix, delimiter (`\\n`), or fixed size.\n- **Partial `send`/`recv`:** `send` may send fewer bytes than asked, so **loop until everything is sent**. `recv` returns **0** when the peer closed the connection, **-1** on error.\n- **`SO_REUSEADDR`:** lets the server rebind to the port immediately after restart. Without it you get `Address already in use` because of **TIME_WAIT**.\n- **TIME_WAIT:** after closing, the side that closes first keeps the connection in this state for about 60 s so late packets are not mixed into a new connection.\n- **`bind` vs `connect`:** server binds to a known port. Client usually does not bind, the OS picks a random (ephemeral) port.\n- **`backlog` in `listen`:** size of the queue of connections waiting for `accept`.\n- **`SIGPIPE`:** writing to a socket closed by the peer raises `SIGPIPE`. Use `send(fd, buf, n, MSG_NOSIGNAL)` or ignore the signal.\n- **Blocking vs non-blocking:** by default `accept`, `recv`, `connect` block. Use `O_NONBLOCK` + `poll/epoll` for many connections.\n- **Half close:** `shutdown(fd, SHUT_WR)` says 'I will send no more' but you can still receive.\n- **Graceful close and 'Connection reset by peer':** `ECONNRESET` is a normal error you must handle."
+          ]
+        },
+        {
+          "question": "Show a helper that sends and receives exactly N bytes (handles partial sends and receives).",
+          "answer": [
+            "A real network program needs these two helpers. They also handle `EINTR`."
+          ],
+          "code": "#include <cerrno>\n#include <cstddef>\n#include <sys/socket.h>\n#include <sys/types.h>\n\n// Send exactly 'len' bytes. Returns 0 on success, -1 on error.\nint sendAll(int fd, const void* data, size_t len) {\n    const char* p = static_cast<const char*>(data);\n    while (len > 0) {\n        ssize_t n = send(fd, p, len, MSG_NOSIGNAL);\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\n// Receive exactly 'len' bytes. Returns 0 on success, 0-length close = -2, error = -1.\nint recvAll(int fd, void* data, size_t len) {\n    char* p = static_cast<char*>(data);\n    while (len > 0) {\n        ssize_t n = recv(fd, p, len, 0);\n        if (n == 0) return -2;                      // peer closed the connection\n        if (n == -1) { if (errno == EINTR) continue; return -1; }\n        p += n;\n        len -= static_cast<size_t>(n);\n    }\n    return 0;\n}\n\nint main() { return 0; }"
+        },
+        {
+          "question": "How can a TCP server handle many clients at the same time?",
+          "answer": [
+            "- **Process per client:** `fork()` after `accept()`. Simple and isolated, but heavy (used by old servers such as early Apache).\n- **Thread per client:** a thread (or thread pool) per connection. Simple, but thousands of threads cost memory.\n- **I/O multiplexing:** one thread uses **`select` / `poll` / `epoll`** to watch many sockets (see the I/O Multiplexing topic). Scales to tens of thousands of clients.\n- **Thread pool + epoll (reactor):** what nginx, Redis and modern servers do.",
+            "**Interview tip:** mention the **C10K problem** (handling 10,000 clients) and say `epoll` (Linux), `kqueue` (BSD/macOS), `IOCP` (Windows)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sockets-udp",
+      "title": "Socket Programming: UDP",
+      "category": "Sockets",
+      "frequency": "High",
+      "description": "Connectionless, fast, message-based communication without guarantees.",
+      "questions": [
+        {
+          "question": "What is UDP? TCP vs UDP (very popular question)",
+          "answer": [
+            "- **TCP:** **connection** oriented (handshake), **reliable** (retransmits lost packets), **ordered**, **byte stream**, flow and congestion control. Slower, more overhead.\n- **UDP:** **connectionless**, **no guarantee** (packets can be lost, duplicated, reordered), **keeps message boundaries** (one `sendto` = one datagram), very light and fast.",
+            "**Analogy:** TCP = a phone call (connection, you hear the other side). UDP = sending postcards (fast, but some may get lost or arrive in a different order).",
+            "**Use TCP for:** web (HTTP), email, file transfer, databases, anything that must be correct.",
+            "**Use UDP for:** video/voice streaming, online games, DNS, DHCP, logging/metrics (StatsD), broadcast/multicast, **when speed is more important than perfect delivery** or when you build your own reliability (QUIC)."
+          ]
+        },
+        {
+          "question": "Write a simple UDP server (udp_server.cpp).",
+          "answer": [
+            "No `listen` and no `accept`. The server just `bind`s and receives datagrams together with the sender's address."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);                      // SOCK_DGRAM = UDP\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;\n    addr.sin_port = htons(6060);\n    if (bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) { perror(\"bind\"); return 1; }\n\n    char buf[256];\n    sockaddr_in client{};\n    socklen_t len = sizeof(client);\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, (sockaddr*)&client, &len);   // who sent it?\n    if (n > 0) {\n        buf[n] = '\\0';\n        std::cout << \"UDP server got: \" << buf << \"\\n\";\n        const char* reply = \"ACK from UDP server\";\n        sendto(fd, reply, strlen(reply), 0, (sockaddr*)&client, len);              // reply to sender\n    }\n    close(fd);\n}"
+        },
+        {
+          "question": "Write a simple UDP client (udp_client.cpp).",
+          "answer": [
+            "The client does not `connect`. It just sends a datagram to the server address."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <cstring>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int fd = socket(AF_INET, SOCK_DGRAM, 0);\n    sockaddr_in server{};\n    server.sin_family = AF_INET;\n    server.sin_port = htons(6060);\n    inet_pton(AF_INET, \"127.0.0.1\", &server.sin_addr);\n\n    const char* msg = \"Hello UDP\";\n    sendto(fd, msg, strlen(msg), 0, (sockaddr*)&server, sizeof(server));\n\n    char buf[256];\n    ssize_t n = recvfrom(fd, buf, sizeof(buf) - 1, 0, nullptr, nullptr);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"UDP client got: \" << buf << \"\\n\"; }\n    close(fd);\n}"
+        },
+        {
+          "question": "UDP follow-up questions: loss, size, connect() on UDP, broadcast and multicast.",
+          "answer": [
+            "- **No delivery guarantee:** if you need reliability add sequence numbers, ACKs and retries yourself.\n- **Datagram size:** max about 65,507 bytes, but keep it **below the MTU (about 1472 bytes)** to avoid IP fragmentation, which increases loss.\n- **`recvfrom` with a small buffer** truncates the datagram. The rest is **lost**, not kept for the next call.\n- **`connect()` on a UDP socket** does not create a connection. It only stores the peer address, so you can use `send/recv` and get ICMP errors.\n- **Broadcast:** one to all on the local network, needs `SO_BROADCAST`. **Multicast:** one to a group of subscribers (`IP_ADD_MEMBERSHIP`).\n- **Message boundaries are kept**, unlike TCP."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unix-domain-sockets",
+      "title": "Unix Domain Sockets and socketpair",
+      "category": "Sockets",
+      "frequency": "High",
+      "description": "Fast, two-way sockets for processes on the same machine.",
+      "questions": [
+        {
+          "question": "What is a Unix domain socket? How is it different from a TCP socket on localhost?",
+          "answer": [
+            "A **Unix domain socket** (`AF_UNIX`) works like a normal socket but the address is a **file path** (for example `/tmp/app.sock`) and the data **never goes through the network stack**. Works for **unrelated processes on the same machine**.",
+            "- **Faster** than TCP on `127.0.0.1` (no TCP/IP processing, no checksums, fewer copies).\n- **Two-way**, supports `SOCK_STREAM` (like TCP) and `SOCK_DGRAM` (like UDP).\n- **File permissions** control who can connect (real security).\n- **Can pass file descriptors** between processes (`SCM_RIGHTS`) and **verify the sender's identity** (`SO_PEERCRED`: PID, UID).\n- **Remove the socket file** with `unlink()` before `bind` and after use.",
+            "**Where used:** X11, Docker (`/var/run/docker.sock`), systemd, D-Bus, PostgreSQL, MySQL local connections, nginx to PHP-FPM."
+          ]
+        },
+        {
+          "question": "Write a simple Unix domain socket example (server and client).",
+          "answer": [
+            "The parent is the server and the child is the client. In real use these are two separate programs that use the same socket path."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/un.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    const char* path = \"/tmp/demo.sock\";\n    unlink(path);                                          // remove old socket file\n\n    int server = socket(AF_UNIX, SOCK_STREAM, 0);\n    sockaddr_un addr{};\n    addr.sun_family = AF_UNIX;\n    strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);\n    bind(server, (sockaddr*)&addr, sizeof(addr));\n    listen(server, 5);                                     // ready before the client starts\n\n    if (fork() == 0) {                                     // client\n        int c = socket(AF_UNIX, SOCK_STREAM, 0);\n        connect(c, (sockaddr*)&addr, sizeof(addr));\n        const char* msg = \"Hello via Unix socket\";\n        send(c, msg, strlen(msg), 0);\n        close(c);\n        std::cout.flush(); _exit(0);\n    }\n    int client = accept(server, nullptr, nullptr);         // server\n    char buf[100];\n    ssize_t n = recv(client, buf, sizeof(buf) - 1, 0);\n    if (n > 0) { buf[n] = '\\0'; std::cout << \"Server got: \" << buf << \"\\n\"; }\n    close(client); close(server);\n    wait(nullptr);\n    unlink(path);\n}"
+        },
+        {
+          "question": "What is socketpair()? Write a simple two-way example between parent and child.",
+          "answer": [
+            "`socketpair()` creates **two already connected sockets** in one call. It is like a **two-way pipe** (full duplex) and the easiest way to talk both directions between a parent and a child."
+          ],
+          "code": "#include <cstring>\n#include <iostream>\n#include <sys/socket.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int sv[2];\n    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) { perror(\"socketpair\"); return 1; }\n\n    if (fork() == 0) {                                   // child uses sv[1]\n        close(sv[0]);\n        char buf[64];\n        ssize_t n = read(sv[1], buf, sizeof(buf) - 1);\n        buf[n] = '\\0';\n        std::cout << \"Child got: \" << buf << \"\\n\";\n        const char* reply = \"pong\";\n        if (write(sv[1], reply, strlen(reply)) == -1) perror(\"write\");\n        close(sv[1]);\n        std::cout.flush(); _exit(0);\n    }\n    close(sv[1]);                                        // parent uses sv[0]\n    if (write(sv[0], \"ping\", 4) == -1) perror(\"write\");\n    char buf[64];\n    ssize_t n = read(sv[0], buf, sizeof(buf) - 1);\n    buf[n] = '\\0';\n    std::cout << \"Parent got: \" << buf << \"\\n\";\n    close(sv[0]);\n    wait(nullptr);\n}"
+        }
+      ]
+    },
+    {
+      "id": "io-multiplexing",
+      "title": "I/O Multiplexing: select, poll, epoll",
+      "category": "Sockets",
+      "frequency": "High",
+      "description": "Watch many sockets/pipes with one thread.",
+      "questions": [
+        {
+          "question": "What is I/O multiplexing? select vs poll vs epoll (very popular question)",
+          "answer": [
+            "**I/O multiplexing** lets **one thread wait for many file descriptors** (sockets, pipes, FIFOs, signalfd...) and tells you **which are ready**, so you never block on one slow client.",
+            "**Analogy:** a waiter who watches many tables and serves the table that raises its hand, instead of standing at one table.",
+            "- **`select`:** oldest, portable. Limited to **`FD_SETSIZE` = 1024** descriptors. You must **rebuild the fd sets every call** and scan all of them. O(n).\n- **`poll`:** no 1024 limit, uses an array of `pollfd`, no rebuild of bitmaps. Still scans all descriptors every call. O(n).\n- **`epoll`** (Linux): you **register** descriptors once (`epoll_ctl`) and `epoll_wait` returns **only the ready ones**. O(1) per ready event. Scales to 100,000+ connections. (BSD/macOS: `kqueue`, Windows: `IOCP`.)",
+            "**Level-triggered (default):** reports 'still readable' on every call while data remains. **Edge-triggered (`EPOLLET`):** reports **only on a change**, so you must read until `EAGAIN` and use non-blocking sockets."
+          ]
+        },
+        {
+          "question": "Write a simple epoll echo server in C++.",
+          "answer": [
+            "One thread, many clients. The server echoes back whatever each client sends."
+          ],
+          "code": "#include <arpa/inet.h>\n#include <fcntl.h>\n#include <iostream>\n#include <netinet/in.h>\n#include <sys/epoll.h>\n#include <sys/socket.h>\n#include <unistd.h>\n\nint main() {\n    int srv = socket(AF_INET, SOCK_STREAM, 0);\n    int opt = 1;\n    setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));\n    sockaddr_in addr{};\n    addr.sin_family = AF_INET;\n    addr.sin_addr.s_addr = INADDR_ANY;\n    addr.sin_port = htons(7070);\n    bind(srv, (sockaddr*)&addr, sizeof(addr));\n    listen(srv, 128);\n\n    int ep = epoll_create1(0);                              // create epoll instance\n    epoll_event ev{};\n    ev.events = EPOLLIN;\n    ev.data.fd = srv;\n    epoll_ctl(ep, EPOLL_CTL_ADD, srv, &ev);                 // watch the listening socket\n\n    epoll_event events[64];\n    for (;;) {\n        int n = epoll_wait(ep, events, 64, -1);             // sleep until something is ready\n        for (int i = 0; i < n; ++i) {\n            int fd = events[i].data.fd;\n            if (fd == srv) {                                // new client\n                int c = accept(srv, nullptr, nullptr);\n                epoll_event cev{};\n                cev.events = EPOLLIN;\n                cev.data.fd = c;\n                epoll_ctl(ep, EPOLL_CTL_ADD, c, &cev);\n            } else {                                        // data from a client\n                char buf[512];\n                ssize_t r = recv(fd, buf, sizeof(buf), 0);\n                if (r <= 0) {                               // closed or error\n                    epoll_ctl(ep, EPOLL_CTL_DEL, fd, nullptr);\n                    close(fd);\n                } else {\n                    send(fd, buf, r, 0);                    // echo\n                }\n            }\n        }\n    }\n}"
+        },
+        {
+          "question": "Write a simple select() example that waits for data on stdin or a pipe with a timeout.",
+          "answer": [
+            "`select` needs three sets (read, write, exceptional), the highest fd + 1, and an optional timeout."
+          ],
+          "code": "#include <iostream>\n#include <sys/select.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int fd[2];\n    pipe(fd);\n    if (fork() == 0) {                                  // child writes after 1 second\n        close(fd[0]);\n        sleep(1);\n        if (write(fd[1], \"data\", 4) == -1) perror(\"write\");\n        std::cout.flush(); _exit(0);\n    }\n    close(fd[1]);\n\n    fd_set readfds;\n    FD_ZERO(&readfds);                                  // must be rebuilt before each select()\n    FD_SET(fd[0], &readfds);\n    timeval tv{3, 0};                                   // wait at most 3 seconds\n\n    int ready = select(fd[0] + 1, &readfds, nullptr, nullptr, &tv);\n    if (ready > 0 && FD_ISSET(fd[0], &readfds)) {\n        char buf[16];\n        ssize_t n = read(fd[0], buf, sizeof(buf) - 1);\n        buf[n] = '\\0';\n        std::cout << \"Ready, read: \" << buf << \"\\n\";\n    } else if (ready == 0) {\n        std::cout << \"Timeout\\n\";\n    }\n    wait(nullptr);\n}"
+        }
+      ]
+    },
+    {
+      "id": "other-ipc",
+      "title": "Other IPC Methods: eventfd, File Locks, D-Bus, RPC/gRPC, ZeroMQ",
+      "category": "Other Methods",
+      "frequency": "Medium",
+      "description": "Less common but frequently mentioned IPC mechanisms.",
+      "questions": [
+        {
+          "question": "What is eventfd? Write a simple example.",
+          "answer": [
+            "`eventfd()` (Linux) creates a file descriptor that holds a **64-bit counter**. `write()` adds to the counter, `read()` returns it and resets it to zero (blocks while it is zero). It is a very light **wake-up / notification** mechanism, and works with `select/poll/epoll`. It is the modern replacement for 'pipe just to wake up a thread' and for many uses of signals."
+          ],
+          "code": "#include <cstdint>\n#include <iostream>\n#include <sys/eventfd.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nint main() {\n    int efd = eventfd(0, 0);\n    if (fork() == 0) {                                  // child waits for the event\n        uint64_t value;\n        if (read(efd, &value, sizeof(value)) == sizeof(value))   // blocks until the counter is > 0\n            std::cout << \"Child woke up, value = \" << value << \"\\n\";\n        std::cout.flush(); _exit(0);\n    }\n    sleep(1);\n    uint64_t one = 1;\n    if (write(efd, &one, sizeof(one)) == -1) perror(\"write\");    // wake the child\n    wait(nullptr);\n    close(efd);\n}"
+        },
+        {
+          "question": "What is file locking (flock / fcntl)? Show the 'only one instance of my program' trick.",
+          "answer": [
+            "A **file lock** lets processes coordinate through a file. `flock(fd, LOCK_EX)` takes an **exclusive** lock, `LOCK_SH` a shared (read) lock, `LOCK_NB` makes it non-blocking. `fcntl(F_SETLK)` can lock **byte ranges** (record locks). The lock is **released automatically when the process dies**, which is why it is great for a **single-instance lock** and PID files of daemons."
+          ],
+          "code": "#include <fcntl.h>\n#include <iostream>\n#include <sys/file.h>\n#include <unistd.h>\n\nint main() {\n    int fd = open(\"/tmp/myapp.lock\", O_CREAT | O_RDWR, 0644);\n    if (flock(fd, LOCK_EX | LOCK_NB) == -1) {            // fail immediately if somebody holds it\n        std::cout << \"Another instance is already running\\n\";\n        return 1;\n    }\n    std::cout << \"Running (lock held). Press Enter to exit...\\n\";\n    std::cin.get();\n    // lock released automatically on exit or crash\n}"
+        },
+        {
+          "question": "What are D-Bus, RPC, gRPC and ZeroMQ? When do you use them instead of raw sockets?",
+          "answer": [
+            "- **D-Bus:** message bus on Linux desktops and system services (systemd, NetworkManager). Processes call methods and send signals by name through a bus daemon.\n- **RPC (Remote Procedure Call):** call a function in **another process or machine** like a local function. The framework handles marshalling (serialising arguments), the network and the reply.\n- **gRPC:** modern RPC from Google. You describe the API in a **`.proto` file**, the generator creates C++ client/server code. Uses **HTTP/2 + Protocol Buffers**, supports streaming, many languages. Very common for **microservices**.\n- **ZeroMQ / nanomsg:** a socket library with patterns (request-reply, publish-subscribe, push-pull) over TCP, IPC or in-process. Less boilerplate than raw sockets.\n- **Message brokers** (RabbitMQ, Kafka, MQTT): a separate server stores and routes messages between many programs. Used for distributed systems.",
+            "**Use them when:** you have many message types, need other languages, versioning, retries, or a network. **Use raw sockets / shared memory when:** you need maximum speed or full control."
+          ],
+          "code": "// greeter.proto  (gRPC service definition)\nsyntax = \"proto3\";\n\nservice Greeter {\n  rpc SayHello (HelloRequest) returns (HelloReply);   // looks like a normal function call\n}\nmessage HelloRequest { string name = 1; }\nmessage HelloReply   { string message = 1; }\n\n// The generated C++ client then lets you write:\n//   HelloReply reply;\n//   stub->SayHello(&context, request, &reply);       // runs in another process"
+        },
+        {
+          "question": "What is serialisation (marshalling) and why do we need it for IPC? What about struct padding and endianness?",
+          "answer": [
+            "Processes exchange **bytes**, not C++ objects. **Serialisation** converts an object into bytes (and back). Sending a `struct` directly with `write(&obj, sizeof(obj))` is **dangerous**:",
+            "- **Pointers** (`std::string`, `std::vector`) point to memory that does not exist in the other process.\n- **Padding and alignment** may differ between compilers/platforms. Use `#pragma pack` or fixed-size fields, or serialise field by field.\n- **Endianness:** a little-endian PC and a big-endian device read the same bytes as different numbers. Use `htonl/ntohl` or a library.\n- **Versioning:** old and new programs must understand each other.",
+            "**Good choices:** Protocol Buffers, FlatBuffers, Cap'n Proto, MessagePack, JSON (readable but larger), or a simple **length-prefixed** binary format of fixed-size fields."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "windows-ipc",
+      "title": "IPC on Windows",
+      "category": "Platform",
+      "frequency": "Medium",
+      "description": "Windows equivalents of pipes, shared memory, semaphores and sockets.",
+      "questions": [
+        {
+          "question": "What are the IPC mechanisms on Windows and their Linux equivalents?",
+          "answer": [
+            "- **Anonymous pipe** (`CreatePipe`) = `pipe()`\n- **Named pipe** (`CreateNamedPipe`, `ConnectNamedPipe`, path `\\\\.\\pipe\\name`) = FIFO / Unix domain socket. Two-way and works over the network.\n- **File mapping / shared memory** (`CreateFileMapping`, `MapViewOfFile`) = `shm_open` + `mmap`\n- **Mailslot** = simple one-way broadcast messages\n- **Mutex, Semaphore, Event** (`CreateMutex`, `CreateSemaphore`, `CreateEvent`, `WaitForSingleObject`) = POSIX semaphore/mutex/condition (named ones work between processes)\n- **Winsock** (`WSAStartup`, then the same `socket/bind/listen/accept/connect`) = BSD sockets. Needs `WSAStartup`/`WSACleanup` and `closesocket()`.\n- **`WM_COPYDATA`** window message, **clipboard**, **COM / DCOM**, **RPC**, **ALPC** (internal)\n- **`IOCP`** (I/O completion ports) = `epoll` for scalable servers"
+          ]
+        },
+        {
+          "question": "Write a simple Windows shared memory example (CreateFileMapping).",
+          "answer": [
+            "Windows only. The second program uses `OpenFileMapping` with the same name. Not compiled on Linux."
+          ],
+          "code": "// ---- Process A: creates and writes ----\n#include <windows.h>\n#include <cstring>\n#include <iostream>\n\nint main() {\n    HANDLE hMap = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE,\n                                     0, 4096, \"Local\\\\MySharedMem\");   // named object\n    char* p = (char*)MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 4096);\n    strcpy(p, \"Hello from process A\");\n    std::cout << \"Written. Press Enter to quit\\n\";\n    std::cin.get();\n    UnmapViewOfFile(p);\n    CloseHandle(hMap);\n}\n\n// ---- Process B: opens and reads ----\n// HANDLE hMap = OpenFileMappingA(FILE_MAP_READ, FALSE, \"Local\\\\MySharedMem\");\n// const char* p = (const char*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);\n// std::cout << p;"
+        }
+      ]
+    },
+    {
+      "id": "boost-interprocess",
+      "title": "Boost.Interprocess (C++ Library)",
+      "category": "Platform",
+      "frequency": "Medium",
+      "description": "Portable C++ wrappers for shared memory, mutexes, message queues and containers.",
+      "questions": [
+        {
+          "question": "What is Boost.Interprocess? Why use it instead of raw shm_open/mmap?",
+          "answer": [
+            "**Boost.Interprocess** is a C++ library with portable, RAII-based classes for IPC on Linux and Windows:",
+            "- `shared_memory_object` + `mapped_region` (shared memory)\n- `managed_shared_memory`: a shared-memory **heap** where you can `construct<T>(\"name\")` objects and use **STL-like containers** (`vector`, `map`, `string`) that are safe in shared memory (they use `offset_ptr` instead of raw pointers)\n- `named_mutex`, `named_condition`, `named_semaphore`, `interprocess_mutex`, `scoped_lock`\n- `message_queue`, `file_lock`",
+            "**Benefits:** RAII (fewer leaks), portability, safe containers in shared memory. **Drawbacks:** large header-only dependency, you still must call `remove()` to delete named objects after a crash."
+          ],
+          "code": "// writer.cpp\n#include <boost/interprocess/shared_memory_object.hpp>\n#include <boost/interprocess/mapped_region.hpp>\n#include <cstring>\nusing namespace boost::interprocess;\n\nint main() {\n    shared_memory_object shm(open_or_create, \"MySharedMemory\", read_write);\n    shm.truncate(1024);                                   // set size\n    mapped_region region(shm, read_write);                // map it\n    std::strcpy(static_cast<char*>(region.get_address()), \"Hello Boost\");\n}\n\n// reader.cpp  (another process)\n// shared_memory_object shm(open_only, \"MySharedMemory\", read_only);\n// mapped_region region(shm, read_only);\n// std::cout << static_cast<const char*>(region.get_address());\n// shared_memory_object::remove(\"MySharedMemory\");       // cleanup when finished"
+        },
+        {
+          "question": "Show a named_mutex guarding shared data between two programs with Boost.",
+          "answer": [
+            "`scoped_lock` unlocks automatically (RAII), even if an exception is thrown."
+          ],
+          "code": "#include <boost/interprocess/sync/named_mutex.hpp>\n#include <boost/interprocess/sync/scoped_lock.hpp>\n#include <iostream>\nusing namespace boost::interprocess;\n\nint main() {\n    named_mutex mutex(open_or_create, \"my_named_mutex\");\n    {\n        scoped_lock<named_mutex> lock(mutex);             // lock; unlocked at end of scope\n        std::cout << \"Only one process at a time is here\\n\";\n    }\n    // named_mutex::remove(\"my_named_mutex\");             // when no longer needed\n}"
+        }
+      ]
+    },
+    {
+      "id": "synchronisation-problems",
+      "title": "Race Conditions, Deadlock and Lock-free IPC",
+      "category": "Synchronization",
+      "frequency": "Very High",
+      "description": "Classic concurrency problems asked together with IPC.",
+      "questions": [
+        {
+          "question": "What is a race condition and a critical section? How do you prevent it in IPC?",
+          "answer": [
+            "A **race condition** happens when the result depends on the **timing** of two processes accessing shared data. Example: two processes do `counter++` (read, add, write). Both read 5, both write 6, one increment is lost.",
+            "The code that touches the shared data is the **critical section**. Rules: only **one process at a time** (mutual exclusion), no process waits forever (progress), nobody waits indefinitely (bounded waiting).",
+            "**Prevent with:** semaphore / process-shared mutex around the critical section, atomic operations (`std::atomic`), file locks, or by **avoiding sharing** (message passing)."
+          ]
+        },
+        {
+          "question": "What is a deadlock? What are the four conditions (Coffman) and how do you avoid it?",
+          "answer": [
+            "A **deadlock** is when processes wait for each other forever. Example: A holds the semaphore 1 and waits for 2, B holds 2 and waits for 1.",
+            "**All four conditions must be true:**",
+            "- **Mutual exclusion:** the resource can be held by only one process\n- **Hold and wait:** a process holds one resource while waiting for another\n- **No pre-emption:** a resource cannot be taken away\n- **Circular wait:** a cycle of processes waiting for each other",
+            "**Avoid by breaking one condition:** always take locks in the **same global order** (breaks circular wait), take all locks at once, use **`trylock` / timeouts** and back off, or use fewer locks.",
+            "**Related problems:** **starvation** (a process never gets the resource), **livelock** (processes keep reacting but make no progress), **priority inversion** (a low priority process holding a lock blocks a high priority one; fixed with priority inheritance, `PTHREAD_PRIO_INHERIT`)."
+          ]
+        },
+        {
+          "question": "Write a lock-free single-producer single-consumer ring buffer in shared memory.",
+          "answer": [
+            "Very fast IPC used in audio, trading and logging. One process only writes `head`, the other only writes `tail`, so **no lock is needed**. `std::atomic` with acquire/release makes the data visible in the correct order. `std::atomic<size_t>` is lock-free on normal platforms, so it works across processes."
+          ],
+          "code": "#include <atomic>\n#include <iostream>\n#include <new>\n#include <sched.h>\n#include <sys/mman.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\nconstexpr size_t N = 8;                                   // capacity\n\nstruct Ring {\n    std::atomic<size_t> head{0};                          // written only by the producer\n    std::atomic<size_t> tail{0};                          // written only by the consumer\n    int data[N];\n\n    bool push(int v) {\n        size_t h = head.load(std::memory_order_relaxed);\n        if (h - tail.load(std::memory_order_acquire) == N) return false;   // full\n        data[h % N] = v;\n        head.store(h + 1, std::memory_order_release);     // publish after the data is written\n        return true;\n    }\n    bool pop(int& v) {\n        size_t t = tail.load(std::memory_order_relaxed);\n        if (t == head.load(std::memory_order_acquire)) return false;       // empty\n        v = data[t % N];\n        tail.store(t + 1, std::memory_order_release);\n        return true;\n    }\n};\n\nint main() {\n    void* mem = mmap(nullptr, sizeof(Ring), PROT_READ | PROT_WRITE,\n                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);\n    Ring* ring = new (mem) Ring();                        // construct in shared memory\n\n    if (fork() == 0) {                                    // consumer\n        int sum = 0, v, got = 0;\n        while (got < 20) {\n            if (ring->pop(v)) { sum += v; ++got; }\n            else sched_yield();\n        }\n        std::cout << \"Consumer sum = \" << sum << \"\\n\";    // 210\n        std::cout.flush(); _exit(0);\n    }\n    for (int i = 1; i <= 20; ++i)                         // producer\n        while (!ring->push(i)) sched_yield();\n    wait(nullptr);\n    munmap(mem, sizeof(Ring));\n}"
+        },
+        {
+          "question": "Follow-up: what problems appear when a process crashes while using IPC objects?",
+          "answer": [
+            "- **Lock held by a dead process:** others wait forever. Fix: **robust mutexes**, System V `SEM_UNDO`, file locks (released automatically), or lease/timeouts.\n- **Half-written data in shared memory:** use a **version/sequence number** or a checksum so the reader can detect an incomplete update (seqlock idea).\n- **Leaked IPC objects:** shared memory, queues and semaphores stay until removed. Clean up at start (`unlink` old name) and in a shutdown handler.\n- **Broken connection:** sockets give `ECONNRESET` / `EPIPE` / `recv == 0`. Pipes give `EPIPE` / `SIGPIPE`. Design **reconnect and timeout** logic.\n- **Heartbeat:** periodic message so the other side knows you are alive."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ipc-comparison",
+      "title": "IPC Comparison Questions",
+      "category": "Interview Scenarios",
+      "frequency": "Very High",
+      "description": "Side-by-side comparisons that are asked in almost every interview.",
+      "questions": [
+        {
+          "question": "Compare all IPC methods: speed, direction, related/unrelated, network, data type.",
+          "answer": [
+            "- **Pipe:** one-way, related processes only, local, byte stream, medium speed, auto-removed.\n- **FIFO:** one-way, unrelated processes, local, byte stream, medium speed, file must be unlinked.\n- **Message queue:** one-way per send (queues are shared), unrelated, local, **separate messages with priority/type**, medium speed, kernel-persistent.\n- **Shared memory:** both directions, unrelated (by name) or related, local, **raw memory, fastest**, needs your own synchronisation, kernel-persistent.\n- **mmap file:** like shared memory, but backed by a file, can persist on disk.\n- **Semaphore / mutex:** not for data, only **synchronisation**.\n- **Signal:** notification only, almost no data, asynchronous.\n- **Unix domain socket:** two-way, unrelated, local, stream or datagram, fast, can pass file descriptors.\n- **TCP / UDP socket:** two-way, unrelated, **local or network**, slowest locally but the only choice across machines."
+          ]
+        },
+        {
+          "question": "Which IPC is fastest and why? Rank them.",
+          "answer": [
+            "**Fastest to slowest (typical, for large data on one machine):**",
+            "- 1. **Shared memory** (no copies, no system calls per access)\n- 2. **Pipes / FIFO / Unix domain sockets / message queues** (kernel copies data twice; Unix sockets and pipes are usually quicker than POSIX queues)\n- 3. **TCP over loopback** (adds the whole network stack)\n- 4. **TCP across the network** (limited by network latency and bandwidth)",
+            "**Caveat:** shared memory is fastest for **bulk data**, but for tiny messages the cost of **synchronisation** (semaphores = system calls) can dominate. Lock-free ring buffers with atomics solve this. Always **measure**."
+          ]
+        },
+        {
+          "question": "Pipe vs FIFO vs Message queue: what is the difference?",
+          "answer": [
+            "- **Pipe:** unnamed, related processes only, byte stream, gone when closed.\n- **FIFO:** named (file in file system), unrelated processes, byte stream, stays until `unlink`.\n- **Message queue:** named/keyed, unrelated processes, **message boundaries + priority/type**, selective receive, stays in the kernel until removed."
+          ]
+        },
+        {
+          "question": "POSIX IPC vs System V IPC: what is the difference?",
+          "answer": [
+            "- **System V:** older (`shmget`, `msgget`, `semget`), identified by **keys (`ftok`) and integer ids**, can be inspected with `ipcs` and removed with `ipcrm`, semaphore **sets**, `SEM_UNDO`. Clumsy API.\n- **POSIX:** newer (`shm_open`, `mq_open`, `sem_open`), identified by **names** (`/name`), use **file descriptors** (work with `select/poll`), cleaner API, thread-safe design. **Recommended for new code.**\n- Both survive process exit until removed explicitly."
+          ]
+        },
+        {
+          "question": "Shared memory vs message passing: when to use which?",
+          "answer": [
+            "- **Shared memory:** large data, very high speed, frequent updates, many readers. But you must handle **synchronisation, crashes, cleanup, no pointers**.\n- **Message passing** (pipe, queue, socket): simpler and safer, **OS does synchronisation**, works across machines (sockets), natural for request/response. Slower because of copying.\n- A common design: **shared memory for the data + a pipe/eventfd/semaphore to notify** the other side that data is ready."
+          ]
+        },
+        {
+          "question": "Stream-oriented vs message-oriented IPC: which methods keep message boundaries?",
+          "answer": [
+            "- **Stream (no boundaries):** pipe, FIFO, TCP, `SOCK_STREAM` Unix sockets. You need framing (length prefix or delimiter).\n- **Message / datagram (boundaries kept):** POSIX/System V message queues, UDP, `SOCK_DGRAM` and `SOCK_SEQPACKET` Unix sockets."
+          ]
+        },
+        {
+          "question": "Blocking vs non-blocking and synchronous vs asynchronous IPC?",
+          "answer": [
+            "- **Blocking:** the call waits until it can finish (`read` on an empty pipe sleeps).\n- **Non-blocking** (`O_NONBLOCK`): returns immediately with `EAGAIN` if it would block. Combine with `poll/epoll`.\n- **Synchronous:** caller waits for the reply (RPC request-response).\n- **Asynchronous:** caller continues, reply comes later via callback, signal or event (`aio_*`, `io_uring`, signals, epoll)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ipc-scenario-questions",
+      "title": "Scenario Questions, Debugging Tools and Best Practices",
+      "category": "Interview Scenarios",
+      "frequency": "Very High",
+      "description": "Design questions, Linux tools, security, common errors and a practice list.",
+      "questions": [
+        {
+          "question": "Which IPC method would you choose for each of these scenarios?",
+          "answer": [
+            "- Shell-like pipeline: output of one program is input of another -> **Pipe**\n- Parent starts a worker and reads its output -> **Pipe** or **socketpair**\n- A tool sends commands to a background daemon on the same machine -> **Unix domain socket** (or FIFO)\n- A logging service receiving logs from many programs locally -> **Unix domain socket (datagram)** or **message queue**\n- Real-time video frames or market data between two processes -> **Shared memory + lock-free ring buffer / semaphore**\n- Chat server with many remote clients -> **TCP sockets + epoll**\n- Game with fast position updates, loss is acceptable -> **UDP**\n- Make sure only one copy of the application runs -> **File lock (`flock`)**\n- Gracefully stop or reload a daemon -> **Signals** (`SIGTERM`, `SIGHUP`)\n- Microservices in different languages -> **gRPC / REST**\n- Limit to 5 concurrent users of a resource -> **Counting semaphore**\n- Wake another process when work is ready -> **eventfd / pipe / semaphore**"
+          ]
+        },
+        {
+          "question": "Design a logger service that many processes can send logs to. Which IPC would you use and what problems do you handle?",
+          "answer": [
+            "- **Transport:** Unix domain socket (`SOCK_DGRAM` or `SOCK_STREAM`) or a POSIX message queue. A shared-memory ring buffer per client for very high volume.\n- **Server:** one logger process with `epoll`, writes to a file, rotates files.\n- **Framing:** length-prefixed messages with timestamp, level, PID.\n- **Back pressure:** what if the logger is slow? Drop low-priority logs or block the sender (decide and document).\n- **Crash safety:** clients reconnect. Server removes the old socket file at start.\n- **Security:** socket file permissions, check sender with `SO_PEERCRED`.\n- **C++ design:** `Logger` interface hides IPC (Strategy), singleton or injected instance."
+          ]
+        },
+        {
+          "question": "Design a parent that starts 4 worker processes, sends them jobs and collects results. What IPC and what problems?",
+          "answer": [
+            "- **Job distribution:** a shared POSIX message queue, or one `socketpair` per worker.\n- **Results:** a result queue or the same socketpair (two-way).\n- **Shutdown:** send a 'poison pill' message or `SIGTERM`, then `waitpid` for every worker.\n- **Crash handling:** handle `SIGCHLD`, restart dead workers, re-queue unfinished jobs.\n- **Avoid zombies:** reap with `waitpid(-1, ..., WNOHANG)` in the `SIGCHLD` handler.\n- **Fairness:** one shared queue naturally balances the load."
+          ]
+        },
+        {
+          "question": "Which Linux commands help you debug IPC problems? (practical question)",
+          "answer": [
+            "- **`ipcs`** shows System V shared memory, queues and semaphores (`ipcs -m`, `-q`, `-s`). **`ipcrm -m|-q|-s id`** removes them.\n- **`ls -l /dev/shm`** shows POSIX shared memory and named semaphores (`sem.name`). Remove with `rm`.\n- **`ls /dev/mqueue`** shows POSIX message queues (mount with `mount -t mqueue none /dev/mqueue`).\n- **`ss -tulpn`** (or `netstat -tulpn`) lists listening TCP/UDP sockets with the owning process. **`ss -xp`** shows Unix domain sockets.\n- **`lsof -p PID`** / **`lsof -i :5050`** shows open files, pipes, sockets of a process or port.\n- **`ls -l /proc/PID/fd`** shows all file descriptors of a process (pipes show as `pipe:[id]`).\n- **`strace -f -p PID`** (or `strace -f ./app`) shows system calls such as `read`, `write`, `futex`, `epoll_wait`. Great for 'why is my program stuck?'.\n- **`ps aux | grep Z`** (state `Z`) finds zombie processes. **`kill -l`** lists signals.\n- **`gdb`**: attach with `gdb -p PID`, `bt` to see where it is blocked.\n- **`tcpdump` / Wireshark** for network traffic. **`nc` (netcat)** to test sockets quickly."
+          ]
+        },
+        {
+          "question": "What are the common errno values and mistakes in IPC programs?",
+          "answer": [
+            "- **`EINTR`:** a signal interrupted the call. Retry in a loop.\n- **`EAGAIN` / `EWOULDBLOCK`:** non-blocking call would block. Not a real error.\n- **`EPIPE` / `SIGPIPE`:** writing to a closed pipe/socket.\n- **`EEXIST`:** the named object already exists (`O_EXCL`).\n- **`ENOENT`:** the name does not exist (reader started before the writer created it).\n- **`EACCES`:** permission problem on the name/mode.\n- **`EADDRINUSE`:** port still in use. Use `SO_REUSEADDR`.\n- **`ECONNREFUSED` / `ECONNRESET`:** nobody is listening / peer reset the connection.\n- **Typical mistakes:** forgetting to close unused pipe ends, not checking return values, forgetting `unlink`/`shm_unlink`, ignoring partial `read/write`, using `printf` in signal handlers, putting pointers in shared memory, no synchronisation on shared memory, wrong `sizeof` in `msgsnd`."
+          ]
+        },
+        {
+          "question": "What are the security considerations of IPC?",
+          "answer": [
+            "- **Permissions:** set the narrowest `mode` (0600/0660) on FIFOs, shared memory, queues, sockets. Mind your `umask`.\n- **Predictable names in `/tmp`:** another user could create the name first (symlink or squatting attack). Use `O_EXCL`, a private directory (`/run/user/UID`) and check ownership.\n- **Never trust the data:** validate lengths and fields from the other process (buffer overflow, integer overflow in the length prefix).\n- **Authenticate peers:** `SO_PEERCRED` on Unix sockets, TLS on TCP.\n- **Least privilege:** drop privileges (`setuid`) in worker processes (sandboxing).\n- **Resource exhaustion:** limit message size, queue length and number of connections to avoid denial of service."
+          ]
+        },
+        {
+          "question": "Practice list: coding questions you should be able to write on a whiteboard.",
+          "answer": [
+            "- 1. Parent sends a string to the child through a pipe, the child prints it\n- 2. Implement `ls | wc -l` using `pipe`, `fork`, `dup2`, `exec`\n- 3. Two unrelated programs exchanging data through a FIFO\n- 4. Shared memory with `shm_open` + `mmap` between two programs, protected by a semaphore\n- 5. Producer-consumer with two semaphores in shared memory\n- 6. TCP echo server and client (and then make it handle many clients)\n- 7. UDP sender and receiver\n- 8. Handle `SIGINT` / `SIGTERM` for graceful shutdown and `SIGCHLD` to reap children\n- 9. Create a zombie process and then fix it\n- 10. Single-instance application using `flock`\n- 11. Two-way communication between parent and child using `socketpair`\n- 12. A process-shared mutex in shared memory incremented by two processes"
+          ]
+        }
+      ]
+    }
+  ]
+}
