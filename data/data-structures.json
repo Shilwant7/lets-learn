@@ -1,1 +1,1590 @@
-{"topics":[{"id":"arrays","title":"Arrays","description":"Contiguous collections.","questions":[{"question":"What is an array?","answer":["An array holds a fixed number of elements of the same type in contiguous memory. Indexed access is O(1)."]}]},{"id":"linked-list","title":"Linked Lists","description":"Node-based sequences.","questions":[{"question":"How is a linked list different from an array?","answer":["Linked-list nodes are connected through pointers rather than stored contiguously. Random access takes O(n) time."]}]}]}
+{
+  "topics": [
+    {
+      "id": "basics",
+      "title": "Basics & Complexity",
+      "description": "Start here: what data structures are and how we measure them.",
+      "questions": [
+        {
+          "question": "What is a data structure?",
+          "answer": [
+            "A **data structure** is a way of *storing* and *organizing* data in memory so that we can use it **efficiently** (fast searching, inserting, deleting).",
+            "Think of it like a **kitchen**: spices are kept in a rack, plates in a stand, vegetables in a basket. Each thing is stored in a way that makes it easy to find and use.",
+            "Examples: Array, Linked List, Stack, Queue, Hash Table, Tree, Graph.",
+            "🧠 **How to remember:** *Data structure = a smart box to keep data so work becomes fast.*"
+          ]
+        },
+        {
+          "question": "What are the types of data structures?",
+          "answer": [
+            "Data structures are mainly divided into two groups:",
+            "- **Primitive**: basic types built into the language, like `int`, `char`, `float`, `double`, pointer.\n- **Non-primitive**: built using primitive types. These are divided into:\n  - **Linear** (one after another): Array, Linked List, Stack, Queue.\n  - **Non-linear** (data is connected in levels or links): Tree, Graph.",
+            "We can also say: **Static** (fixed size, like an array) and **Dynamic** (size can grow or shrink, like a linked list).",
+            "🧠 **How to remember:** *Linear = a straight line (queue at a ticket counter). Non-linear = a family tree.*"
+          ]
+        },
+        {
+          "question": "What is the difference between a data structure and an Abstract Data Type (ADT)?",
+          "answer": [
+            "- An **ADT** tells **WHAT** operations are possible (the *idea*). Example: a Stack supports `push`, `pop`, `peek`.\n- A **data structure** tells **HOW** those operations are actually done in memory (the *implementation*). Example: the Stack can be built using an **array** or a **linked list**.",
+            "Example: A **TV remote** is the ADT (buttons: volume up, channel change). The **circuit inside** is the data structure (how it really works).",
+            "🧠 **How to remember:** *ADT = **A**bstract = **A**sk what it does. Data structure = how it is **made**.*"
+          ]
+        },
+        {
+          "question": "What is Time Complexity and Big-O notation?",
+          "answer": [
+            "**Time complexity** tells how the running time of a program **grows** when the input size (`n`) grows. **Big-O** is the notation used to write it, and it shows the **worst case**.",
+            "Example: finding a name in a phone book by checking every page takes more time as the book grows. That is `O(n)`.",
+            "Common complexities from fastest to slowest:",
+            { "code": [
+              "O(1)       Constant     -> access array element arr[5]",
+              "O(log n)   Logarithmic  -> binary search",
+              "O(n)       Linear       -> loop through all elements",
+              "O(n log n) Linearithmic -> merge sort, quick sort (average)",
+              "O(n^2)     Quadratic    -> bubble sort (two nested loops)",
+              "O(2^n)     Exponential  -> naive recursive Fibonacci"
+            ] },
+            "🧠 **How to remember:** *1 < log n < n < n log n < n² < 2ⁿ. Say it as: **\"One Log Never Lets Nothing Escape\"** (O(1), log n, n, n log n, n², 2ⁿ).*"
+          ]
+        },
+        {
+          "question": "What is Space Complexity?",
+          "answer": [
+            "**Space complexity** tells how much **extra memory** an algorithm needs as the input size grows.",
+            { "code": [
+              "// O(1) space: only a few variables, no matter how big n is",
+              "int sum(int arr[], int n) {",
+              "    int total = 0;",
+              "    for (int i = 0; i < n; i++)",
+              "        total += arr[i];",
+              "    return total;",
+              "}",
+              "",
+              "// O(n) space: creates a new array of size n",
+              "void copy(int arr[], int n) {",
+              "    int *b = malloc(n * sizeof(int));",
+              "    for (int i = 0; i < n; i++) b[i] = arr[i];",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Time = how **long**. Space = how **much memory**.*"
+          ]
+        },
+        {
+          "question": "What are Best, Average and Worst case?",
+          "answer": [
+            "- **Best case**: the luckiest situation. Example: in linear search, the item is the **first** element, `O(1)`.\n- **Average case**: a typical situation. Example: the item is somewhere in the middle, `O(n)`.\n- **Worst case**: the unluckiest situation. Example: the item is **last** or not present, `O(n)`.",
+            "Big-O usually talks about the **worst case**, because it gives a safe guarantee.",
+            "🧠 **How to remember:** *Best = lucky day, Worst = bad day. Big-O always plans for the **bad day**.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arrays",
+      "title": "Arrays",
+      "description": "Contiguous collections of same-type elements.",
+      "questions": [
+        {
+          "question": "What is an array?",
+          "answer": [
+            "An **array** holds a **fixed number** of elements of the **same type** in **contiguous** (side by side) memory. Each element has an **index** starting from `0`.",
+            { "code": [
+              "int arr[5] = {10, 20, 30, 40, 50};",
+              "// index:    0   1   2   3   4",
+              "// arr[2] is 30"
+            ] },
+            "Because elements are side by side, the computer finds any element directly using: `address = base_address + index * size_of_element`. So access is **O(1)**.",
+            "🧠 **How to remember:** *Array = a row of lockers with numbers (starting at 0). Jump to any locker instantly.*"
+          ]
+        },
+        {
+          "question": "What are the advantages and disadvantages of arrays?",
+          "answer": [
+            "**Advantages:**\n- Fast access by index, `O(1)`.\n- Simple and memory-friendly (good *cache* performance because data is side by side).",
+            "**Disadvantages:**\n- **Fixed size**, you must decide the size in advance.\n- **Insertion and deletion are slow**, `O(n)`, because elements must be shifted.\n- Wastes memory if the size is too big.",
+            "🧠 **How to remember:** *Array = **fast to read**, **slow to change**.*"
+          ]
+        },
+        {
+          "question": "What are the time complexities of array operations?",
+          "answer": [
+            { "code": [
+              "Operation              Time",
+              "---------------------------------",
+              "Access by index        O(1)",
+              "Search (unsorted)      O(n)",
+              "Search (sorted+binary) O(log n)",
+              "Insert at end         O(1)   (if space is available)",
+              "Insert at start/middle O(n)  (shifting needed)",
+              "Delete at start/middle O(n)  (shifting needed)"
+            ] },
+            "🧠 **How to remember:** *Anything that needs **shifting** costs O(n). Anything with a direct **index** costs O(1).*"
+          ]
+        },
+        {
+          "question": "How do you insert an element at a given position in an array?",
+          "answer": [
+            "Shift all elements from that position **one step right**, then place the new element.",
+            { "code": [
+              "// insert 'value' at index 'pos' (array has 'n' elements, has extra space)",
+              "void insertAt(int arr[], int *n, int pos, int value) {",
+              "    for (int i = *n - 1; i >= pos; i--)",
+              "        arr[i + 1] = arr[i];   // shift right",
+              "    arr[pos] = value;",
+              "    (*n)++;",
+              "}",
+              "",
+              "// Before: 10 20 30 40   insertAt(arr, &n, 2, 99)",
+              "// After : 10 20 99 30 40"
+            ] },
+            "🧠 **How to remember:** *Like a cinema row: to seat a new person in the middle, everyone after must **move one seat right**.*"
+          ]
+        },
+        {
+          "question": "How do you reverse an array?",
+          "answer": [
+            "Use **two pointers**: one at the start, one at the end. **Swap** and move them towards each other.",
+            { "code": [
+              "void reverse(int arr[], int n) {",
+              "    int i = 0, j = n - 1;",
+              "    while (i < j) {",
+              "        int temp = arr[i];",
+              "        arr[i] = arr[j];",
+              "        arr[j] = temp;",
+              "        i++;",
+              "        j--;",
+              "    }",
+              "}",
+              "// 1 2 3 4 5  ->  5 4 3 2 1   Time: O(n), Space: O(1)"
+            ] },
+            "🧠 **How to remember:** *Two friends at both ends of a rope swap places and walk to the middle.*"
+          ]
+        },
+        {
+          "question": "What is the difference between an array and a linked list?",
+          "answer": [
+            { "code": [
+              "Feature            Array              Linked List",
+              "---------------------------------------------------------",
+              "Memory             Contiguous         Scattered (nodes + pointers)",
+              "Size               Fixed              Dynamic",
+              "Access             O(1) by index      O(n)",
+              "Insert/Delete      O(n) (shifting)    O(1) if position known",
+              "Extra memory       None               Pointer in each node"
+            ] },
+            "🧠 **How to remember:** *Array = **book with page numbers** (jump anywhere). Linked list = **treasure hunt** (each clue points to the next).*"
+          ]
+        },
+        {
+          "question": "What is a 2D array? How is it stored in memory?",
+          "answer": [
+            "A **2D array** is an array of arrays, like a **table** with rows and columns.",
+            { "code": [
+              "int m[2][3] = { {1, 2, 3},",
+              "                {4, 5, 6} };",
+              "// m[1][2] is 6"
+            ] },
+            "In C, memory is **row-major**: the whole first row is stored, then the second row, and so on. So the memory looks like `1 2 3 4 5 6`.",
+            "Address formula: `address = base + (row * total_columns + col) * size`.",
+            "🧠 **How to remember:** *C reads like a book: **row by row**, left to right.*"
+          ]
+        },
+        {
+          "question": "What is the difference between an array and a pointer?",
+          "answer": [
+            "- An **array** is a block of memory with a fixed size. The array name gives the address of the first element, but you **cannot** reassign it.\n- A **pointer** is a variable that stores an address. You **can** change it to point elsewhere.",
+            { "code": [
+              "int arr[3] = {1, 2, 3};",
+              "int *p = arr;     // p points to arr[0]",
+              "p++;              // OK: p now points to arr[1]",
+              "// arr++;         // ERROR: array name cannot be changed",
+              "",
+              "// sizeof(arr) = 12 bytes (3 ints)",
+              "// sizeof(p)   = 8 bytes (just an address on a 64-bit system)"
+            ] },
+            "🧠 **How to remember:** *Array = the **house** (fixed). Pointer = a **paper with the address** (can be changed).*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings",
+      "title": "Strings",
+      "description": "Sequences of characters, especially C-style strings.",
+      "questions": [
+        {
+          "question": "What is a string in C?",
+          "answer": [
+            "In C, a **string** is an **array of characters** that ends with a special **null character** `'\\0'`. This tells C where the string ends.",
+            { "code": [
+              "char s[] = \"Hi\";",
+              "// memory: 'H'  'i'  '\\0'",
+              "// size is 3 bytes (2 letters + 1 null)"
+            ] },
+            "🧠 **How to remember:** *String = characters + a **full stop** (`\\0`) that says \"I am finished\".*"
+          ]
+        },
+        {
+          "question": "How do you find the length of a string without using strlen()?",
+          "answer": [
+            "Count characters until you reach `'\\0'`.",
+            { "code": [
+              "int myStrlen(const char *s) {",
+              "    int count = 0;",
+              "    while (s[count] != '\\0')",
+              "        count++;",
+              "    return count;",
+              "}",
+              "// myStrlen(\"hello\") returns 5"
+            ] },
+            "🧠 **How to remember:** *Walk along the letters until you hit the **stop sign** `\\0`.*"
+          ]
+        },
+        {
+          "question": "How do you reverse a string?",
+          "answer": [
+            "Use the **two pointer** method, the same as reversing an array.",
+            { "code": [
+              "void reverseStr(char *s) {",
+              "    int i = 0, j = 0;",
+              "    while (s[j] != '\\0') j++;   // find length",
+              "    j--;                        // last real character",
+              "    while (i < j) {",
+              "        char t = s[i];",
+              "        s[i] = s[j];",
+              "        s[j] = t;",
+              "        i++; j--;",
+              "    }",
+              "}",
+              "// \"abc\" -> \"cba\""
+            ] },
+            "🧠 **How to remember:** *Same trick as array reversal: swap from both ends.*"
+          ]
+        },
+        {
+          "question": "How do you check if a string is a palindrome?",
+          "answer": [
+            "A **palindrome** reads the same forward and backward (e.g. `madam`). Compare the first character with the last, the second with the second last, and so on.",
+            { "code": [
+              "int isPalindrome(const char *s, int len) {",
+              "    int i = 0, j = len - 1;",
+              "    while (i < j) {",
+              "        if (s[i] != s[j]) return 0;   // not a palindrome",
+              "        i++; j--;",
+              "    }",
+              "    return 1;                         // palindrome",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Palindrome = a **mirror word**. Compare the outside letters and move inward.*"
+          ]
+        },
+        {
+          "question": "What is the difference between char s[] = \"abc\" and char *s = \"abc\"?",
+          "answer": [
+            "- `char s[] = \"abc\";` creates a **modifiable copy** of the string in the array (on the stack). You can change letters.\n- `char *s = \"abc\";` points to a **string literal** stored in **read-only memory**. Changing it causes **undefined behavior** (usually a crash).",
+            { "code": [
+              "char a[] = \"abc\";",
+              "a[0] = 'X';        // OK -> \"Xbc\"",
+              "",
+              "char *b = \"abc\";",
+              "// b[0] = 'X';     // CRASH: read-only memory",
+              "const char *c = \"abc\";   // better: use const to be safe"
+            ] },
+            "🧠 **How to remember:** *Array = your **own copy** (you can scribble). Pointer to literal = a **printed notice board** (do not write on it).*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "linked-list",
+      "title": "Linked Lists",
+      "description": "Node-based sequences connected by pointers.",
+      "questions": [
+        {
+          "question": "What is a linked list?",
+          "answer": [
+            "A **linked list** is a linear data structure where each element is a **node**. Each node has two parts:\n- **data** (the value)\n- **next** (a pointer to the next node)",
+            "The last node points to `NULL`. The first node is called the **head**.",
+            { "code": [
+              "struct Node {",
+              "    int data;",
+              "    struct Node *next;",
+              "};",
+              "",
+              "// head -> [10|*] -> [20|*] -> [30|NULL]"
+            ] },
+            "🧠 **How to remember:** *Linked list = a **train**. Each coach (node) holds passengers (data) and is hooked to the next coach (pointer).*"
+          ]
+        },
+        {
+          "question": "What are the types of linked lists?",
+          "answer": [
+            "- **Singly linked list**: each node points only to the **next** node.\n- **Doubly linked list**: each node has **next** and **prev** pointers (you can move both ways).\n- **Circular linked list**: the last node points back to the **first** node, so there is no `NULL`.",
+            { "code": [
+              "Singly:    A -> B -> C -> NULL",
+              "Doubly:    NULL <- A <-> B <-> C -> NULL",
+              "Circular:  A -> B -> C -> (back to A)"
+            ] },
+            "🧠 **How to remember:** *Singly = one-way street. Doubly = two-way street. Circular = roundabout.*"
+          ]
+        },
+        {
+          "question": "How do you insert a node at the beginning of a singly linked list?",
+          "answer": [
+            "Create the new node, make it point to the current head, then make it the new head. This takes **O(1)** time.",
+            { "code": [
+              "struct Node* insertAtHead(struct Node *head, int value) {",
+              "    struct Node *n = malloc(sizeof(struct Node));",
+              "    n->data = value;",
+              "    n->next = head;   // 1. new node points to old head",
+              "    return n;         // 2. new node becomes head",
+              "}",
+              "// head = insertAtHead(head, 5);"
+            ] },
+            "🧠 **How to remember:** *New coach joins the **front** of the train: first hook it to the old front, then call it the new engine.*"
+          ]
+        },
+        {
+          "question": "How do you insert a node at the end of a singly linked list?",
+          "answer": [
+            "Travel to the **last node** (the one whose `next` is `NULL`) and attach the new node. This takes **O(n)** time (unless you keep a *tail* pointer).",
+            { "code": [
+              "struct Node* insertAtEnd(struct Node *head, int value) {",
+              "    struct Node *n = malloc(sizeof(struct Node));",
+              "    n->data = value;",
+              "    n->next = NULL;",
+              "    if (head == NULL) return n;   // empty list",
+              "    struct Node *cur = head;",
+              "    while (cur->next != NULL)",
+              "        cur = cur->next;",
+              "    cur->next = n;",
+              "    return head;",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Walk to the **last coach**, then hook the new coach behind it.*"
+          ]
+        },
+        {
+          "question": "How do you delete a node from a linked list?",
+          "answer": [
+            "Find the node, make the **previous node** skip it by pointing to the node after it, then `free` the memory.",
+            { "code": [
+              "struct Node* deleteNode(struct Node *head, int key) {",
+              "    if (head == NULL) return NULL;",
+              "    if (head->data == key) {            // deleting the head",
+              "        struct Node *t = head->next;",
+              "        free(head);",
+              "        return t;",
+              "    }",
+              "    struct Node *cur = head;",
+              "    while (cur->next != NULL && cur->next->data != key)",
+              "        cur = cur->next;",
+              "    if (cur->next != NULL) {",
+              "        struct Node *t = cur->next;",
+              "        cur->next = t->next;            // skip the node",
+              "        free(t);                        // avoid memory leak",
+              "    }",
+              "    return head;",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Remove a coach: **unhook, reconnect the two neighbours, then scrap it** (free).*"
+          ]
+        },
+        {
+          "question": "How do you reverse a singly linked list?",
+          "answer": [
+            "Use **three pointers**: `prev`, `curr`, `next`. For each node, flip its `next` pointer to point backward.",
+            { "code": [
+              "struct Node* reverse(struct Node *head) {",
+              "    struct Node *prev = NULL, *curr = head, *next = NULL;",
+              "    while (curr != NULL) {",
+              "        next = curr->next;   // save the next node",
+              "        curr->next = prev;   // flip the arrow",
+              "        prev = curr;         // move prev forward",
+              "        curr = next;         // move curr forward",
+              "    }",
+              "    return prev;             // new head",
+              "}",
+              "// 1->2->3->NULL  becomes  3->2->1->NULL",
+              "// Time: O(n), Space: O(1)"
+            ] },
+            "🧠 **How to remember:** *Remember **SFMM**: **S**ave next, **F**lip the arrow, **M**ove prev, **M**ove curr.*"
+          ]
+        },
+        {
+          "question": "How do you find the middle of a linked list?",
+          "answer": [
+            "Use the **slow and fast pointer** technique. The slow pointer moves **1 step**, the fast pointer moves **2 steps**. When fast reaches the end, slow is at the **middle**.",
+            { "code": [
+              "struct Node* findMiddle(struct Node *head) {",
+              "    struct Node *slow = head, *fast = head;",
+              "    while (fast != NULL && fast->next != NULL) {",
+              "        slow = slow->next;",
+              "        fast = fast->next->next;",
+              "    }",
+              "    return slow;",
+              "}",
+              "// 1->2->3->4->5 : middle is 3"
+            ] },
+            "🧠 **How to remember:** *Tortoise and Hare race. When the hare finishes, the tortoise is at the **halfway** point.*"
+          ]
+        },
+        {
+          "question": "How do you detect a loop (cycle) in a linked list?",
+          "answer": [
+            "Use **Floyd's Cycle Detection** (slow and fast pointers). If there is a loop, the fast pointer will eventually **meet** the slow pointer. If fast reaches `NULL`, there is no loop.",
+            { "code": [
+              "int hasCycle(struct Node *head) {",
+              "    struct Node *slow = head, *fast = head;",
+              "    while (fast != NULL && fast->next != NULL) {",
+              "        slow = slow->next;",
+              "        fast = fast->next->next;",
+              "        if (slow == fast) return 1;   // they met: loop exists",
+              "    }",
+              "    return 0;                         // reached NULL: no loop",
+              "}",
+              "// Time: O(n), Space: O(1)"
+            ] },
+            "🧠 **How to remember:** *Two runners on a **circular track**: the faster one will always catch the slower one. On a straight road, the fast one just reaches the end.*"
+          ]
+        },
+        {
+          "question": "What are the advantages of a doubly linked list over a singly linked list?",
+          "answer": [
+            "- You can move **both forward and backward**.\n- **Deleting** a node is easier because you already have the `prev` pointer.\n- Easy to implement structures like **browser back/forward** and **undo/redo**.",
+            "**Disadvantage:** each node needs **extra memory** for the `prev` pointer.",
+            { "code": [
+              "struct DNode {",
+              "    int data;",
+              "    struct DNode *prev;",
+              "    struct DNode *next;",
+              "};"
+            ] },
+            "🧠 **How to remember:** *Doubly = **D**ouble pointers = **D**irection both ways.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stack",
+      "title": "Stack",
+      "description": "Last In, First Out (LIFO) structure.",
+      "questions": [
+        {
+          "question": "What is a stack?",
+          "answer": [
+            "A **stack** is a linear data structure that follows the **LIFO** rule: **Last In, First Out**. The item added last is removed first. All work happens at one end, called the **top**.",
+            "Main operations:\n- `push(x)`: add an item on top\n- `pop()`: remove the top item\n- `peek()` / `top()`: look at the top item without removing it\n- `isEmpty()`, `isFull()`",
+            "Real-life example: a **stack of plates**. You put a plate on top and also take a plate from the top.",
+            "🧠 **How to remember:** *Stack = **pile of plates**. Last plate placed is the first plate picked.*"
+          ]
+        },
+        {
+          "question": "How do you implement a stack using an array?",
+          "answer": [
+            "Keep an integer `top` that tracks the index of the last item. Start with `top = -1` (empty).",
+            { "code": [
+              "#define MAX 5",
+              "int stack[MAX];",
+              "int top = -1;",
+              "",
+              "void push(int x) {",
+              "    if (top == MAX - 1) return;   // overflow: stack is full",
+              "    stack[++top] = x;",
+              "}",
+              "",
+              "int pop() {",
+              "    if (top == -1) return -1;     // underflow: stack is empty",
+              "    return stack[top--];",
+              "}",
+              "",
+              "int peek() {",
+              "    return (top == -1) ? -1 : stack[top];",
+              "}"
+            ] },
+            "All operations take **O(1)** time.",
+            "🧠 **How to remember:** *top = -1 means **empty**. Push = move up then store. Pop = read then move down.*"
+          ]
+        },
+        {
+          "question": "What are stack overflow and stack underflow?",
+          "answer": [
+            "- **Overflow**: pushing into a stack that is **already full**.\n- **Underflow**: popping from a stack that is **empty**.",
+            "In program execution, *stack overflow* also happens when a function calls itself endlessly (infinite recursion) and uses up all the call stack memory.",
+            { "code": [
+              "void f() {",
+              "    f();   // no stopping condition -> stack overflow (crash)",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Overflow = **over**filled glass. Underflow = **under** nothing, empty glass.*"
+          ]
+        },
+        {
+          "question": "What are the real-world applications of a stack?",
+          "answer": [
+            "- **Function calls** (the call stack stores local variables and return addresses).\n- **Undo / Redo** in editors.\n- **Browser back button**.\n- **Checking balanced brackets** like `{ [ ( ) ] }`.\n- **Expression evaluation** and conversion (infix to postfix).\n- **Depth First Search (DFS)** in graphs.",
+            "🧠 **How to remember:** *Anything where you must go **back to the most recent thing** uses a stack.*"
+          ]
+        },
+        {
+          "question": "How do you check for balanced parentheses using a stack?",
+          "answer": [
+            "Steps:\n1. Go through the string character by character.\n2. If it is an **opening** bracket `(`, `{`, `[` then **push** it.\n3. If it is a **closing** bracket, **pop** the top and check that it matches.\n4. At the end, the stack must be **empty**.",
+            { "code": [
+              "int isBalanced(const char *s) {",
+              "    char st[100]; int top = -1;",
+              "    for (int i = 0; s[i] != '\\0'; i++) {",
+              "        char c = s[i];",
+              "        if (c == '(' || c == '{' || c == '[') {",
+              "            st[++top] = c;",
+              "        } else if (c == ')' || c == '}' || c == ']') {",
+              "            if (top == -1) return 0;",
+              "            char o = st[top--];",
+              "            if ((c == ')' && o != '(') ||",
+              "                (c == '}' && o != '{') ||",
+              "                (c == ']' && o != '[')) return 0;",
+              "        }",
+              "    }",
+              "    return top == -1;",
+              "}",
+              "// \"{[()]}\" -> 1 (balanced)    \"{[(])}\" -> 0 (not balanced)"
+            ] },
+            "🧠 **How to remember:** *Open = **push**, Close = **pop and match**. At the end the stack must be **empty**.*"
+          ]
+        },
+        {
+          "question": "What is infix, prefix and postfix notation?",
+          "answer": [
+            "They are different ways of writing mathematical expressions:\n- **Infix**: operator is **between** operands. Example: `A + B`\n- **Prefix**: operator is **before** operands. Example: `+ A B`\n- **Postfix**: operator is **after** operands. Example: `A B +`",
+            "Computers like **postfix** because it needs no brackets and can be evaluated easily with a **stack**.",
+            { "code": [
+              "Infix  : (2 + 3) * 4",
+              "Postfix: 2 3 + 4 *",
+              "",
+              "Evaluate postfix with a stack:",
+              "push 2, push 3",
+              "see '+' -> pop 3 and 2, push 5",
+              "push 4",
+              "see '*' -> pop 4 and 5, push 20   => Answer: 20"
+            ] },
+            "🧠 **How to remember:** *Pre = operator **Pre**ceeds, Post = operator comes **Post** (after), In = operator stays **In** the middle.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "queue",
+      "title": "Queue",
+      "description": "First In, First Out (FIFO) structure and its variations.",
+      "questions": [
+        {
+          "question": "What is a queue?",
+          "answer": [
+            "A **queue** is a linear data structure that follows the **FIFO** rule: **First In, First Out**. Items are added at the **rear** (back) and removed from the **front**.",
+            "Main operations:\n- `enqueue(x)`: add at the rear\n- `dequeue()`: remove from the front\n- `front()`: see the first item\n- `isEmpty()`, `isFull()`",
+            "Real-life example: **people standing in a line** at a ticket counter.",
+            "🧠 **How to remember:** *Queue = **line of people**. First person in line is served first.*"
+          ]
+        },
+        {
+          "question": "How do you implement a queue using an array?",
+          "answer": [
+            { "code": [
+              "#define MAX 5",
+              "int q[MAX];",
+              "int front = 0, rear = -1, count = 0;",
+              "",
+              "void enqueue(int x) {",
+              "    if (count == MAX) return;     // queue full",
+              "    q[++rear] = x;",
+              "    count++;",
+              "}",
+              "",
+              "int dequeue() {",
+              "    if (count == 0) return -1;    // queue empty",
+              "    count--;",
+              "    return q[front++];",
+              "}"
+            ] },
+            "**Problem:** after many dequeues the front moves forward and the space at the start is wasted. A **circular queue** solves this.",
+            "🧠 **How to remember:** *Enqueue at **rear**, dequeue from **front**. Like entering a bus from the back and leaving from the front.*"
+          ]
+        },
+        {
+          "question": "What is a circular queue? Why do we need it?",
+          "answer": [
+            "In a **circular queue**, the last position is connected back to the first position. When `rear` reaches the end, it **wraps around** to index `0` if space is free there. This reuses empty space.",
+            "We use the **modulo** operator for wrapping:",
+            { "code": [
+              "#define MAX 5",
+              "int q[MAX];",
+              "int front = 0, rear = -1, count = 0;",
+              "",
+              "void enqueue(int x) {",
+              "    if (count == MAX) return;          // full",
+              "    rear = (rear + 1) % MAX;           // wrap around",
+              "    q[rear] = x;",
+              "    count++;",
+              "}",
+              "",
+              "int dequeue() {",
+              "    if (count == 0) return -1;         // empty",
+              "    int x = q[front];",
+              "    front = (front + 1) % MAX;         // wrap around",
+              "    count--;",
+              "    return x;",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Circular queue = a **merry-go-round**. When you reach the end, you come back to the start using `% MAX`.*"
+          ]
+        },
+        {
+          "question": "What is a deque (double-ended queue)?",
+          "answer": [
+            "A **deque** (pronounced *deck*) allows insertion and deletion at **both ends** (front and rear).",
+            "- `push_front`, `push_back`\n- `pop_front`, `pop_back`",
+            "It works like both a **stack** and a **queue**. Used in *sliding window* problems and *undo/redo* features.",
+            "🧠 **How to remember:** *De-que = **D**ouble-**E**nded queue = enter and exit from **both doors** of a bus.*"
+          ]
+        },
+        {
+          "question": "What is a priority queue?",
+          "answer": [
+            "A **priority queue** is a queue where every item has a **priority**. The item with the **highest priority** is removed first, not the one that came first.",
+            "Real-life example: an **hospital emergency room**. A serious patient is treated before a patient with a small cut, even if the second patient arrived earlier.",
+            "It is usually built using a **heap**. Insert and delete take **O(log n)**.",
+            "Used in: CPU task scheduling, Dijkstra's shortest path, Huffman coding.",
+            "🧠 **How to remember:** *Priority queue = **VIP line**. Most important goes first.*"
+          ]
+        },
+        {
+          "question": "What is the difference between a stack and a queue?",
+          "answer": [
+            { "code": [
+              "Feature        Stack                 Queue",
+              "------------------------------------------------------",
+              "Rule           LIFO (Last In First Out)   FIFO (First In First Out)",
+              "Insert at      Top                   Rear",
+              "Remove from    Top                   Front",
+              "Example        Pile of plates        Ticket counter line",
+              "Used in        Undo, recursion, DFS  Scheduling, BFS, buffers"
+            ] },
+            "🧠 **How to remember:** *Stack = **S**ame end (one end only). Queue = **Q**uietly wait in line (two ends).*"
+          ]
+        },
+        {
+          "question": "How can you implement a queue using two stacks?",
+          "answer": [
+            "Use two stacks: `in` and `out`.\n- **Enqueue**: always push into `in`.\n- **Dequeue**: if `out` is empty, move **all** items from `in` to `out` (this **reverses** the order), then pop from `out`.",
+            { "code": [
+              "Enqueue 1, 2, 3  ->  in  = [1, 2, 3]  (3 on top)",
+              "Dequeue:  out is empty, so move everything",
+              "          pop 3,2,1 from 'in' and push into 'out'",
+              "          out = [3, 2, 1]  (1 on top)",
+              "          pop from out -> 1   (FIFO works!)"
+            ] },
+            "🧠 **How to remember:** *Reversing a reversed pile gives the original order: **stack + stack = queue**.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hash-table",
+      "title": "Hash Table",
+      "description": "Key-value storage with very fast lookup.",
+      "questions": [
+        {
+          "question": "What is a hash table?",
+          "answer": [
+            "A **hash table** stores data as **key-value** pairs. A **hash function** converts the key into an **index** of an array, so we can find the value very quickly. Average time for insert, search and delete is **O(1)**.",
+            { "code": [
+              "int hash(int key, int size) {",
+              "    return key % size;     // simple hash function",
+              "}",
+              "",
+              "// size = 10",
+              "// key 25 -> index 5",
+              "// key 42 -> index 2"
+            ] },
+            "Real-life example: a **school locker system**. Your roll number tells you exactly which locker to open, no searching needed.",
+            "🧠 **How to remember:** *Hash table = **dictionary with magic index**. Key goes in the hash machine, index comes out.*"
+          ]
+        },
+        {
+          "question": "What is a hash function? What makes a good one?",
+          "answer": [
+            "A **hash function** converts a key into an array index. A **good** hash function:\n- is **fast** to compute,\n- gives the **same output** for the same key,\n- **spreads** keys evenly (few collisions).",
+            "🧠 **How to remember:** *Good hash = **F**ast, **C**onsistent, **E**venly spread → **FCE**.*"
+          ]
+        },
+        {
+          "question": "What is a collision in hashing? How is it handled?",
+          "answer": [
+            "A **collision** happens when **two different keys** give the **same index**. Example: with size 10, keys `15` and `25` both go to index `5`.",
+            "Two main solutions:\n- **Chaining (open hashing)**: each index holds a **linked list**. All keys with the same index are added to that list.\n- **Open addressing (closed hashing)**: if the spot is taken, **find another empty spot** in the array itself. Methods: *linear probing* (check next slot), *quadratic probing*, *double hashing*.",
+            { "code": [
+              "Chaining (size 10):",
+              "index 5 -> [15] -> [25] -> [35]",
+              "",
+              "Linear probing:",
+              "15 goes to index 5.",
+              "25 wants index 5 (taken) -> tries 6 -> stored at 6."
+            ] },
+            "🧠 **How to remember:** *Two people want the same seat. **Chaining** = they share the seat as a list. **Open addressing** = the second one finds the **next free seat**.*"
+          ]
+        },
+        {
+          "question": "What is the load factor?",
+          "answer": [
+            "**Load factor = number of items / size of the table**.",
+            "Example: 7 items in a table of size 10 → load factor = `0.7`.",
+            "If the load factor becomes **too high** (usually above `0.7`), collisions increase and the table becomes slow. Then we do **rehashing**: create a **bigger table** and re-insert all items.",
+            "🧠 **How to remember:** *Load factor = how **full** the cupboard is. Too full → buy a bigger cupboard.*"
+          ]
+        },
+        {
+          "question": "What is the worst-case time of a hash table? Compare with other structures.",
+          "answer": [
+            "- **Average:** `O(1)` for insert, search, delete.\n- **Worst case:** `O(n)`, when all keys collide into the same index.",
+            { "code": [
+              "Structure       Search      Insert",
+              "-----------------------------------",
+              "Array           O(n)        O(n)",
+              "Sorted Array    O(log n)    O(n)",
+              "Linked List     O(n)        O(1)",
+              "BST (balanced)  O(log n)    O(log n)",
+              "Hash Table      O(1) avg    O(1) avg"
+            ] },
+            "🧠 **How to remember:** *Hash table is **usually super fast**, but with a bad hash function everything piles into one bucket and becomes a slow list.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trees",
+      "title": "Trees",
+      "description": "Hierarchical structures: binary trees and binary search trees.",
+      "questions": [
+        {
+          "question": "What is a tree? Explain basic terminology.",
+          "answer": [
+            "A **tree** is a **non-linear** data structure with nodes connected in a **parent-child** hierarchy. It has no cycles.",
+            "- **Root**: the topmost node (no parent).\n- **Parent / Child**: a node above / below another node.\n- **Leaf**: a node with **no children**.\n- **Siblings**: nodes with the same parent.\n- **Edge**: the link between two nodes.\n- **Height**: the longest path from a node down to a leaf.\n- **Depth**: the distance from the root to that node.\n- **Subtree**: a node together with all its descendants.",
+            { "code": [
+              "        A          <- root",
+              "       / \\",
+              "      B   C        <- B and C are siblings",
+              "     / \\   \\",
+              "    D   E   F      <- D, E, F are leaves"
+            ] },
+            "🧠 **How to remember:** *Tree = **family tree**. Root = grandfather, leaves = youngest kids with no children.*"
+          ]
+        },
+        {
+          "question": "What is a binary tree?",
+          "answer": [
+            "A **binary tree** is a tree in which every node has **at most 2 children**: a **left** child and a **right** child.",
+            { "code": [
+              "struct TreeNode {",
+              "    int data;",
+              "    struct TreeNode *left;",
+              "    struct TreeNode *right;",
+              "};"
+            ] },
+            "🧠 **How to remember:** *Binary = **bi** = two. Maximum **two** kids per parent.*"
+          ]
+        },
+        {
+          "question": "What are the types of binary trees?",
+          "answer": [
+            "- **Full binary tree**: every node has **0 or 2** children (never 1).\n- **Complete binary tree**: all levels are completely filled **except possibly the last**, which is filled from **left to right**. (Heaps use this.)\n- **Perfect binary tree**: all internal nodes have 2 children and all leaves are at the **same level**.\n- **Balanced binary tree**: the height difference between left and right subtrees is small (at most 1 for AVL).\n- **Skewed tree**: every node has only one child (it looks like a linked list).",
+            "🧠 **How to remember:** *Full = no one has **one** child. Complete = fill **left to right**. Perfect = **everything** filled neatly like a pyramid.*"
+          ]
+        },
+        {
+          "question": "What are the tree traversals (Inorder, Preorder, Postorder)?",
+          "answer": [
+            "These are **Depth First** ways to visit every node. The name tells where the **root** is visited:\n- **Inorder**: Left → **Root** → Right\n- **Preorder**: **Root** → Left → Right\n- **Postorder**: Left → Right → **Root**",
+            { "code": [
+              "void inorder(struct TreeNode *root) {",
+              "    if (root == NULL) return;",
+              "    inorder(root->left);",
+              "    /* visit root: use root->data */",
+              "    inorder(root->right);",
+              "}",
+              "",
+              "// For this tree:     1",
+              "//                   / \\",
+              "//                  2   3",
+              "// Inorder   : 2 1 3",
+              "// Preorder  : 1 2 3",
+              "// Postorder : 2 3 1"
+            ] },
+            "**Level order** (Breadth First) visits level by level using a **queue**: `1 2 3`.",
+            "🧠 **How to remember:** *Pre = root **Pre**mier (first). In = root **In** the middle. Post = root **Post** (last).*"
+          ]
+        },
+        {
+          "question": "What is a Binary Search Tree (BST)?",
+          "answer": [
+            "A **BST** is a binary tree with this rule for every node:\n- All values in the **left** subtree are **smaller**.\n- All values in the **right** subtree are **bigger**.",
+            { "code": [
+              "        8",
+              "       / \\",
+              "      3   10",
+              "     / \\    \\",
+              "    1   6    14",
+              "",
+              "Inorder traversal gives sorted order: 1 3 6 8 10 14"
+            ] },
+            "Search, insert and delete take **O(log n)** on average (balanced), but **O(n)** in the worst case (skewed tree).",
+            "🧠 **How to remember:** *Left = **Less**, Right = **Right (greater)**. Inorder = **sorted**.*"
+          ]
+        },
+        {
+          "question": "How do you insert and search in a BST?",
+          "answer": [
+            "Compare the value with the current node. If **smaller**, go **left**. If **bigger**, go **right**. Repeat until you find the spot (insert) or the value (search).",
+            { "code": [
+              "struct TreeNode* insert(struct TreeNode *root, int val) {",
+              "    if (root == NULL) {",
+              "        struct TreeNode *n = malloc(sizeof(struct TreeNode));",
+              "        n->data = val; n->left = n->right = NULL;",
+              "        return n;",
+              "    }",
+              "    if (val < root->data) root->left  = insert(root->left, val);",
+              "    else if (val > root->data) root->right = insert(root->right, val);",
+              "    return root;",
+              "}",
+              "",
+              "int search(struct TreeNode *root, int val) {",
+              "    if (root == NULL) return 0;          // not found",
+              "    if (root->data == val) return 1;     // found",
+              "    if (val < root->data) return search(root->left, val);",
+              "    return search(root->right, val);",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Like a **number guessing game**: smaller → go left, bigger → go right.*"
+          ]
+        },
+        {
+          "question": "How do you find the height of a binary tree?",
+          "answer": [
+            "Height = `1 + max(height of left, height of right)`. An empty tree has height `0` (counting nodes).",
+            { "code": [
+              "int height(struct TreeNode *root) {",
+              "    if (root == NULL) return 0;",
+              "    int l = height(root->left);",
+              "    int r = height(root->right);",
+              "    return 1 + (l > r ? l : r);",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Ask both kids \"how tall are you?\", take the **taller** answer and add **1** for yourself.*"
+          ]
+        },
+        {
+          "question": "What are the ways to delete a node in a BST?",
+          "answer": [
+            "There are **3 cases**:\n1. **Leaf node** (no children): just remove it.\n2. **One child**: replace the node with its child.\n3. **Two children**: replace the node's value with its **inorder successor** (smallest value in the right subtree) or **inorder predecessor** (largest value in the left subtree), then delete that successor node.",
+            "🧠 **How to remember:** *0 kids → remove. 1 kid → kid takes the place. 2 kids → the **next bigger number** takes the place.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-trees",
+      "title": "Balanced & Special Trees",
+      "description": "AVL, Red-Black, B-Tree and Trie.",
+      "questions": [
+        {
+          "question": "What is an AVL tree?",
+          "answer": [
+            "An **AVL tree** is a **self-balancing BST**. For every node, the height difference between the left and right subtrees (**balance factor**) must be **-1, 0 or +1**. If it goes beyond, the tree does **rotations** to balance itself.",
+            "`Balance factor = height(left) - height(right)`",
+            "Rotations: **Left (LL), Right (RR), Left-Right (LR), Right-Left (RL)**.",
+            "Benefit: search, insert and delete are always **O(log n)**, never O(n).",
+            "🧠 **How to remember:** *AVL = a **strict teacher** who does not allow one side to grow more than 1 level taller.*"
+          ]
+        },
+        {
+          "question": "What is a Red-Black tree?",
+          "answer": [
+            "A **Red-Black tree** is another self-balancing BST where each node is coloured **red** or **black**. Rules:\n- The root is **black**.\n- A **red node** cannot have a red child (no two reds in a row).\n- Every path from a node to its leaves has the **same number of black nodes**.",
+            "It is **less strictly balanced** than AVL, so it needs **fewer rotations** during insert/delete. It is used in `std::map` and `std::set` in C++ and in the Linux kernel.",
+            "🧠 **How to remember:** *Red-Black = **traffic light rule**: two reds can never come together.*"
+          ]
+        },
+        {
+          "question": "What is a B-Tree and where is it used?",
+          "answer": [
+            "A **B-Tree** is a self-balancing tree where each node can have **many keys and many children** (not just 2). All leaves are at the **same level**.",
+            "It keeps the tree **short and wide**, so fewer disk reads are needed. That is why it is used in **databases** and **file systems** (a **B+ Tree** is common in database indexes).",
+            "🧠 **How to remember:** *B-Tree = **Big node** tree for **B**ig data on disk.*"
+          ]
+        },
+        {
+          "question": "What is a Trie (prefix tree)?",
+          "answer": [
+            "A **Trie** is a tree used to store **strings**. Each node represents a **character**, and the path from the root to a node forms a prefix or a word. Search time depends on the **word length**, not on the number of words.",
+            { "code": [
+              "Words: cat, car, dog",
+              "",
+              "         root",
+              "        /    \\",
+              "       c      d",
+              "       |      |",
+              "       a      o",
+              "      / \\     |",
+              "     t   r    g"
+            ] },
+            "Used for **autocomplete**, **spell check** and **dictionary** programs.",
+            "🧠 **How to remember:** *Trie = re**TRIE**val tree. Type **\"ca\"** and the phone suggests **cat, car** by following the path.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heap",
+      "title": "Heap",
+      "description": "Complete binary tree used for priority-based work.",
+      "questions": [
+        {
+          "question": "What is a heap?",
+          "answer": [
+            "A **heap** is a **complete binary tree** that follows the **heap property**:\n- **Max-Heap**: every parent is **greater than or equal** to its children. The **largest** is at the root.\n- **Min-Heap**: every parent is **smaller than or equal** to its children. The **smallest** is at the root.",
+            { "code": [
+              "Max-Heap:        50",
+              "                /  \\",
+              "              30    40",
+              "             / \\",
+              "           10   20"
+            ] },
+            "🧠 **How to remember:** *Max-Heap = **boss is the biggest**. Min-Heap = **boss is the smallest**.*"
+          ]
+        },
+        {
+          "question": "How is a heap stored in an array?",
+          "answer": [
+            "Because a heap is a **complete** tree, we store it **level by level** in an array. For a node at index `i` (starting from 0):\n- **Parent** = `(i - 1) / 2`\n- **Left child** = `2 * i + 1`\n- **Right child** = `2 * i + 2`",
+            { "code": [
+              "Tree:      50              Array: [50, 30, 40, 10, 20]",
+              "          /  \\             index:   0   1   2   3   4",
+              "        30    40",
+              "       / \\",
+              "     10   20",
+              "",
+              "Children of index 1 (30): index 3 (10) and index 4 (20)"
+            ] },
+            "🧠 **How to remember:** *Children = **2i+1** and **2i+2**. Parent = **(i-1)/2**.*"
+          ]
+        },
+        {
+          "question": "How does insertion and deletion work in a heap?",
+          "answer": [
+            "**Insert** (in a Max-Heap):\n1. Add the new item at the **end** of the array.\n2. **Bubble up**: while it is bigger than its parent, **swap** with the parent.",
+            "**Delete (extract max):**\n1. Remove the **root** (the max).\n2. Move the **last** item to the root.\n3. **Bubble down** (heapify): swap with the **larger child** until the heap property is restored.",
+            "Both take **O(log n)** time. Reading the max is **O(1)**.",
+            "🧠 **How to remember:** *Insert = **add at bottom, climb up**. Delete = **remove top, put last on top, sink down**.*"
+          ]
+        },
+        {
+          "question": "What is heapify?",
+          "answer": [
+            "**Heapify** is the process of fixing a node (and its subtree) so that it follows the heap property. It pushes a node **down** until it is in the correct place.",
+            { "code": [
+              "void heapify(int arr[], int n, int i) {   // max-heap",
+              "    int largest = i;",
+              "    int l = 2 * i + 1, r = 2 * i + 2;",
+              "    if (l < n && arr[l] > arr[largest]) largest = l;",
+              "    if (r < n && arr[r] > arr[largest]) largest = r;",
+              "    if (largest != i) {",
+              "        int t = arr[i]; arr[i] = arr[largest]; arr[largest] = t;",
+              "        heapify(arr, n, largest);          // keep sinking",
+              "    }",
+              "}"
+            ] },
+            "Building a heap from an array takes **O(n)** time.",
+            "🧠 **How to remember:** *Heapify = **sink the sinking node** by swapping with its bigger child.*"
+          ]
+        },
+        {
+          "question": "What is the difference between a heap and a BST?",
+          "answer": [
+            { "code": [
+              "Feature          Heap                    BST",
+              "------------------------------------------------------------",
+              "Order            Parent vs child only    Left < Root < Right",
+              "Shape            Complete tree           Any shape",
+              "Get min/max      O(1) at the root        O(log n)",
+              "Search any item  O(n)                    O(log n)",
+              "Sorted output    No                      Yes (inorder)",
+              "Use              Priority queue, heap sort  Searching, sorted data"
+            ] },
+            "🧠 **How to remember:** *Heap = **find the boss fast**. BST = **find anyone fast**.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "graphs",
+      "title": "Graphs",
+      "description": "Vertices connected by edges, with traversals and common algorithms.",
+      "questions": [
+        {
+          "question": "What is a graph?",
+          "answer": [
+            "A **graph** is a collection of **vertices (nodes)** connected by **edges**. It is used to show **relationships**.",
+            "Examples: cities connected by roads, friends on social media, computers in a network.",
+            "Types:\n- **Directed**: edges have a direction (A → B), like Instagram follow.\n- **Undirected**: edges go both ways (A — B), like Facebook friends.\n- **Weighted**: edges have a value (distance, cost).\n- **Cyclic / Acyclic**: has a loop or not.",
+            "🧠 **How to remember:** *Graph = **map of dots and lines**. Dots = places, lines = roads.*"
+          ]
+        },
+        {
+          "question": "How can a graph be represented in memory?",
+          "answer": [
+            "Two main ways:",
+            "**1. Adjacency Matrix**: a 2D array. `m[i][j] = 1` if there is an edge from `i` to `j`. Space: `O(V²)`. Checking an edge is `O(1)`.",
+            "**2. Adjacency List**: for each vertex, a list of its neighbours. Space: `O(V + E)`. Good for **sparse** graphs (few edges).",
+            { "code": [
+              "Graph: 0 - 1, 0 - 2, 1 - 2",
+              "",
+              "Adjacency Matrix:       Adjacency List:",
+              "    0 1 2               0 -> 1, 2",
+              "0 [ 0 1 1 ]             1 -> 0, 2",
+              "1 [ 1 0 1 ]             2 -> 0, 1",
+              "2 [ 1 1 0 ]"
+            ] },
+            "🧠 **How to remember:** *Matrix = **full attendance sheet** (uses more space). List = **each person writes only their friends**.*"
+          ]
+        },
+        {
+          "question": "What is BFS (Breadth First Search)?",
+          "answer": [
+            "**BFS** visits nodes **level by level**: first the start node, then all its neighbours, then their neighbours, and so on. It uses a **queue**. It finds the **shortest path** in an unweighted graph.",
+            { "code": [
+              "#define V 4",
+              "void bfs(int g[V][V], int start) {",
+              "    int visited[V] = {0};",
+              "    int q[V], front = 0, rear = 0;",
+              "    q[rear++] = start;",
+              "    visited[start] = 1;",
+              "    while (front < rear) {",
+              "        int u = q[front++];",
+              "        /* visit u here */",
+              "        for (int v = 0; v < V; v++) {",
+              "            if (g[u][v] && !visited[v]) {",
+              "                visited[v] = 1;",
+              "                q[rear++] = v;",
+              "            }",
+              "        }",
+              "    }",
+              "}",
+              "// Time: O(V + E) with adjacency list"
+            ] },
+            "🧠 **How to remember:** *BFS = **ripples in water**, spreading outward ring by ring. **B**FS uses **B**us queue (Queue).*"
+          ]
+        },
+        {
+          "question": "What is DFS (Depth First Search)?",
+          "answer": [
+            "**DFS** goes **as deep as possible** along one path, then **backtracks** and tries another. It uses a **stack** (or **recursion**).",
+            { "code": [
+              "#define V 4",
+              "int visited[V];",
+              "",
+              "void dfs(int g[V][V], int u) {",
+              "    visited[u] = 1;",
+              "    /* visit u here */",
+              "    for (int v = 0; v < V; v++) {",
+              "        if (g[u][v] && !visited[v])",
+              "            dfs(g, v);",
+              "    }",
+              "}",
+              "// Time: O(V + E) with adjacency list"
+            ] },
+            "🧠 **How to remember:** *DFS = **exploring a maze**: keep going deep, and when stuck, come back. **D**FS uses **D**eep **S**tack.*"
+          ]
+        },
+        {
+          "question": "What is the difference between BFS and DFS?",
+          "answer": [
+            { "code": [
+              "Feature         BFS                  DFS",
+              "---------------------------------------------------------",
+              "Data structure  Queue                Stack / Recursion",
+              "Goes            Level by level       Deep first, then back",
+              "Shortest path   Yes (unweighted)     Not guaranteed",
+              "Memory          More (wide graphs)   Less (usually)",
+              "Used for        Shortest path        Cycle detection, topological sort, mazes"
+            ] },
+            "🧠 **How to remember:** *BFS = **B**readth = go **wide** (queue). DFS = **D**epth = go **deep** (stack).*"
+          ]
+        },
+        {
+          "question": "How do you detect a cycle in a graph?",
+          "answer": [
+            "- **Undirected graph:** do DFS. If you reach an already visited node that is **not the parent** of the current node, there is a cycle. (Union-Find also works.)\n- **Directed graph:** do DFS and track nodes in the **current recursion path**. If you reach a node that is already in the current path, there is a cycle.",
+            "🧠 **How to remember:** *Walking in a maze and seeing **your own footprints again** means you are going in circles.*"
+          ]
+        },
+        {
+          "question": "What is a Minimum Spanning Tree (MST)? Name the algorithms.",
+          "answer": [
+            "A **spanning tree** connects **all vertices** of a graph using **V − 1 edges** with **no cycles**. The **Minimum Spanning Tree** is the one with the **smallest total edge weight**.",
+            "Real-life example: laying **cables** to connect all houses in a village using the **least cable**.",
+            "Algorithms:\n- **Kruskal's**: sort all edges by weight, keep adding the smallest edge that **does not form a cycle**.\n- **Prim's**: start from one vertex and always add the **cheapest edge** that connects a new vertex.",
+            "🧠 **How to remember:** *Kruskal = **K**eep the cheapest **edges**. Prim = **P**ick the cheapest next **vertex** from the growing tree.*"
+          ]
+        },
+        {
+          "question": "What is Dijkstra's algorithm?",
+          "answer": [
+            "**Dijkstra's algorithm** finds the **shortest path** from one source to all other vertices in a graph with **non-negative weights**.",
+            "Steps:\n1. Set the distance of the source to `0` and all others to **infinity**.\n2. Pick the unvisited vertex with the **smallest distance**.\n3. For each neighbour, check whether going through this vertex gives a **shorter** distance. If yes, **update** it.\n4. Repeat until all vertices are visited.",
+            "Using a **min-heap (priority queue)**, the time is `O((V + E) log V)`. It **does not work** with negative weights (use **Bellman-Ford** instead).",
+            "🧠 **How to remember:** *Dijkstra = **GPS navigation**: always go to the closest unvisited place first and update distances.*"
+          ]
+        },
+        {
+          "question": "What is topological sorting?",
+          "answer": [
+            "**Topological sort** arranges the vertices of a **Directed Acyclic Graph (DAG)** in a line so that for every edge `A → B`, `A` comes **before** `B`.",
+            "Example: **course prerequisites**. You must finish *Maths 1* before *Maths 2*.",
+            { "code": [
+              "Edges: Shirt -> Tie -> Jacket, Trousers -> Belt -> Jacket",
+              "",
+              "One valid order:",
+              "Shirt, Trousers, Tie, Belt, Jacket"
+            ] },
+            "It can be done using **DFS** (add a node after all its neighbours are done, then reverse) or **Kahn's algorithm** (repeatedly remove nodes with **in-degree 0**).",
+            "🧠 **How to remember:** *Topological sort = **getting dressed**: socks before shoes, shirt before jacket.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "title": "Sorting Algorithms",
+      "description": "Common sorting techniques and their complexities.",
+      "questions": [
+        {
+          "question": "What is Bubble Sort?",
+          "answer": [
+            "**Bubble sort** repeatedly compares **adjacent** elements and **swaps** them if they are in the wrong order. After each pass, the **largest** element *bubbles up* to the end.",
+            { "code": [
+              "void bubbleSort(int arr[], int n) {",
+              "    for (int i = 0; i < n - 1; i++) {",
+              "        int swapped = 0;",
+              "        for (int j = 0; j < n - i - 1; j++) {",
+              "            if (arr[j] > arr[j + 1]) {",
+              "                int t = arr[j]; arr[j] = arr[j + 1]; arr[j + 1] = t;",
+              "                swapped = 1;",
+              "            }",
+              "        }",
+              "        if (!swapped) break;   // already sorted: stop early",
+              "    }",
+              "}",
+              "// 5 3 1  -> pass 1: 3 1 5 -> pass 2: 1 3 5",
+              "// Time: O(n^2) worst/average, O(n) best. Space: O(1). Stable."
+            ] },
+            "🧠 **How to remember:** *Bubbles rise to the top: the **biggest bubble floats to the end** every round.*"
+          ]
+        },
+        {
+          "question": "What is Selection Sort?",
+          "answer": [
+            "**Selection sort** finds the **smallest** element in the unsorted part and **swaps** it to the front. Repeat for the next position.",
+            { "code": [
+              "void selectionSort(int arr[], int n) {",
+              "    for (int i = 0; i < n - 1; i++) {",
+              "        int min = i;",
+              "        for (int j = i + 1; j < n; j++)",
+              "            if (arr[j] < arr[min]) min = j;",
+              "        int t = arr[i]; arr[i] = arr[min]; arr[min] = t;",
+              "    }",
+              "}",
+              "// Time: O(n^2) always. Space: O(1). Not stable. Few swaps (max n-1)."
+            ] },
+            "🧠 **How to remember:** *Picking the **shortest student** and placing them at the front of the line, then the next shortest, and so on.*"
+          ]
+        },
+        {
+          "question": "What is Insertion Sort?",
+          "answer": [
+            "**Insertion sort** builds the sorted list one item at a time. Take the next item and **insert** it into its correct place among the already sorted items on the left, shifting bigger items right.",
+            { "code": [
+              "void insertionSort(int arr[], int n) {",
+              "    for (int i = 1; i < n; i++) {",
+              "        int key = arr[i];",
+              "        int j = i - 1;",
+              "        while (j >= 0 && arr[j] > key) {",
+              "            arr[j + 1] = arr[j];   // shift right",
+              "            j--;",
+              "        }",
+              "        arr[j + 1] = key;",
+              "    }",
+              "}",
+              "// Time: O(n^2) worst, O(n) best (nearly sorted). Space: O(1). Stable."
+            ] },
+            "Good for **small** or **almost sorted** data.",
+            "🧠 **How to remember:** *Sorting **playing cards in your hand**: pick a card and slide it into the right place.*"
+          ]
+        },
+        {
+          "question": "What is Merge Sort?",
+          "answer": [
+            "**Merge sort** uses **Divide and Conquer**:\n1. **Divide** the array into two halves.\n2. **Sort** each half (recursively).\n3. **Merge** the two sorted halves into one sorted array.",
+            { "code": [
+              "void merge(int a[], int l, int m, int r) {",
+              "    int n1 = m - l + 1, n2 = r - m;",
+              "    int L[n1], R[n2];",
+              "    for (int i = 0; i < n1; i++) L[i] = a[l + i];",
+              "    for (int j = 0; j < n2; j++) R[j] = a[m + 1 + j];",
+              "    int i = 0, j = 0, k = l;",
+              "    while (i < n1 && j < n2)",
+              "        a[k++] = (L[i] <= R[j]) ? L[i++] : R[j++];",
+              "    while (i < n1) a[k++] = L[i++];",
+              "    while (j < n2) a[k++] = R[j++];",
+              "}",
+              "",
+              "void mergeSort(int a[], int l, int r) {",
+              "    if (l >= r) return;",
+              "    int m = l + (r - l) / 2;",
+              "    mergeSort(a, l, m);",
+              "    mergeSort(a, m + 1, r);",
+              "    merge(a, l, m, r);",
+              "}",
+              "// Time: O(n log n) always. Space: O(n). Stable."
+            ] },
+            "🧠 **How to remember:** *Merge sort = **cut the pile in half again and again**, then **zip** the sorted halves together.*"
+          ]
+        },
+        {
+          "question": "What is Quick Sort?",
+          "answer": [
+            "**Quick sort** also uses **Divide and Conquer**:\n1. Choose a **pivot** element.\n2. **Partition**: put smaller elements to the left of the pivot and bigger ones to the right.\n3. Recursively sort the left and right parts.",
+            { "code": [
+              "int partition(int a[], int low, int high) {",
+              "    int pivot = a[high];",
+              "    int i = low - 1;",
+              "    for (int j = low; j < high; j++) {",
+              "        if (a[j] < pivot) {",
+              "            i++;",
+              "            int t = a[i]; a[i] = a[j]; a[j] = t;",
+              "        }",
+              "    }",
+              "    int t = a[i + 1]; a[i + 1] = a[high]; a[high] = t;",
+              "    return i + 1;",
+              "}",
+              "",
+              "void quickSort(int a[], int low, int high) {",
+              "    if (low < high) {",
+              "        int p = partition(a, low, high);",
+              "        quickSort(a, low, p - 1);",
+              "        quickSort(a, p + 1, high);",
+              "    }",
+              "}",
+              "// Average: O(n log n). Worst: O(n^2) (bad pivot). Space: O(log n). Not stable."
+            ] },
+            "🧠 **How to remember:** *Quick sort = **pick a captain (pivot)**. Smaller players stand on the left, bigger on the right. Repeat in each group.*"
+          ]
+        },
+        {
+          "question": "What is Heap Sort?",
+          "answer": [
+            "**Heap sort** first builds a **Max-Heap**. Then it repeatedly **swaps the root (largest)** with the last item, reduces the heap size by one, and **heapifies** again.",
+            "Time: **O(n log n)** in all cases. Space: **O(1)**. **Not stable**.",
+            "🧠 **How to remember:** *Keep removing the **boss (max)** from the top and putting it at the back. The remaining team re-selects a boss.*"
+          ]
+        },
+        {
+          "question": "Compare all sorting algorithms.",
+          "answer": [
+            { "code": [
+              "Algorithm       Best        Average     Worst       Space     Stable",
+              "-------------------------------------------------------------------",
+              "Bubble          O(n)        O(n^2)      O(n^2)      O(1)      Yes",
+              "Selection       O(n^2)      O(n^2)      O(n^2)      O(1)      No",
+              "Insertion       O(n)        O(n^2)      O(n^2)      O(1)      Yes",
+              "Merge           O(n log n)  O(n log n)  O(n log n)  O(n)      Yes",
+              "Quick           O(n log n)  O(n log n)  O(n^2)      O(log n)  No",
+              "Heap            O(n log n)  O(n log n)  O(n log n)  O(1)      No"
+            ] },
+            "🧠 **How to remember:** *The three **simple** sorts (Bubble, Selection, Insertion) are **n²**. The three **smart** sorts (Merge, Quick, Heap) are **n log n**. Only **Merge** needs extra memory O(n), and only **Quick** has bad worst case.*"
+          ]
+        },
+        {
+          "question": "What is a stable sorting algorithm?",
+          "answer": [
+            "A sort is **stable** if items with **equal keys** keep their **original order** after sorting.",
+            { "code": [
+              "Students (name, marks): (Amit,80) (Ravi,90) (Sam,80)",
+              "",
+              "Stable sort by marks:   (Amit,80) (Sam,80) (Ravi,90)   <- Amit still before Sam",
+              "Unstable could give:    (Sam,80) (Amit,80) (Ravi,90)   <- order changed"
+            ] },
+            "Stable sorts: **Bubble, Insertion, Merge**. Not stable: **Selection, Quick, Heap**.",
+            "🧠 **How to remember:** *Stable = **\"first come, first served\"** is respected even when marks are equal.*"
+          ]
+        },
+        {
+          "question": "What is an in-place sorting algorithm?",
+          "answer": [
+            "An **in-place** algorithm sorts the data using only a **small constant extra memory** (like a few variables). It does not need a second big array.",
+            "In-place: **Bubble, Selection, Insertion, Heap, Quick** (Quick uses a little stack memory for recursion).\nNot in-place: **Merge sort** (needs an extra array of size n).",
+            "🧠 **How to remember:** *In-place = **rearranging furniture inside the same room** without moving to a new room.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "searching",
+      "title": "Searching Algorithms",
+      "description": "Linear and binary search.",
+      "questions": [
+        {
+          "question": "What is Linear Search?",
+          "answer": [
+            "**Linear search** checks every element **one by one** from the start until it finds the target or reaches the end. It works on **unsorted** data.",
+            { "code": [
+              "int linearSearch(int arr[], int n, int key) {",
+              "    for (int i = 0; i < n; i++) {",
+              "        if (arr[i] == key) return i;   // found at index i",
+              "    }",
+              "    return -1;                         // not found",
+              "}",
+              "// Time: O(n). Space: O(1)."
+            ] },
+            "🧠 **How to remember:** *Looking for your keys by **checking every pocket one by one**.*"
+          ]
+        },
+        {
+          "question": "What is Binary Search?",
+          "answer": [
+            "**Binary search** works only on a **sorted** array. Check the **middle** element:\n- If it is the target, done.\n- If target is **smaller**, search the **left half**.\n- If target is **bigger**, search the **right half**.\nEach step **cuts the search area in half**.",
+            { "code": [
+              "int binarySearch(int arr[], int n, int key) {",
+              "    int low = 0, high = n - 1;",
+              "    while (low <= high) {",
+              "        int mid = low + (high - low) / 2;   // avoids overflow",
+              "        if (arr[mid] == key) return mid;",
+              "        else if (key < arr[mid]) high = mid - 1;",
+              "        else low = mid + 1;",
+              "    }",
+              "    return -1;",
+              "}",
+              "// Time: O(log n). Space: O(1)."
+            ] },
+            "🧠 **How to remember:** *Guess the number between 1 and 100: say 50. \"Higher?\" Then 75... **Always halve it**.*"
+          ]
+        },
+        {
+          "question": "Why do we write mid = low + (high - low) / 2 instead of (low + high) / 2?",
+          "answer": [
+            "If `low` and `high` are both very large, `low + high` can **overflow** the `int` limit and become a wrong (negative) number. The formula `low + (high - low) / 2` gives the **same result** but is **safe**.",
+            "🧠 **How to remember:** *Start from low and add **half the distance**. Never add two giant numbers.*"
+          ]
+        },
+        {
+          "question": "Linear search vs Binary search: when to use which?",
+          "answer": [
+            { "code": [
+              "Feature        Linear Search      Binary Search",
+              "---------------------------------------------------",
+              "Data needed    Any order          Must be sorted",
+              "Time           O(n)               O(log n)",
+              "Works on       Arrays, lists      Arrays (random access)",
+              "Simplicity     Very simple        Slightly tricky"
+            ] },
+            "Use **linear** for small or unsorted data. Use **binary** for large sorted data. Binary search does **not** work well on linked lists because you cannot jump to the middle in O(1).",
+            "🧠 **How to remember:** *Linear = **line by line**. Binary = **split in two** (needs order).*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recursion-dp",
+      "title": "Recursion & Dynamic Programming",
+      "description": "Functions calling themselves and remembering results.",
+      "questions": [
+        {
+          "question": "What is recursion?",
+          "answer": [
+            "**Recursion** is when a function **calls itself** to solve a smaller version of the same problem. Every recursive function needs:\n- A **base case**: a condition where it stops.\n- A **recursive case**: the function calls itself with a smaller input.",
+            { "code": [
+              "int factorial(int n) {",
+              "    if (n == 0 || n == 1) return 1;   // base case",
+              "    return n * factorial(n - 1);      // recursive case",
+              "}",
+              "// factorial(4) = 4 * 3 * 2 * 1 = 24"
+            ] },
+            "Without a base case, you get **infinite recursion** and a **stack overflow**.",
+            "🧠 **How to remember:** *Russian dolls: open a doll, find a smaller doll, repeat until the **smallest doll (base case)**.*"
+          ]
+        },
+        {
+          "question": "What is the difference between recursion and iteration?",
+          "answer": [
+            "- **Recursion**: a function calls itself. Uses the **call stack** (more memory). Code is often **shorter and cleaner**.\n- **Iteration**: uses loops (`for`, `while`). Uses **less memory** and is usually **faster**.",
+            { "code": [
+              "// Sum of 1..n",
+              "int sumRec(int n)  { return n == 0 ? 0 : n + sumRec(n - 1); }",
+              "",
+              "int sumLoop(int n) {",
+              "    int s = 0;",
+              "    for (int i = 1; i <= n; i++) s += i;",
+              "    return s;",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Recursion = **elegant but heavy**. Loop = **plain but light**.*"
+          ]
+        },
+        {
+          "question": "What is Dynamic Programming (DP)?",
+          "answer": [
+            "**Dynamic Programming** solves a big problem by breaking it into **smaller overlapping problems** and **storing (remembering)** their answers so we never compute the same thing twice.",
+            "It works when the problem has:\n- **Overlapping subproblems** (same small problem repeats).\n- **Optimal substructure** (the best answer is built from best answers of small parts).",
+            "Two styles:\n- **Memoization (top-down)**: recursion + store results in a table.\n- **Tabulation (bottom-up)**: fill a table from the smallest problem up using loops.",
+            "🧠 **How to remember:** *DP = **recursion with a notebook**. Write down answers so you never solve the same question twice.*"
+          ]
+        },
+        {
+          "question": "How does DP improve the Fibonacci series?",
+          "answer": [
+            "Plain recursion recalculates the same values again and again, giving `O(2^n)` time. DP stores each result once, giving `O(n)` time.",
+            { "code": [
+              "// Slow: O(2^n)",
+              "int fib(int n) {",
+              "    if (n <= 1) return n;",
+              "    return fib(n - 1) + fib(n - 2);",
+              "}",
+              "",
+              "// Fast: O(n) using tabulation",
+              "int fibDP(int n) {",
+              "    if (n <= 1) return n;",
+              "    int dp[n + 1];",
+              "    dp[0] = 0; dp[1] = 1;",
+              "    for (int i = 2; i <= n; i++)",
+              "        dp[i] = dp[i - 1] + dp[i - 2];",
+              "    return dp[n];",
+              "}",
+              "// Series: 0 1 1 2 3 5 8 13 ..."
+            ] },
+            "🧠 **How to remember:** *Do not ask the same question twice. **Write the answer in the notebook (dp array)** and look it up.*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "choosing-ds",
+      "title": "Comparison & Tricky Questions",
+      "description": "Choosing the right data structure and common interview confusions.",
+      "questions": [
+        {
+          "question": "Which data structure should I choose for which situation?",
+          "answer": [
+            { "code": [
+              "Need                                      Use",
+              "----------------------------------------------------------",
+              "Fast access by index                      Array",
+              "Frequent insert/delete in the middle      Linked List",
+              "Undo / Back / recursion                   Stack",
+              "Order of arrival (printer, tasks)         Queue",
+              "Fast lookup by key                        Hash Table",
+              "Sorted data with fast search/insert       Balanced BST (AVL / Red-Black)",
+              "Always need min or max quickly            Heap / Priority Queue",
+              "Prefix search / autocomplete              Trie",
+              "Relationships / networks / maps           Graph"
+            ] },
+            "🧠 **How to remember:** *Ask yourself: **\"What do I do most - read, insert, search, or get min/max?\"** and pick the structure built for that job.*"
+          ]
+        },
+        {
+          "question": "Give a complete time complexity summary of all data structures.",
+          "answer": [
+            { "code": [
+              "Structure        Access     Search     Insert     Delete",
+              "---------------------------------------------------------",
+              "Array            O(1)       O(n)       O(n)       O(n)",
+              "Linked List      O(n)       O(n)       O(1)*      O(1)*",
+              "Stack            O(n)       O(n)       O(1)       O(1)",
+              "Queue            O(n)       O(n)       O(1)       O(1)",
+              "Hash Table       -          O(1) avg   O(1) avg   O(1) avg",
+              "BST (balanced)   O(log n)   O(log n)   O(log n)   O(log n)",
+              "BST (skewed)     O(n)       O(n)       O(n)       O(n)",
+              "Heap             -          O(n)       O(log n)   O(log n)",
+              "",
+              "* when the position (node) is already known"
+            ] },
+            "🧠 **How to remember:** *Array = fast **read**. Linked list = fast **change**. Hash = fast **everything (on average)**. Balanced tree = steady **log n**.*"
+          ]
+        },
+        {
+          "question": "What is the difference between stack memory and heap memory?",
+          "answer": [
+            "- **Stack memory**: automatic memory for **local variables** and **function calls**. Fast, small, managed automatically. Memory is freed when the function returns.\n- **Heap memory**: memory you request manually with `malloc` / `new`. Bigger and slower. **You must free it** yourself using `free` / `delete`, otherwise you get a **memory leak**.",
+            { "code": [
+              "void demo() {",
+              "    int a = 10;                          // stack: freed automatically",
+              "    int *p = malloc(sizeof(int));        // heap: you must free it",
+              "    *p = 20;",
+              "    free(p);                             // release heap memory",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Stack = **hotel room** (auto cleaned at checkout). Heap = **rented house** (you must return the keys yourself).*"
+          ]
+        },
+        {
+          "question": "What is a memory leak in the context of linked lists and trees?",
+          "answer": [
+            "A **memory leak** happens when you allocate memory (`malloc`) but **never free** it, and you lose the pointer to it. In linked lists and trees, this often happens when you **delete the head or root pointer** without freeing the other nodes.",
+            { "code": [
+              "// Wrong: the remaining nodes are lost forever",
+              "head = NULL;",
+              "",
+              "// Right: free every node one by one",
+              "void freeList(struct Node *head) {",
+              "    while (head != NULL) {",
+              "        struct Node *t = head;",
+              "        head = head->next;",
+              "        free(t);",
+              "    }",
+              "}"
+            ] },
+            "🧠 **How to remember:** *Every **malloc** needs a matching **free**, like every **borrowed book** needs a return.*"
+          ]
+        },
+        {
+          "question": "What is a dangling pointer and a NULL pointer?",
+          "answer": [
+            "- A **NULL pointer** points to **nothing** (address 0). It is safe to check but **dereferencing** it crashes the program.\n- A **dangling pointer** points to memory that has **already been freed**. Using it causes **undefined behavior**.",
+            { "code": [
+              "int *p = malloc(sizeof(int));",
+              "free(p);        // memory released",
+              "// p is now dangling!",
+              "p = NULL;       // good practice: set to NULL after free"
+            ] },
+            "🧠 **How to remember:** *NULL = **empty address slip**. Dangling = **address of a demolished house**. Always write NULL after free.*"
+          ]
+        },
+        {
+          "question": "What is the difference between a graph and a tree?",
+          "answer": [
+            { "code": [
+              "Feature      Tree                         Graph",
+              "--------------------------------------------------------------",
+              "Cycles       Never                        Allowed",
+              "Root         Has one root                 No root",
+              "Edges        Exactly n-1 for n nodes      Any number",
+              "Path         Exactly one path between 2   Can be many paths",
+              "Direction    Parent to child              Directed or undirected"
+            ] },
+            "A **tree is a special graph**: connected and with no cycles.",
+            "🧠 **How to remember:** *Every tree is a graph, but not every graph is a tree. Tree = **no loops, one root**.*"
+          ]
+        }
+      ]
+    }
+  ]
+}
