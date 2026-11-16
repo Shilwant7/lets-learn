@@ -1,0 +1,1993 @@
+{
+  "topics": [
+    {
+      "id": "threading-basics",
+      "title": "Threading Basics",
+      "description": "Core concepts every multithreading interview starts with.",
+      "questions": [
+        {
+          "question": "What is the difference between a process and a thread?",
+          "answer": [
+            "A **process** is a running program with its own private address space (code, heap, globals, open files). A **thread** is a path of execution *inside* a process.",
+            "- Threads of one process **share**: heap, global/static data, code, open file descriptors.\n- Each thread has its **own**: stack, registers, program counter, thread-local storage, errno.\n- Creating a thread and switching between threads is cheaper than for processes.\n- A crash (for example a segmentation fault) in one thread kills the **whole process**, while processes are isolated from each other.",
+            "Think of a process as a house and threads as the people living in it. They share the kitchen (heap) but each has their own bed (stack)."
+          ]
+        },
+        {
+          "question": "What is the difference between concurrency and parallelism?",
+          "answer": [
+            "**Concurrency** means several tasks are *in progress* at the same time (they may take turns on one CPU core). **Parallelism** means several tasks are *actually running* at the same instant on different cores.",
+            "Concurrency is about structure (dealing with many things). Parallelism is about execution (doing many things). A single-core machine can be concurrent but not parallel."
+          ]
+        },
+        {
+          "question": "Why do we use multithreading? What are its disadvantages?",
+          "answer": [
+            "**Advantages:** use multiple cores for speed, keep a UI or server responsive while work happens in the background, overlap slow I/O (network, disk) with computation, and share data easily because of the common address space.",
+            "**Disadvantages:** race conditions, deadlocks, harder debugging (bugs appear randomly), locking overhead, and more complex design. More threads than cores can even make a program slower."
+          ]
+        },
+        {
+          "question": "What are the states of a thread?",
+          "answer": [
+            "- **New / Created:** thread object exists but has not started.\n- **Ready (Runnable):** waiting for the scheduler to give it a CPU.\n- **Running:** executing on a CPU.\n- **Blocked / Waiting:** waiting for a mutex, condition, I/O or sleep.\n- **Terminated:** function returned or thread was cancelled. A terminated thread that is not joined stays as a *zombie* until joined (or is detached)."
+          ]
+        },
+        {
+          "question": "What is a context switch and why is it expensive?",
+          "answer": [
+            "A context switch is when the OS stops one thread and starts another. It saves the registers and program counter of the old thread and loads those of the new one.",
+            "The direct cost is small (microseconds), but the **indirect cost is large**: CPU caches and the TLB become cold for the new thread. Thread switches within the same process are cheaper than process switches because the address space does not change (no TLB flush).",
+            "Too many runnable threads means too many context switches, which is why a thread pool sized near the number of cores is common."
+          ]
+        },
+        {
+          "question": "What are user-level threads and kernel-level threads?",
+          "answer": [
+            "**Kernel threads** are known and scheduled by the OS. They can run on different cores, and one blocking system call does not block the others.",
+            "**User-level (green) threads** are scheduled by a library in user space. They are fast to create and switch, but the kernel sees only one thread, so they cannot use many cores and one blocking call can stop all of them.",
+            "Linux pthreads (NPTL) use the **1:1 model**: each pthread is one kernel thread. C++ `std::thread` is normally built on top of pthreads."
+          ]
+        },
+        {
+          "question": "What is a race condition and what is a data race? Are they the same?",
+          "answer": [
+            "A **race condition** is a bug where the result depends on the timing or order of threads. A **data race** is a specific situation: two threads access the *same memory location* at the same time, at least one is a *write*, and there is no synchronisation.",
+            "In C and C++ a data race is **undefined behaviour**. You can have a race condition without a data race (all accesses are locked, but the logic is still wrong, for example check-then-act) and a data race is almost always a race condition.",
+            "Example of a data race: two threads doing `counter++` on a plain `int`. `counter++` is really read, add, write, so updates can be lost."
+          ]
+        },
+        {
+          "question": "What is a critical section?",
+          "answer": [
+            "A piece of code that accesses shared data and must be executed by **only one thread at a time**. You protect it with a mutex (or other lock).",
+            "A good critical section is **as short as possible**: do slow work (I/O, heavy computation) outside it."
+          ]
+        },
+        {
+          "question": "What is thread safety? What is reentrancy? Are they the same?",
+          "answer": [
+            "A function is **thread-safe** if it gives correct results when called from many threads at once. A function is **reentrant** if it can be interrupted in the middle and called again (by another thread or by a signal handler) before the first call finishes.",
+            "They are not the same. A function that uses a global buffer but locks it with a mutex is thread-safe but **not** reentrant (a signal handler that interrupts it while the lock is held would deadlock). A reentrant function uses only its own arguments and local variables, so it is automatically thread-safe.",
+            "Classic example: `strtok` and `localtime` use static storage and are not thread-safe. Use `strtok_r` and `localtime_r`."
+          ]
+        },
+        {
+          "question": "What is Amdahl's law?",
+          "answer": [
+            "It gives the maximum speed-up from parallelism: `speedup = 1 / ((1 - P) + P / N)` where **P** is the fraction of the program that can run in parallel and **N** is the number of cores.",
+            "If 90% of the code is parallel (P = 0.9), even with infinite cores the speed-up is at most 10x, because the 10% serial part always remains. So reduce the serial part and the locking, rather than only adding cores."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pthreads-basics",
+      "title": "Pthreads: Creation and Lifecycle",
+      "description": "POSIX threads: create, join, detach, attributes, cancellation and signals.",
+      "questions": [
+        {
+          "question": "How do you create a thread with pthreads? What are the signature and the compile flag?",
+          "answer": [
+            "Use `pthread_create(&tid, attr, start_routine, arg)`. The start routine must have the form `void *fn(void *)`. It returns 0 on success, or an **error number** (it does not set errno).",
+            "Compile and link with `-pthread` (better than only `-lpthread`, because it also sets the correct preprocessor flags).",
+            {
+              "code": [
+                "#include <pthread.h>",
+                "#include <stdio.h>",
+                "",
+                "void *hello(void *arg) {",
+                "    printf(\"Hello from thread, arg = %d\\n\", *(int *)arg);",
+                "    return NULL;",
+                "}",
+                "",
+                "int main(void) {",
+                "    pthread_t t;",
+                "    int value = 42;",
+                "    if (pthread_create(&t, NULL, hello, &value) != 0) return 1;",
+                "    pthread_join(t, NULL);   // wait for the thread to finish",
+                "    return 0;",
+                "}"
+              ]
+            },
+            "Build with: `gcc -pthread main.c -o main`"
+          ]
+        },
+        {
+          "question": "What is the difference between pthread_join and pthread_detach?",
+          "answer": [
+            "`pthread_join(t, &ret)` blocks until thread `t` ends, collects its return value and frees its resources. `pthread_detach(t)` says nobody will join it, and the system frees its resources automatically when it ends.",
+            "- A thread must be **either joined or detached**, otherwise its resources leak (zombie thread).\n- You cannot join a detached thread, and you cannot join the same thread twice (undefined behaviour).\n- With a detached thread you cannot get its return value, and you do not know when it finishes, so be careful that it does not use data that has already been destroyed.",
+            {
+              "code": [
+                "pthread_t t;",
+                "pthread_create(&t, NULL, worker, NULL);",
+                "pthread_detach(t);          // fire and forget",
+                "// or create it detached:",
+                "pthread_attr_t attr;",
+                "pthread_attr_init(&attr);",
+                "pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);",
+                "pthread_create(&t, &attr, worker, NULL);",
+                "pthread_attr_destroy(&attr);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you pass arguments to a thread and get a result back?",
+          "answer": [
+            "Pass a pointer to a struct for many arguments. Return a result with `return ptr;` or `pthread_exit(ptr)`, and receive it from `pthread_join`.",
+            "The returned pointer must point to memory that is still valid: **heap memory**, a global, or memory owned by the caller. Never return the address of a local variable.",
+            {
+              "code": [
+                "typedef struct { int a, b; } args_t;",
+                "",
+                "void *add(void *p) {",
+                "    args_t *in = p;",
+                "    int *result = malloc(sizeof *result);   // heap, survives the thread",
+                "    *result = in->a + in->b;",
+                "    return result;",
+                "}",
+                "",
+                "args_t args = {3, 4};",
+                "pthread_t t;",
+                "pthread_create(&t, NULL, add, &args);",
+                "int *res;",
+                "pthread_join(t, (void **)&res);",
+                "printf(\"%d\\n\", *res);   // 7",
+                "free(res);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is wrong with passing &i of a loop variable to pthread_create? (very common bug)",
+          "answer": [
+            "All threads receive the **same address**. By the time a thread reads `*arg`, the loop may have already changed `i`, so several threads see the same (or a wrong) value.",
+            {
+              "code": [
+                "// BUG: threads may all print 5",
+                "for (int i = 0; i < 5; i++)",
+                "    pthread_create(&t[i], NULL, work, &i);",
+                "",
+                "// FIX 1: give each thread its own copy",
+                "int ids[5];",
+                "for (int i = 0; i < 5; i++) {",
+                "    ids[i] = i;",
+                "    pthread_create(&t[i], NULL, work, &ids[i]);",
+                "}",
+                "",
+                "// FIX 2: pass the value itself in the pointer (works for small ints)",
+                "pthread_create(&t[i], NULL, work, (void *)(intptr_t)i);"
+              ]
+            },
+            "The same type of bug happens when you pass the address of a **local variable** to a thread and the function returns before the thread uses it."
+          ]
+        },
+        {
+          "question": "What is the difference between pthread_exit() and exit() and return from main()?",
+          "answer": [
+            "- `pthread_exit()` ends **only the calling thread**.\n- `exit()` (or `return` from `main`) ends the **whole process**, and all other threads are killed immediately, even if they are still working.\n- If `main` calls `pthread_exit()` instead of returning, the process keeps running until the last thread finishes.",
+            "That is why a program that creates threads but does not `join` them often prints nothing: `main` returns, and the process dies before the threads get to run."
+          ]
+        },
+        {
+          "question": "What are thread attributes (pthread_attr_t)? How do you change the stack size?",
+          "answer": [
+            "Attributes are set before creation: detach state, stack size and address, scheduling policy and priority, scope, and CPU affinity (non-portable).",
+            "The default stack size on Linux is usually **8 MB** (from `ulimit -s`). With many threads this uses a lot of *virtual* memory. Deep recursion or big local arrays in a thread can overflow its stack, so you may need to increase it, or reduce it for thousands of threads.",
+            {
+              "code": [
+                "pthread_attr_t attr;",
+                "pthread_attr_init(&attr);",
+                "pthread_attr_setstacksize(&attr, 1024 * 1024);   // 1 MB",
+                "pthread_create(&t, &attr, work, NULL);",
+                "pthread_attr_destroy(&attr);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you get the thread ID? How do you compare two thread IDs?",
+          "answer": [
+            "`pthread_self()` returns the calling thread's `pthread_t`. `pthread_t` is an opaque type (it may be a struct), so compare with `pthread_equal(a, b)`, not with `==`.",
+            "The OS-level thread id (what you see in `top -H` or `gdb`) is different: on Linux use `syscall(SYS_gettid)` (or `gettid()` in new glibc)."
+          ]
+        },
+        {
+          "question": "How does thread cancellation work (pthread_cancel)?",
+          "answer": [
+            "`pthread_cancel(t)` *requests* that thread `t` stop. By default the cancel is **deferred**: the thread stops only when it reaches a **cancellation point** (functions like `sleep`, `read`, `write`, `pthread_cond_wait`, `pthread_testcancel`).",
+            "- Cancellation can be disabled with `pthread_setcancelstate`, or changed to asynchronous with `pthread_setcanceltype` (dangerous: the thread can stop anywhere, even inside `malloc`).\n- Use **cleanup handlers** (`pthread_cleanup_push/pop`) to unlock mutexes and free memory when cancelled.\n- Cancelling a thread that holds a mutex without a cleanup handler leaves the mutex locked forever.\n- A safer design is a shared **stop flag** (atomic) that the thread checks regularly, and then the thread exits normally."
+          ]
+        },
+        {
+          "question": "How are signals handled in a multithreaded program?",
+          "answer": [
+            "- Signal **dispositions** (handlers) are per-process, but the signal **mask** is per-thread.\n- A process-directed signal (like SIGTERM) is delivered to **any one thread** that does not block it.\n- Synchronous signals (SIGSEGV, SIGFPE) go to the thread that caused them.",
+            "Best practice: block signals in all threads with `pthread_sigmask`, then create one dedicated thread that waits for them with `sigwait()`. This avoids writing complicated, restricted signal-handler code.",
+            {
+              "code": [
+                "sigset_t set;",
+                "sigemptyset(&set);",
+                "sigaddset(&set, SIGINT);",
+                "pthread_sigmask(SIG_BLOCK, &set, NULL);   // do this in main BEFORE creating threads",
+                "",
+                "void *signal_thread(void *arg) {",
+                "    int sig;",
+                "    sigwait(&set, &sig);   // handled like normal code, no handler restrictions",
+                "    printf(\"got signal %d\\n\", sig);",
+                "    return NULL;",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What happens when you call fork() in a multithreaded program?",
+          "answer": [
+            "The child process contains **only the thread that called fork()**. All other threads vanish, but the memory (including locked mutexes) is copied as it was.",
+            "So if another thread held a mutex (for example inside `malloc`) at the moment of `fork`, the child inherits a locked mutex that nobody will ever unlock, and it may deadlock.",
+            "In the child, only **async-signal-safe** functions are allowed until `exec`. Best rule: in a multithreaded program, call `fork` only to immediately call `exec` (or use `posix_spawn`). `pthread_atfork()` can register handlers to lock and unlock your own mutexes around the fork."
+          ]
+        },
+        {
+          "question": "How do you set CPU affinity and thread priority/scheduling policy?",
+          "answer": [
+            "Affinity (Linux specific): `pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset)` pins a thread to chosen cores. It is useful for real-time and cache-sensitive code.",
+            "Scheduling: `pthread_setschedparam` with policies `SCHED_OTHER` (normal), `SCHED_FIFO` and `SCHED_RR` (real-time, needs privileges). Real-time threads that spin without blocking can starve the rest of the system."
+          ]
+        },
+        {
+          "question": "What is thread-local storage (TLS)? How is it used in C and pthreads?",
+          "answer": [
+            "TLS gives each thread its **own copy** of a variable, so no lock is needed. Typical examples: `errno`, per-thread buffers, per-thread random-number state.",
+            {
+              "code": [
+                "// 1) Compiler support (GCC/Clang): __thread, C11: _Thread_local, C++11: thread_local",
+                "__thread int counter = 0;     // each thread has its own counter",
+                "",
+                "// 2) POSIX keys (can have a destructor that runs at thread exit)",
+                "static pthread_key_t key;",
+                "pthread_key_create(&key, free);",
+                "pthread_setspecific(key, malloc(100));",
+                "char *buf = pthread_getspecific(key);"
+              ]
+            },
+            "`errno` is thread-local, which is why each thread can check `errno` without affecting the others."
+          ]
+        },
+        {
+          "question": "What is pthread_once and where do you use it?",
+          "answer": [
+            "It runs an initialisation function **exactly once**, even if many threads call it at the same time. All other callers wait until the first one has finished. Used for lazy initialisation of globals and singletons.",
+            {
+              "code": [
+                "static pthread_once_t once = PTHREAD_ONCE_INIT;",
+                "static void init(void) { puts(\"initialised\"); }",
+                "",
+                "void *worker(void *arg) {",
+                "    pthread_once(&once, init);   // init() runs only once in total",
+                "    return NULL;",
+                "}"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pthread-mutex",
+      "title": "Pthreads: Mutex",
+      "description": "Mutual exclusion: usage, types, errors and best practices.",
+      "questions": [
+        {
+          "question": "What is a mutex and how do you use it in pthreads?",
+          "answer": [
+            "A mutex (mutual exclusion lock) lets only **one thread at a time** enter a critical section. A thread locks it before using shared data and unlocks it afterwards. Other threads that try to lock it **block** until it is released.",
+            {
+              "code": [
+                "#include <pthread.h>",
+                "#include <stdio.h>",
+                "",
+                "int counter = 0;",
+                "pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;",
+                "",
+                "void *inc(void *arg) {",
+                "    for (int i = 0; i < 100000; i++) {",
+                "        pthread_mutex_lock(&lock);",
+                "        counter++;                 // critical section",
+                "        pthread_mutex_unlock(&lock);",
+                "    }",
+                "    return NULL;",
+                "}",
+                "",
+                "int main(void) {",
+                "    pthread_t a, b;",
+                "    pthread_create(&a, NULL, inc, NULL);",
+                "    pthread_create(&b, NULL, inc, NULL);",
+                "    pthread_join(a, NULL);",
+                "    pthread_join(b, NULL);",
+                "    printf(\"%d\\n\", counter);   // always 200000",
+                "    return 0;",
+                "}"
+              ]
+            },
+            "Without the mutex the result is usually less than 200000, because `counter++` is not atomic."
+          ]
+        },
+        {
+          "question": "How do you initialise and destroy a mutex? Static vs dynamic?",
+          "answer": [
+            "- **Static:** `pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;` (global or static only, no destroy needed).\n- **Dynamic:** `pthread_mutex_init(&m, &attr)` and later `pthread_mutex_destroy(&m)`. Use this for mutexes inside heap objects or when you need special attributes.",
+            "Never destroy a mutex that is locked or that other threads may still be waiting on. Never copy a mutex."
+          ]
+        },
+        {
+          "question": "What are the mutex types: normal, recursive, error-checking?",
+          "answer": [
+            "- **PTHREAD_MUTEX_NORMAL (default):** locking it twice from the same thread **deadlocks** (behaviour undefined by the standard). Unlocking by a non-owner is undefined.\n- **PTHREAD_MUTEX_ERRORCHECK:** locking twice returns `EDEADLK`; unlocking a mutex you do not own returns `EPERM`. Good for debugging.\n- **PTHREAD_MUTEX_RECURSIVE:** the same thread can lock it many times, and must unlock the same number of times.\n- (Glibc's `PTHREAD_MUTEX_DEFAULT` is the same as normal.)",
+            {
+              "code": [
+                "pthread_mutexattr_t a;",
+                "pthread_mutexattr_init(&a);",
+                "pthread_mutexattr_settype(&a, PTHREAD_MUTEX_RECURSIVE);",
+                "pthread_mutex_t m;",
+                "pthread_mutex_init(&m, &a);",
+                "pthread_mutexattr_destroy(&a);"
+              ]
+            },
+            "Recursive mutexes are often a sign of unclear design. Prefer splitting the code into a public function that locks and a private helper that assumes the lock is held."
+          ]
+        },
+        {
+          "question": "What is the difference between pthread_mutex_lock, trylock and timedlock?",
+          "answer": [
+            "- `pthread_mutex_lock`: blocks until it gets the lock.\n- `pthread_mutex_trylock`: returns immediately; `0` if locked, `EBUSY` if somebody else holds it.\n- `pthread_mutex_timedlock`: blocks up to an absolute time, then returns `ETIMEDOUT`.",
+            "`trylock` is used to avoid deadlock (back off and retry) and to do other work instead of waiting."
+          ]
+        },
+        {
+          "question": "What happens if a thread unlocks a mutex it did not lock? What if a thread dies while holding a mutex?",
+          "answer": [
+            "Unlocking a mutex you do not own is **undefined** for a normal mutex (error-checking mutexes return `EPERM`). A mutex has an *owner*, and this is the key difference from a semaphore.",
+            "If a thread dies (or is cancelled or crashes in a multi-process shared mutex) while holding it, the mutex stays locked forever. **Robust mutexes** (`PTHREAD_MUTEX_ROBUST`) solve this: the next locker gets `EOWNERDEAD`, repairs the data and calls `pthread_mutex_consistent`."
+          ]
+        },
+        {
+          "question": "Can a mutex be shared between processes?",
+          "answer": [
+            "Yes, if the mutex lives in **shared memory** and is initialised with the attribute `PTHREAD_PROCESS_SHARED`. The default is `PTHREAD_PROCESS_PRIVATE` (only threads of the same process).",
+            {
+              "code": [
+                "pthread_mutexattr_t a;",
+                "pthread_mutexattr_init(&a);",
+                "pthread_mutexattr_setpshared(&a, PTHREAD_PROCESS_SHARED);",
+                "// the pthread_mutex_t must be placed in shared memory (mmap / shm_open)"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is the difference between a mutex and a spinlock?",
+          "answer": [
+            "A **mutex** puts a waiting thread to sleep (the OS blocks it), which costs a context switch but wastes no CPU while waiting. A **spinlock** keeps the thread in a loop checking the lock (busy waiting), which wastes CPU but responds very quickly.",
+            "Use a spinlock only when the critical section is **very short** and the lock holder is running on another core (for example in kernel code or low-latency code). On a single core, a spinlock is useless, because the lock holder cannot run while you spin.",
+            "In pthreads: `pthread_spin_lock / pthread_spin_unlock`."
+          ]
+        },
+        {
+          "question": "What is the difference between a mutex and a (binary) semaphore?",
+          "answer": [
+            "- A **mutex has ownership**: only the thread that locked it may unlock it. It is for *protecting a resource* (mutual exclusion). It can offer priority inheritance and recursive locking.\n- A **semaphore has no owner**: any thread can `post` it. It is a *signalling* tool, or a counter of available resources.",
+            "Example: a mutex guards a shared list. A semaphore lets a producer tell a consumer \"an item is ready\"."
+          ]
+        },
+        {
+          "question": "What is priority inversion and how do you solve it?",
+          "answer": [
+            "A low-priority thread holds a mutex. A high-priority thread waits for it. A medium-priority thread keeps running and preempts the low one, so the low one cannot release the mutex, and the high-priority thread is effectively blocked by the medium one. (This famously caused the Mars Pathfinder resets.)",
+            "Solutions: **priority inheritance** (the lock holder temporarily gets the priority of the highest waiter) with `pthread_mutexattr_setprotocol(&a, PTHREAD_PRIO_INHERIT)`, or **priority ceiling** (`PTHREAD_PRIO_PROTECT`)."
+          ]
+        },
+        {
+          "question": "What are best practices when using mutexes?",
+          "answer": [
+            "- Keep critical sections short; never do blocking I/O while holding a lock.\n- Always unlock on **every** exit path (early `return`, errors). In C++ use RAII (`lock_guard`).\n- Lock **one mutex per piece of data** and document which mutex protects which data.\n- Always lock multiple mutexes in the **same global order**.\n- Do not call unknown code (callbacks, virtual functions) while holding a lock.\n- Check return values of pthread functions during development."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "condition-variables",
+      "title": "Condition Variables",
+      "description": "Waiting for a condition safely: wait, signal, spurious wakeups and producer-consumer.",
+      "questions": [
+        {
+          "question": "What is a condition variable and why do we need it?",
+          "answer": [
+            "A mutex only protects data. It cannot let a thread **wait until something becomes true** (for example \"the queue is not empty\"). Without a condition variable you would have to loop and lock/unlock again and again (busy waiting), which wastes CPU.",
+            "A condition variable lets a thread **sleep** until another thread tells it that the condition may have changed. It is always used together with a **mutex** and a **predicate** (a real condition on shared data)."
+          ]
+        },
+        {
+          "question": "How does pthread_cond_wait work? Why does it take a mutex?",
+          "answer": [
+            "`pthread_cond_wait(&cond, &mutex)` does three things **atomically**: unlocks the mutex, puts the thread to sleep, and when woken, locks the mutex again before returning.",
+            "The mutex must be locked by the caller. The atomic *unlock and sleep* is important: if they were two separate steps, a signal could arrive between them and be lost (**lost wakeup**).",
+            {
+              "code": [
+                "pthread_mutex_lock(&m);",
+                "while (!ready)                    // always a WHILE, not an if",
+                "    pthread_cond_wait(&cv, &m);   // releases m while sleeping",
+                "// here m is locked again and ready == true",
+                "use(data);",
+                "pthread_mutex_unlock(&m);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Why must pthread_cond_wait be inside a while loop and not an if? (spurious wakeups)",
+          "answer": [
+            "Two reasons:\n- **Spurious wakeups:** the implementation is allowed to wake a waiting thread even though nobody signalled.\n- **Stolen wakeups:** another thread may have run first and consumed the data, so when you wake up the condition is false again.",
+            "So after every wakeup you must **re-check the predicate**. Use `while (!condition) wait(...)`. With `if`, the program will work in tests and then fail randomly in production."
+          ]
+        },
+        {
+          "question": "What is the difference between pthread_cond_signal and pthread_cond_broadcast?",
+          "answer": [
+            "`signal` wakes **at least one** waiting thread. `broadcast` wakes **all** waiting threads.",
+            "- Use `signal` when any one waiter can handle the event (for example one new item in a queue).\n- Use `broadcast` when the change affects all waiters (shutdown flag, \"all data ready\"), or when different waiters wait for *different* conditions on the same condition variable.",
+            "If nobody is waiting, a signal is **lost**. Condition variables have no memory. That is why you must always set a real flag/predicate under the mutex."
+          ]
+        },
+        {
+          "question": "What is a lost wakeup? How do you avoid it?",
+          "answer": [
+            "It happens when a signal is sent before the other thread starts waiting, so the waiter sleeps forever.",
+            "Avoid it by **always changing and checking the predicate under the same mutex**, and by waiting inside a loop: if the flag is already true, the waiter never sleeps at all.",
+            {
+              "code": [
+                "// signaller",
+                "pthread_mutex_lock(&m);",
+                "ready = 1;                    // change the state under the lock",
+                "pthread_cond_signal(&cv);",
+                "pthread_mutex_unlock(&m);",
+                "",
+                "// waiter: if ready is already 1, it does not sleep, so no wakeup is lost",
+                "pthread_mutex_lock(&m);",
+                "while (!ready) pthread_cond_wait(&cv, &m);",
+                "pthread_mutex_unlock(&m);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Should you call signal while holding the mutex or after releasing it?",
+          "answer": [
+            "Both are correct. The predicate must be **changed** under the mutex. The `signal` call itself may be before or after the unlock.",
+            "- Signal **after** unlocking can avoid the \"hurry up and wait\" problem (the woken thread immediately blocks on the mutex you still hold).\n- Signal **while holding** the lock is simpler, and is needed if the condition variable could be destroyed right after the waiter wakes up."
+          ]
+        },
+        {
+          "question": "Implement a producer-consumer (bounded buffer) using pthreads.",
+          "answer": [
+            "Use one mutex, and two condition variables: `not_full` (producers wait on it) and `not_empty` (consumers wait on it).",
+            {
+              "code": [
+                "#define N 5",
+                "int buf[N], in = 0, out = 0, count = 0;",
+                "pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;",
+                "pthread_cond_t not_full  = PTHREAD_COND_INITIALIZER;",
+                "pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;",
+                "",
+                "void produce(int item) {",
+                "    pthread_mutex_lock(&m);",
+                "    while (count == N)                       // buffer full",
+                "        pthread_cond_wait(&not_full, &m);",
+                "    buf[in] = item;",
+                "    in = (in + 1) % N;",
+                "    count++;",
+                "    pthread_cond_signal(&not_empty);",
+                "    pthread_mutex_unlock(&m);",
+                "}",
+                "",
+                "int consume(void) {",
+                "    pthread_mutex_lock(&m);",
+                "    while (count == 0)                       // buffer empty",
+                "        pthread_cond_wait(&not_empty, &m);",
+                "    int item = buf[out];",
+                "    out = (out + 1) % N;",
+                "    count--;",
+                "    pthread_cond_signal(&not_full);",
+                "    pthread_mutex_unlock(&m);",
+                "    return item;",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you wait with a timeout on a condition variable?",
+          "answer": [
+            "Use `pthread_cond_timedwait` with an **absolute** time (not a duration). It returns `ETIMEDOUT` if the time passes. By default the clock is `CLOCK_REALTIME`, which can jump if the system time changes. For a safe timeout, create the condition variable with `CLOCK_MONOTONIC` using `pthread_condattr_setclock`.",
+            {
+              "code": [
+                "struct timespec ts;",
+                "clock_gettime(CLOCK_REALTIME, &ts);",
+                "ts.tv_sec += 2;                      // wait max 2 seconds",
+                "pthread_mutex_lock(&m);",
+                "int rc = 0;",
+                "while (!ready && rc != ETIMEDOUT)",
+                "    rc = pthread_cond_timedwait(&cv, &m, &ts);",
+                "pthread_mutex_unlock(&m);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you stop worker threads waiting on a condition variable (clean shutdown)?",
+          "answer": [
+            "Set a `stop` flag **under the mutex**, then `broadcast` so that all sleeping workers wake up. Workers must check the flag in their wait loop and exit. Then `join` them.",
+            {
+              "code": [
+                "// worker",
+                "pthread_mutex_lock(&m);",
+                "while (queue_empty() && !stop)",
+                "    pthread_cond_wait(&cv, &m);",
+                "if (stop && queue_empty()) { pthread_mutex_unlock(&m); return NULL; }",
+                "",
+                "// shutdown",
+                "pthread_mutex_lock(&m);",
+                "stop = 1;",
+                "pthread_cond_broadcast(&cv);",
+                "pthread_mutex_unlock(&m);"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "semaphores-rwlock-barrier",
+      "title": "Semaphores, Read-Write Locks and Barriers",
+      "description": "Other synchronisation primitives and when to choose them.",
+      "questions": [
+        {
+          "question": "What is a semaphore? Counting vs binary semaphore?",
+          "answer": [
+            "A semaphore is an integer counter with two atomic operations: `wait` (also P / down: wait until the value is above 0, then decrease it) and `post` (also V / up: increase it and wake a waiter).",
+            "- **Counting semaphore:** the value says how many resources are free (for example 5 connections in a pool).\n- **Binary semaphore:** value 0 or 1; behaves like a lock, but without ownership, so it is also used for signalling between threads.",
+            {
+              "code": [
+                "#include <semaphore.h>",
+                "sem_t sem;",
+                "sem_init(&sem, 0, 3);   // 0 = shared between threads only, initial value 3",
+                "",
+                "sem_wait(&sem);         // take one slot (blocks if 0)",
+                "/* use the resource */",
+                "sem_post(&sem);         // give it back",
+                "",
+                "sem_destroy(&sem);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Solve producer-consumer using semaphores.",
+          "answer": [
+            "Use three things: `empty` (counts free slots, starts at N), `full` (counts filled slots, starts at 0) and a mutex for the buffer itself.",
+            {
+              "code": [
+                "sem_t empty, full;",
+                "pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;",
+                "sem_init(&empty, 0, N);",
+                "sem_init(&full,  0, 0);",
+                "",
+                "void produce(int x) {",
+                "    sem_wait(&empty);            // wait for a free slot",
+                "    pthread_mutex_lock(&m);",
+                "    put(x);",
+                "    pthread_mutex_unlock(&m);",
+                "    sem_post(&full);             // one more item available",
+                "}",
+                "",
+                "int consume(void) {",
+                "    sem_wait(&full);             // wait for an item",
+                "    pthread_mutex_lock(&m);",
+                "    int x = get();",
+                "    pthread_mutex_unlock(&m);",
+                "    sem_post(&empty);            // one more free slot",
+                "    return x;",
+                "}"
+              ]
+            },
+            "Common bug: taking the mutex **before** `sem_wait`. Then a producer can sleep on `empty` while holding the mutex, and the consumer can never get the mutex to free a slot, so there is a deadlock."
+          ]
+        },
+        {
+          "question": "What is the difference between named and unnamed POSIX semaphores?",
+          "answer": [
+            "- **Unnamed:** `sem_init` on a `sem_t` variable. Shared between threads, or between processes if placed in shared memory with `pshared = 1`.\n- **Named:** `sem_open(\"/name\", ...)` creates a system-wide semaphore that unrelated processes can open by name. Remove it with `sem_unlink`.",
+            "Also remember System V semaphores (`semget`, `semop`) are an older API that works on sets of semaphores."
+          ]
+        },
+        {
+          "question": "What is a read-write lock and when do you use it?",
+          "answer": [
+            "A read-write lock allows **many readers at the same time**, but only **one writer**, and a writer excludes all readers. It improves speed when data is read much more often than it is written.",
+            {
+              "code": [
+                "pthread_rwlock_t rw = PTHREAD_RWLOCK_INITIALIZER;",
+                "",
+                "// reader",
+                "pthread_rwlock_rdlock(&rw);",
+                "value = shared;",
+                "pthread_rwlock_unlock(&rw);",
+                "",
+                "// writer",
+                "pthread_rwlock_wrlock(&rw);",
+                "shared = new_value;",
+                "pthread_rwlock_unlock(&rw);"
+              ]
+            },
+            "Cautions: a read-write lock is slower than a plain mutex for short critical sections or many writes. Writer starvation can occur if readers keep arriving, and you cannot safely upgrade a read lock to a write lock (deadlock)."
+          ]
+        },
+        {
+          "question": "What is a barrier?",
+          "answer": [
+            "A barrier makes a group of threads **wait for each other**. Every thread calls `pthread_barrier_wait`; none continues until all N threads have arrived. It is used in phased parallel algorithms (compute phase 1, everybody syncs, phase 2).",
+            {
+              "code": [
+                "pthread_barrier_t b;",
+                "pthread_barrier_init(&b, NULL, 4);        // 4 threads",
+                "",
+                "void *worker(void *arg) {",
+                "    do_phase1();",
+                "    int rc = pthread_barrier_wait(&b);    // all 4 must arrive",
+                "    if (rc == PTHREAD_BARRIER_SERIAL_THREAD)",
+                "        merge_results();                  // exactly ONE thread gets this value",
+                "    do_phase2();",
+                "    return NULL;",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Mutex vs semaphore vs spinlock vs condition variable: when do you use which?",
+          "answer": [
+            "- **Mutex:** protect shared data (ownership, one thread at a time).\n- **Condition variable (+ mutex):** wait until a condition on shared data becomes true.\n- **Semaphore:** count resources, or signal an event without needing a predicate.\n- **Spinlock:** extremely short critical sections on multi-core machines, where sleeping costs more than waiting.\n- **Read-write lock:** read-mostly data.\n- **Atomics:** a single variable (counter, flag, pointer swap) with no lock."
+          ]
+        },
+        {
+          "question": "What is a monitor?",
+          "answer": [
+            "A monitor is a design idea (used in Java `synchronized`/`wait`/`notify`): a data structure bundled with one mutex and one or more condition variables, so that all access to the data goes through methods that lock the mutex automatically.",
+            "In C and C++ you build a monitor yourself: a class with a private `std::mutex`, a `std::condition_variable` and data, and public methods that lock."
+          ]
+        },
+        {
+          "question": "What is the difference between pthread_mutex and sem_t with respect to async-signal-safety?",
+          "answer": [
+            "`sem_post` is **async-signal-safe**, so you can call it from a signal handler to wake a thread. `pthread_mutex_lock` and `pthread_cond_signal` are **not** async-signal-safe and must not be used in signal handlers.",
+            "Pattern: the signal handler does `sem_post(&sem)`, and a normal thread waits on `sem_wait` and does the real work."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deadlock-and-problems",
+      "title": "Deadlock, Livelock and Starvation",
+      "description": "Classic concurrency problems, how to detect and prevent them.",
+      "questions": [
+        {
+          "question": "What is a deadlock? Give an example.",
+          "answer": [
+            "A deadlock is when two or more threads wait for each other forever, so none can continue.",
+            {
+              "code": [
+                "// Thread 1                      // Thread 2",
+                "lock(A);                         lock(B);",
+                "lock(B);   // waits for T2       lock(A);   // waits for T1",
+                "...                              ..."
+              ]
+            },
+            "T1 holds A and wants B. T2 holds B and wants A. Neither can ever proceed."
+          ]
+        },
+        {
+          "question": "What are the four necessary conditions for deadlock (Coffman conditions)?",
+          "answer": [
+            "A deadlock can happen only if **all four** are true:\n1. **Mutual exclusion:** the resource can be used by only one thread at a time.\n2. **Hold and wait:** a thread holds one resource while waiting for another.\n3. **No preemption:** a resource cannot be taken away by force.\n4. **Circular wait:** a cycle of threads, each waiting for a resource held by the next.",
+            "To prevent deadlock, break at least one of them. The easiest in practice is **circular wait**, by always locking in the same order."
+          ]
+        },
+        {
+          "question": "How do you prevent or avoid deadlocks in practice?",
+          "answer": [
+            "- **Lock ordering:** every thread locks mutexes in the same global order (for example by address or by an ID).\n- **Lock all at once:** C++ `std::lock(a, b)` / `std::scoped_lock(a, b)` uses a deadlock-avoidance algorithm.\n- **Try-lock and back off:** `trylock`; if it fails, release what you hold and retry.\n- **Timeouts:** use `timedlock` and report an error.\n- **Hold fewer locks:** keep critical sections small; avoid calling callbacks under a lock.\n- **Use higher-level designs:** message queues or one thread that owns the data.",
+            {
+              "code": [
+                "// C++17: no deadlock whatever the order of arguments",
+                "std::scoped_lock lock(m1, m2);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you detect and debug a deadlock in a running program?",
+          "answer": [
+            "Attach `gdb -p <pid>` and run `thread apply all bt`. A deadlocked program shows threads sitting in `pthread_mutex_lock` / `__lll_lock_wait`. Use `print mutex` to see the owner field and find who holds which lock.",
+            "Tools: Valgrind **Helgrind** reports lock-order violations even if the deadlock did not happen in that run; ThreadSanitizer (`-fsanitize=thread`) reports potential deadlocks; `pstack` and `strace -f -p` also help."
+          ]
+        },
+        {
+          "question": "What is a livelock?",
+          "answer": [
+            "Threads are not blocked, they keep running and changing state in response to each other, but make **no progress**. Like two people in a corridor who both step aside to the same side again and again.",
+            "A typical cause is retry loops with `trylock` where both threads release and retry at exactly the same time. Fix with random back-off delays."
+          ]
+        },
+        {
+          "question": "What is starvation? How is it different from deadlock?",
+          "answer": [
+            "Starvation: a thread is ready to run, but never gets the resource because others keep getting it first (for example a writer waiting while readers keep arriving, or a low-priority thread never scheduled). The system as a whole continues to work.",
+            "In a deadlock, the threads involved are stuck forever. Starvation is solved by **fairness**: queues, ageing, or fair locks."
+          ]
+        },
+        {
+          "question": "What is the dining philosophers problem and how do you solve it?",
+          "answer": [
+            "Five philosophers sit round a table with one fork between each pair. Each needs two forks to eat. If all pick up their left fork at once, nobody can get a right fork: deadlock.",
+            "Solutions: number the forks and always take the **lower-numbered first** (breaks circular wait); allow at most **4 philosophers** to sit at the same time (semaphore); make one philosopher pick up in the opposite order; or use a central waiter."
+          ]
+        },
+        {
+          "question": "Can a single thread deadlock itself?",
+          "answer": [
+            "Yes. Locking a **non-recursive mutex twice** in the same thread deadlocks (a typical case is a function that locks a mutex and calls another function which locks the same mutex). Also waiting on a condition variable that only this thread could signal, or joining yourself (`pthread_join(pthread_self())` returns `EDEADLK`).",
+            "An error-checking mutex or a recursive one can reveal or tolerate this, but the better fix is to redesign with a private helper that assumes the lock is already held."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thread-safety",
+      "title": "Thread Safety and Design Techniques",
+      "description": "Writing correct shared code: singleton, lazy init, immutability, lock-free ideas.",
+      "questions": [
+        {
+          "question": "How do you make a singleton thread-safe in C++?",
+          "answer": [
+            "Since C++11, a **function-local static** variable is initialised in a thread-safe way (\"magic statics\"): if several threads call at once, one initialises it and the others wait. This is the simplest and recommended way (Meyers singleton).",
+            {
+              "code": [
+                "class Logger {",
+                "public:",
+                "    static Logger& instance() {",
+                "        static Logger inst;        // initialised once, thread-safely",
+                "        return inst;",
+                "    }",
+                "    Logger(const Logger&) = delete;",
+                "    Logger& operator=(const Logger&) = delete;",
+                "private:",
+                "    Logger() = default;",
+                "};"
+              ]
+            },
+            "Alternative: `std::call_once` with a `std::once_flag`. Note that only the *initialisation* is thread-safe; using the object afterwards still needs its own locking."
+          ]
+        },
+        {
+          "question": "What is double-checked locking and why was it broken?",
+          "answer": [
+            "It is an optimisation: check if the instance exists without a lock, and only lock if it is null, then check again.",
+            {
+              "code": [
+                "// BROKEN with a plain pointer",
+                "if (instance == nullptr) {           // 1st check, no lock",
+                "    std::lock_guard<std::mutex> g(m);",
+                "    if (instance == nullptr)         // 2nd check",
+                "        instance = new Singleton();",
+                "}"
+              ]
+            },
+            "It is broken because `instance = new Singleton()` can be reordered: the pointer may become non-null **before** the constructor has finished. Another thread then sees a non-null pointer to a half-built object. It also contains a data race on `instance`. The fix is to make `instance` a `std::atomic<Singleton*>` with acquire/release ordering, or just use a function-local static or `std::call_once`."
+          ]
+        },
+        {
+          "question": "How do you make a class thread-safe? What are the common approaches?",
+          "answer": [
+            "- **Immutability:** objects that never change after construction need no locks.\n- **Confinement:** only one thread ever touches the data (thread-local, or ownership handed over through a queue).\n- **Locking:** a mutex inside the class protecting its data (monitor style).\n- **Atomics:** for a single variable.\n- **Copy-on-write / snapshots:** readers use an immutable snapshot, writers create a new copy and swap a pointer.",
+            "Remember: making each method thread-safe does not make a *sequence* of calls thread-safe. `if (!q.empty()) q.pop();` is a race even if `empty` and `pop` each lock, so the interface should offer a combined operation like `try_pop`."
+          ]
+        },
+        {
+          "question": "Is the standard library thread-safe? What about std::cout, STL containers and shared_ptr?",
+          "answer": [
+            "- **Containers:** multiple threads may *read* the same container at the same time, but if any thread *writes*, you need external locking. Different containers can be used by different threads without problems.\n- **std::cout:** each individual `<<` is safe from a data race point of view (for synchronised standard streams), but output from different threads can be **interleaved**. Lock a mutex around the whole line, or use `std::osyncstream` (C++20).\n- **std::shared_ptr:** the **reference count** is atomic, so copying shared_ptrs across threads is safe, but the **pointed-to object** is not protected, and modifying the *same* shared_ptr object from two threads is a race (use `std::atomic<std::shared_ptr>` in C++20)."
+          ]
+        },
+        {
+          "question": "Why is volatile not a replacement for synchronisation in C/C++?",
+          "answer": [
+            "`volatile` only stops the compiler from caching or removing reads and writes of that variable. It does **not** make operations atomic and it does **not** create memory ordering between threads or CPUs, so it does not prevent data races (which are undefined behaviour).",
+            "Use `std::atomic` (C++11) or `_Atomic` (C11) for shared flags and counters. (In Java, `volatile` is different and provides visibility.) `volatile` is for hardware registers and signal handlers (`volatile sig_atomic_t`)."
+          ]
+        },
+        {
+          "question": "What is a thread-safe queue? Write one in C++.",
+          "answer": [
+            "A queue guarded by a mutex with a condition variable, so consumers sleep when it is empty.",
+            {
+              "code": [
+                "template <typename T>",
+                "class SafeQueue {",
+                "    std::queue<T> q_;",
+                "    std::mutex m_;",
+                "    std::condition_variable cv_;",
+                "public:",
+                "    void push(T v) {",
+                "        {",
+                "            std::lock_guard<std::mutex> lk(m_);",
+                "            q_.push(std::move(v));",
+                "        }                         // unlock before notify",
+                "        cv_.notify_one();",
+                "    }",
+                "    T pop() {                      // blocking",
+                "        std::unique_lock<std::mutex> lk(m_);",
+                "        cv_.wait(lk, [this]{ return !q_.empty(); });",
+                "        T v = std::move(q_.front());",
+                "        q_.pop();",
+                "        return v;",
+                "    }",
+                "    bool try_pop(T& out) {         // non-blocking, safe check-and-pop in one step",
+                "        std::lock_guard<std::mutex> lk(m_);",
+                "        if (q_.empty()) return false;",
+                "        out = std::move(q_.front());",
+                "        q_.pop();",
+                "        return true;",
+                "    }",
+                "};"
+              ]
+            },
+            "Note that `pop()` returns by value and does `front` and `pop` under one lock. That is why `std::queue::front()` + `pop()` is not used from outside: another thread could take the item in between."
+          ]
+        },
+        {
+          "question": "What are lock-free and wait-free data structures?",
+          "answer": [
+            "- **Lock-free:** at least one thread always makes progress in a finite number of steps, even if others are delayed. They use atomic compare-and-swap (CAS) instead of mutexes, so a suspended thread cannot block the others.\n- **Wait-free:** *every* thread finishes in a bounded number of steps. It is the strongest and hardest to achieve.",
+            "They avoid deadlock and priority inversion, but are very hard to write correctly (ABA problem, memory reclamation, memory ordering). In interviews, usually explain a lock-free stack with CAS, and recommend using a tested library."
+          ]
+        },
+        {
+          "question": "What is the ABA problem?",
+          "answer": [
+            "A CAS-based algorithm checks that a value is still `A` before changing it. But between the read and the CAS, another thread may change A to B and back to A. The CAS succeeds although the state is different (for example the node was freed and reallocated), which corrupts the structure.",
+            "Solutions: add a **version counter** (tagged pointer, double-width CAS), use **hazard pointers** or RCU/epoch based reclamation, or avoid freeing nodes while others can access them."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-thread",
+      "title": "C++ std::thread Basics",
+      "description": "Creating, joining and passing arguments to threads in C++11 and later.",
+      "questions": [
+        {
+          "question": "How do you create and run a thread in C++?",
+          "answer": [
+            "Create a `std::thread` with a callable (function, lambda, functor, member function). Include `<thread>` and link with `-pthread` on Linux. Then `join()` or `detach()` it.",
+            {
+              "code": [
+                "#include <iostream>",
+                "#include <thread>",
+                "",
+                "void hello(int n) { std::cout << \"Hello \" << n << \"\\n\"; }",
+                "",
+                "int main() {",
+                "    std::thread t1(hello, 1);                          // function + args",
+                "    std::thread t2([] { std::cout << \"lambda\\n\"; });   // lambda",
+                "    t1.join();",
+                "    t2.join();",
+                "}"
+              ]
+            },
+            "Build: `g++ -std=c++17 -pthread main.cpp`"
+          ]
+        },
+        {
+          "question": "What happens if a std::thread object is destroyed while still joinable?",
+          "answer": [
+            "The destructor calls **`std::terminate()`**, and the whole program aborts. A thread is *joinable* if it was started and has not yet been joined or detached.",
+            {
+              "code": [
+                "{",
+                "    std::thread t(work);",
+                "}   // t is destroyed without join/detach -> std::terminate()"
+              ]
+            },
+            "Always `join()` or `detach()` before destruction, or use `std::jthread` (C++20), which joins automatically. This is a very common interview question, because the destructor of `std::thread` does *not* join, unlike in some other languages."
+          ]
+        },
+        {
+          "question": "What happens if an exception is thrown before join() is called?",
+          "answer": [
+            "The `join()` line is skipped, the `std::thread` destructor runs while joinable, and the program calls `std::terminate`.",
+            "Solution: use an RAII guard that joins in its destructor (or `std::jthread`).",
+            {
+              "code": [
+                "class ThreadGuard {",
+                "    std::thread& t_;",
+                "public:",
+                "    explicit ThreadGuard(std::thread& t) : t_(t) {}",
+                "    ~ThreadGuard() { if (t_.joinable()) t_.join(); }",
+                "    ThreadGuard(const ThreadGuard&) = delete;",
+                "    ThreadGuard& operator=(const ThreadGuard&) = delete;",
+                "};",
+                "",
+                "std::thread t(work);",
+                "ThreadGuard g(t);",
+                "risky_function();     // even if this throws, t is joined"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How are arguments passed to a std::thread? Why do you need std::ref?",
+          "answer": [
+            "Arguments are **copied (or moved) into the thread's own storage**, even if the function takes a reference parameter. So a function that takes `int&` will not compile (or modify a copy) unless you wrap the argument with `std::ref`.",
+            {
+              "code": [
+                "void add_one(int& x) { x++; }",
+                "",
+                "int n = 0;",
+                "std::thread t1(add_one, n);              // compile error: copy cannot bind to int&",
+                "std::thread t2(add_one, std::ref(n));    // OK: n becomes 1",
+                "t2.join();",
+                "",
+                "// For move-only types use std::move",
+                "auto p = std::make_unique<int>(5);",
+                "std::thread t3([](std::unique_ptr<int> q){ /*...*/ }, std::move(p));",
+                "t3.join();"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you run a class member function in a thread?",
+          "answer": [
+            "Pass a pointer to the member function and then the object (or pointer) as the first argument. Or use a lambda.",
+            {
+              "code": [
+                "struct Worker {",
+                "    void run(int n) { std::cout << \"run \" << n << \"\\n\"; }",
+                "};",
+                "",
+                "Worker w;",
+                "std::thread t1(&Worker::run, &w, 5);              // pointer to object",
+                "std::thread t2([&w]{ w.run(6); });                // lambda",
+                "t1.join(); t2.join();"
+              ]
+            },
+            "The object `w` must stay alive until the thread ends."
+          ]
+        },
+        {
+          "question": "What is the danger of detach() and of capturing by reference in a thread?",
+          "answer": [
+            "A detached thread runs on its own and may outlive the function that created it. If it uses references or pointers to **local variables**, those variables are destroyed when the function returns, and the thread then reads **dangling memory** (undefined behaviour). Also, when `main` returns, detached threads are killed in the middle of work.",
+            {
+              "code": [
+                "void start() {",
+                "    int local = 10;",
+                "    std::thread t([&local]{ use(local); });   // BUG: captures a reference",
+                "    t.detach();",
+                "}   // local is gone, thread still running",
+                "",
+                "// FIX: capture by value (copy), or use shared_ptr, or join the thread",
+                "std::thread t([local]{ use(local); });"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Can you copy a std::thread? How do you move it?",
+          "answer": [
+            "No. A `std::thread` is **move-only**, because it owns a running thread. Copying is deleted. Move with `std::move`, for example to store threads in a vector or to return them from functions.",
+            {
+              "code": [
+                "std::vector<std::thread> pool;",
+                "for (int i = 0; i < 4; ++i)",
+                "    pool.emplace_back(work, i);        // construct in place",
+                "for (auto& t : pool) t.join();",
+                "",
+                "std::thread a(work, 1);",
+                "std::thread b = std::move(a);          // a is now empty, b owns the thread",
+                "b.join();"
+              ]
+            },
+            "Careful: move-assigning to a thread that is still joinable calls `std::terminate`."
+          ]
+        },
+        {
+          "question": "How do you get a thread's ID, the number of cores, and make a thread sleep or yield?",
+          "answer": [
+            "- `std::this_thread::get_id()` the current thread's id; `t.get_id()` for another thread (a default-constructed id means \"not a thread\").\n- `std::thread::hardware_concurrency()` returns the number of hardware threads (may return 0 if unknown), a good starting size for a thread pool.\n- `std::this_thread::sleep_for(std::chrono::milliseconds(100))` and `sleep_until`.\n- `std::this_thread::yield()` gives other threads a chance to run (a hint only)."
+          ]
+        },
+        {
+          "question": "What happens if an exception is thrown inside a thread and not caught?",
+          "answer": [
+            "It cannot be caught in the thread that created it. An uncaught exception leaving the thread function calls `std::terminate()`, which ends the entire program.",
+            "To pass an exception to another thread, catch it inside the thread, store it with `std::current_exception()`, and rethrow it with `std::rethrow_exception()` in the other thread. `std::future` (from `std::async`, `std::promise`, `std::packaged_task`) does this for you automatically.",
+            {
+              "code": [
+                "std::exception_ptr err;",
+                "std::thread t([&]{",
+                "    try { risky(); }",
+                "    catch (...) { err = std::current_exception(); }",
+                "});",
+                "t.join();",
+                "if (err) std::rethrow_exception(err);"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you create a thread pool in C++?",
+          "answer": [
+            "Create N worker threads at start (use `hardware_concurrency()`), a shared task queue protected by a mutex, and a condition variable that wakes the workers when tasks arrive. Workers loop: wait for a task, run it, repeat. On shutdown set a `stop` flag, notify all, and join.",
+            {
+              "code": [
+                "class ThreadPool {",
+                "    std::vector<std::thread> workers_;",
+                "    std::queue<std::function<void()>> tasks_;",
+                "    std::mutex m_;",
+                "    std::condition_variable cv_;",
+                "    bool stop_ = false;",
+                "public:",
+                "    explicit ThreadPool(size_t n) {",
+                "        for (size_t i = 0; i < n; ++i)",
+                "            workers_.emplace_back([this] {",
+                "                for (;;) {",
+                "                    std::function<void()> task;",
+                "                    {",
+                "                        std::unique_lock<std::mutex> lk(m_);",
+                "                        cv_.wait(lk, [this]{ return stop_ || !tasks_.empty(); });",
+                "                        if (stop_ && tasks_.empty()) return;   // finish queued work, then exit",
+                "                        task = std::move(tasks_.front());",
+                "                        tasks_.pop();",
+                "                    }                                           // run the task WITHOUT the lock",
+                "                    task();",
+                "                }",
+                "            });",
+                "    }",
+                "    void submit(std::function<void()> f) {",
+                "        { std::lock_guard<std::mutex> lk(m_); tasks_.push(std::move(f)); }",
+                "        cv_.notify_one();",
+                "    }",
+                "    ~ThreadPool() {",
+                "        { std::lock_guard<std::mutex> lk(m_); stop_ = true; }",
+                "        cv_.notify_all();",
+                "        for (auto& w : workers_) w.join();",
+                "    }",
+                "};"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-mutex-locks",
+      "title": "C++ Mutexes and Lock Wrappers",
+      "description": "std::mutex, lock_guard, unique_lock, scoped_lock, shared_mutex, call_once.",
+      "questions": [
+        {
+          "question": "What is std::mutex and why should you prefer lock_guard over lock()/unlock()?",
+          "answer": [
+            "`std::mutex` is the basic C++11 mutual exclusion lock. It is **not copyable or movable**. If you call `lock()` and `unlock()` manually, an early `return` or an **exception** between them leaves the mutex locked forever.",
+            "`std::lock_guard` uses **RAII**: it locks in the constructor and unlocks in the destructor, so the mutex is released on every exit path.",
+            {
+              "code": [
+                "std::mutex m;",
+                "int counter = 0;",
+                "",
+                "void inc() {",
+                "    std::lock_guard<std::mutex> lock(m);   // locked here",
+                "    ++counter;",
+                "}                                          // unlocked here, even if an exception is thrown"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is the difference between lock_guard, unique_lock and scoped_lock?",
+          "answer": [
+            "- **lock_guard:** the simplest and cheapest. Locks on construction, unlocks on destruction. Cannot be unlocked early or moved.\n- **unique_lock:** flexible. Can lock/unlock manually, be created *unlocked* (`std::defer_lock`), be moved, and works with `condition_variable`. Slightly bigger and slower.\n- **scoped_lock (C++17):** locks **one or more** mutexes at once using a deadlock-avoiding algorithm. For a single mutex it behaves like lock_guard.",
+            "Rule of thumb: use `scoped_lock` (or `lock_guard`) by default, `unique_lock` when you need condition variables or manual control."
+          ]
+        },
+        {
+          "question": "Why does condition_variable::wait need a unique_lock and not a lock_guard?",
+          "answer": [
+            "`wait` must **unlock** the mutex while the thread sleeps and **lock it again** when it wakes up. `lock_guard` has no `unlock()`/`lock()` member functions, but `unique_lock` does."
+          ]
+        },
+        {
+          "question": "How do you lock two mutexes without deadlock in C++? (std::lock, defer_lock, adopt_lock)",
+          "answer": [
+            "The classic example is transferring money between two accounts. If one thread does `transfer(a, b)` and another does `transfer(b, a)`, locking the mutexes in argument order can deadlock.",
+            {
+              "code": [
+                "// C++17: simplest",
+                "void transfer(Account& from, Account& to, int amt) {",
+                "    std::scoped_lock lock(from.m, to.m);       // deadlock-free",
+                "    from.balance -= amt;",
+                "    to.balance   += amt;",
+                "}",
+                "",
+                "// C++11 way",
+                "std::unique_lock<std::mutex> l1(from.m, std::defer_lock);   // not locked yet",
+                "std::unique_lock<std::mutex> l2(to.m,   std::defer_lock);",
+                "std::lock(l1, l2);                                           // locks both safely",
+                "",
+                "// or: lock first, then adopt into guards",
+                "std::lock(from.m, to.m);",
+                "std::lock_guard<std::mutex> g1(from.m, std::adopt_lock);",
+                "std::lock_guard<std::mutex> g2(to.m,   std::adopt_lock);"
+              ]
+            },
+            "Also remember: if `from` and `to` are the **same object**, a normal mutex would deadlock on the second lock, so check for `&from == &to` first."
+          ]
+        },
+        {
+          "question": "What are the other mutex types: recursive_mutex, timed_mutex, shared_mutex?",
+          "answer": [
+            "- **std::recursive_mutex:** the same thread may lock it many times (must unlock the same number of times).\n- **std::timed_mutex / recursive_timed_mutex:** add `try_lock_for` and `try_lock_until`.\n- **std::shared_mutex (C++17) / shared_timed_mutex (C++14):** a read-write lock. `lock()` is exclusive (writers), `lock_shared()` is shared (readers). Use with `std::unique_lock` / `std::shared_lock`.",
+            {
+              "code": [
+                "std::shared_mutex sm;",
+                "int value = 0;",
+                "",
+                "int read() {",
+                "    std::shared_lock<std::shared_mutex> lk(sm);   // many readers allowed",
+                "    return value;",
+                "}",
+                "void write(int v) {",
+                "    std::unique_lock<std::shared_mutex> lk(sm);   // exclusive",
+                "    value = v;",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What does a mutex protect? Why is returning a reference to protected data a problem?",
+          "answer": [
+            "A mutex protects only the code between lock and unlock. If a function returns a **pointer or reference** to the protected data (or passes it to user callbacks), the caller can use it **after the lock is released**, which defeats the protection.",
+            {
+              "code": [
+                "class Data {",
+                "    std::mutex m_;",
+                "    std::vector<int> v_;",
+                "public:",
+                "    // BAD: the caller uses the reference without the lock",
+                "    std::vector<int>& get() { std::lock_guard<std::mutex> g(m_); return v_; }",
+                "",
+                "    // GOOD: return a copy, or provide operations that lock internally",
+                "    std::vector<int> snapshot() { std::lock_guard<std::mutex> g(m_); return v_; }",
+                "    void add(int x) { std::lock_guard<std::mutex> g(m_); v_.push_back(x); }",
+                "};"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is std::call_once and std::once_flag?",
+          "answer": [
+            "`std::call_once(flag, func, args...)` runs `func` **exactly once** even when many threads call it at the same time. If `func` throws, the next caller tries again. It is the C++ version of `pthread_once`, used for lazy initialisation.",
+            {
+              "code": [
+                "std::once_flag flag;",
+                "void init() { std::cout << \"init once\\n\"; }",
+                "",
+                "void worker() {",
+                "    std::call_once(flag, init);   // only the first thread runs init",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is thread_local in C++?",
+          "answer": [
+            "A storage class that gives each thread its own instance of a variable. It is created when the thread starts (or on first use) and destroyed when the thread ends. No locking is needed, because nothing is shared.",
+            {
+              "code": [
+                "thread_local int counter = 0;",
+                "",
+                "void work() {",
+                "    ++counter;   // each thread increments its own copy",
+                "    std::cout << counter << \"\\n\";   // prints 1 in every thread",
+                "}"
+              ]
+            },
+            "Typical uses: per-thread caches, random engines, error codes. Be careful with thread pools: the value lives as long as the worker thread, not as long as the task."
+          ]
+        },
+        {
+          "question": "How do you fix the lost update on counter++ in C++? Mutex or atomic?",
+          "answer": [
+            "Both work. For a **single integer**, `std::atomic<int>` is simpler and faster. For protecting several variables that must change together, use a mutex.",
+            {
+              "code": [
+                "// Option 1: mutex",
+                "int counter = 0; std::mutex m;",
+                "void inc() { std::lock_guard<std::mutex> g(m); ++counter; }",
+                "",
+                "// Option 2: atomic (no lock)",
+                "std::atomic<int> acounter{0};",
+                "void inc2() { acounter.fetch_add(1); }   // or ++acounter"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-condvar-future",
+      "title": "C++ Condition Variables, Futures and Async",
+      "description": "condition_variable, promise, future, packaged_task and async.",
+      "questions": [
+        {
+          "question": "How do you use std::condition_variable correctly?",
+          "answer": [
+            "Three parts: a mutex, a shared **predicate** (a flag or data), and the condition variable. The waiter uses `unique_lock` and `wait` **with a predicate**, which internally loops and handles spurious wakeups.",
+            {
+              "code": [
+                "std::mutex m;",
+                "std::condition_variable cv;",
+                "bool ready = false;",
+                "",
+                "void waiter() {",
+                "    std::unique_lock<std::mutex> lk(m);",
+                "    cv.wait(lk, []{ return ready; });   // same as: while(!ready) cv.wait(lk);",
+                "    std::cout << \"go!\\n\";",
+                "}",
+                "",
+                "void notifier() {",
+                "    {",
+                "        std::lock_guard<std::mutex> lk(m);",
+                "        ready = true;                   // change the state under the mutex",
+                "    }",
+                "    cv.notify_one();",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Why do we need a mutex and a flag when notify already wakes the thread?",
+          "answer": [
+            "Notifications are not stored. If `notify_one` is called when nobody waits, it is lost, and a thread that starts waiting later sleeps forever. The **flag** remembers that the event happened, and the **mutex** makes sure the flag check and the sleep happen atomically with respect to the change.",
+            "Also modifying the flag *without* the mutex (even if it is atomic) can still lose a wakeup, because the notifier may change it and notify just after the waiter checked the predicate but before it actually went to sleep."
+          ]
+        },
+        {
+          "question": "What is the difference between notify_one and notify_all? Do you need the lock to call notify?",
+          "answer": [
+            "`notify_one` wakes one waiting thread (unspecified which). `notify_all` wakes all of them. Use `notify_all` for a state change that matters to everyone, such as a shutdown flag.",
+            "You do **not** need to hold the mutex when calling `notify`. Calling it after unlocking can be slightly faster, because the woken thread will not immediately block on the mutex."
+          ]
+        },
+        {
+          "question": "What are std::future and std::promise?",
+          "answer": [
+            "They form a **one-time communication channel** between threads. A `std::promise<T>` is the *writing end*: the producer calls `set_value` (or `set_exception`). The matching `std::future<T>` is the *reading end*: the consumer calls `get()`, which blocks until the value is ready.",
+            {
+              "code": [
+                "std::promise<int> p;",
+                "std::future<int> f = p.get_future();",
+                "",
+                "std::thread t([&p]{",
+                "    std::this_thread::sleep_for(std::chrono::seconds(1));",
+                "    p.set_value(42);              // send the result",
+                "});",
+                "",
+                "std::cout << f.get() << \"\\n\";    // waits, then prints 42",
+                "t.join();"
+              ]
+            },
+            "`get()` can be called **only once** (use `std::shared_future` if many threads need the result). If the promise is destroyed without setting a value, `get()` throws `std::future_error` (broken_promise)."
+          ]
+        },
+        {
+          "question": "What does std::async do? What are the launch policies?",
+          "answer": [
+            "`std::async` runs a function, possibly in another thread, and returns a `std::future` for the result. Exceptions thrown in the function are stored and rethrown by `get()`.",
+            "- `std::launch::async`: run in a **new thread** immediately.\n- `std::launch::deferred`: run **lazily** in the thread that calls `get()` or `wait()`, no new thread.\n- Default (async | deferred): the implementation chooses, so you cannot be sure a thread is created. **Always pass the policy explicitly** if you need real parallelism.",
+            {
+              "code": [
+                "auto f = std::async(std::launch::async, [] { return 6 * 7; });",
+                "std::cout << f.get() << \"\\n\";   // 42"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Why does this code not run in parallel? (the async future destructor trap)",
+          "answer": [
+            "The destructor of a future returned from `std::async` with the `async` policy **blocks until the task finishes**. If you ignore the returned future, it is a temporary that is destroyed at the end of the statement, so the call becomes synchronous.",
+            {
+              "code": [
+                "std::async(std::launch::async, task1);   // temporary future destroyed -> waits here",
+                "std::async(std::launch::async, task2);   // starts only AFTER task1 finishes",
+                "",
+                "// FIX: keep the futures alive",
+                "auto f1 = std::async(std::launch::async, task1);",
+                "auto f2 = std::async(std::launch::async, task2);",
+                "f1.get(); f2.get();"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What is std::packaged_task?",
+          "answer": [
+            "It wraps a callable and connects its result to a future. You can move it to another thread (for example a thread pool queue) and run it there, and the caller waits on the future. `std::async` is roughly packaged_task plus thread creation.",
+            {
+              "code": [
+                "std::packaged_task<int(int,int)> task([](int a, int b){ return a + b; });",
+                "std::future<int> f = task.get_future();",
+                "std::thread t(std::move(task), 2, 3);   // packaged_task is move-only",
+                "std::cout << f.get() << \"\\n\";          // 5",
+                "t.join();"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Compare std::thread, std::async, std::promise and std::packaged_task. When to use which?",
+          "answer": [
+            "- **std::thread:** low-level; you manage the lifetime, and there is no direct way to get a return value or exception.\n- **std::async:** easiest for \"run this and give me the result\". Less control over threads.\n- **std::promise / future:** manual hand-off of a value (or exception) from one place to another, for example from within a long-running thread.\n- **std::packaged_task:** a task you can queue and run later (thread pools).",
+            "Rule: start with `std::async` for simple parallel work; use a thread pool plus packaged_task for many tasks."
+          ]
+        },
+        {
+          "question": "What are future wait, wait_for and wait_until? How do you check if a future is ready?",
+          "answer": [
+            "`wait()` blocks until ready. `wait_for(duration)` and `wait_until(time_point)` return `std::future_status::ready`, `timeout` or `deferred`.",
+            {
+              "code": [
+                "auto f = std::async(std::launch::async, slow_job);",
+                "while (f.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready) {",
+                "    std::cout << \"still working...\\n\";",
+                "}",
+                "std::cout << f.get() << \"\\n\";"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Write a producer-consumer in C++ with condition_variable.",
+          "answer": [
+            "One thread pushes items into a queue, another pops them. The consumer sleeps when the queue is empty; a `done` flag ends the loop.",
+            {
+              "code": [
+                "#include <condition_variable>",
+                "#include <iostream>",
+                "#include <mutex>",
+                "#include <queue>",
+                "#include <thread>",
+                "",
+                "std::queue<int> q;",
+                "std::mutex m;",
+                "std::condition_variable cv;",
+                "bool done = false;",
+                "",
+                "void producer() {",
+                "    for (int i = 1; i <= 5; ++i) {",
+                "        { std::lock_guard<std::mutex> lk(m); q.push(i); }",
+                "        cv.notify_one();",
+                "    }",
+                "    { std::lock_guard<std::mutex> lk(m); done = true; }",
+                "    cv.notify_all();",
+                "}",
+                "",
+                "void consumer() {",
+                "    for (;;) {",
+                "        std::unique_lock<std::mutex> lk(m);",
+                "        cv.wait(lk, []{ return !q.empty() || done; });",
+                "        if (q.empty() && done) break;        // finished",
+                "        int v = q.front(); q.pop();",
+                "        lk.unlock();                         // process outside the lock",
+                "        std::cout << \"got \" << v << \"\\n\";",
+                "    }",
+                "}",
+                "",
+                "int main() {",
+                "    std::thread p(producer), c(consumer);",
+                "    p.join(); c.join();",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "How do you print the numbers 1 to N alternately from two threads (odd/even printing)?",
+          "answer": [
+            "A famous coding question. Use a shared counter, a mutex and a condition variable. Each thread waits until it is its turn (odd or even).",
+            {
+              "code": [
+                "std::mutex m;",
+                "std::condition_variable cv;",
+                "int n = 1;",
+                "const int MAX = 10;",
+                "",
+                "void print(bool odd) {",
+                "    while (true) {",
+                "        std::unique_lock<std::mutex> lk(m);",
+                "        cv.wait(lk, [&]{ return n > MAX || (n % 2 == 1) == odd; });",
+                "        if (n > MAX) break;",
+                "        std::cout << (odd ? \"odd : \" : \"even: \") << n++ << \"\\n\";",
+                "        cv.notify_all();",
+                "    }",
+                "}",
+                "",
+                "int main() {",
+                "    std::thread t1(print, true), t2(print, false);",
+                "    t1.join(); t2.join();",
+                "}"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-atomics-memory-model",
+      "title": "Atomics and the Memory Model",
+      "description": "std::atomic, memory ordering, CAS, false sharing and visibility.",
+      "questions": [
+        {
+          "question": "What is std::atomic and what does atomic mean?",
+          "answer": [
+            "An operation is **atomic** if other threads can see it only as fully done or not done at all, never half done. `std::atomic<T>` gives atomic read, write and read-modify-write operations on a variable, without a mutex (if the hardware supports it).",
+            {
+              "code": [
+                "std::atomic<int> counter{0};",
+                "",
+                "void work() {",
+                "    for (int i = 0; i < 100000; ++i)",
+                "        counter.fetch_add(1);        // or ++counter, atomic",
+                "}",
+                "// two threads -> counter is always exactly 200000"
+              ]
+            },
+            "Operations: `load`, `store`, `exchange`, `fetch_add`, `fetch_sub`, `fetch_or`, `compare_exchange_weak/strong`. Atomics are not copyable. Check `is_lock_free()` to see if they use locks internally."
+          ]
+        },
+        {
+          "question": "Is i++ atomic? What about on a std::atomic<int>?",
+          "answer": [
+            "A plain `i++` is **not atomic**: it is three steps (load, add, store), so two threads can both read the same value and one update is lost. On `std::atomic<int>`, `i++` is a single atomic read-modify-write.",
+            "A subtle point: `a = a + 1` on an atomic is **not** atomic as a whole. It is an atomic load, then a separate atomic store. Use `a++`, `a += 1` or `fetch_add`."
+          ]
+        },
+        {
+          "question": "What is compare_exchange? What is the difference between weak and strong?",
+          "answer": [
+            "`compare_exchange(expected, desired)` is CAS: *if the atomic equals `expected`, set it to `desired` and return true; otherwise copy the current value into `expected` and return false*. It is the base of lock-free algorithms.",
+            "`compare_exchange_weak` may fail **spuriously** (return false even though the value matched) but can be faster on some CPUs, so use it **in a loop**. `compare_exchange_strong` never fails spuriously, so use it for a single attempt.",
+            {
+              "code": [
+                "// atomic \"multiply by 2\"",
+                "std::atomic<int> v{5};",
+                "int old = v.load();",
+                "while (!v.compare_exchange_weak(old, old * 2)) {",
+                "    // old now contains the current value, retry",
+                "}"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What are the memory orders in C++? (relaxed, acquire, release, acq_rel, seq_cst)",
+          "answer": [
+            "A memory order tells the compiler and CPU how much reordering is allowed around an atomic operation.",
+            "- **memory_order_relaxed:** only atomicity, no ordering with other variables. Good for plain counters.\n- **memory_order_release** (on a store): all writes before it become visible to a thread that **acquires** the same variable.\n- **memory_order_acquire** (on a load): all reads and writes after it see what was written before the matching release.\n- **memory_order_acq_rel:** both, for read-modify-write.\n- **memory_order_seq_cst (default):** all threads agree on a single total order of these operations. Simplest and safest, but can be slower.",
+            "If you are not sure, use the default `seq_cst`."
+          ]
+        },
+        {
+          "question": "Explain acquire-release with an example (publishing data with a flag).",
+          "answer": [
+            "A writer prepares data, then sets a flag with **release**. A reader waits for the flag with **acquire**. Once the reader sees the flag, it is guaranteed to see the data written before it.",
+            {
+              "code": [
+                "int data = 0;                       // plain variable",
+                "std::atomic<bool> ready{false};",
+                "",
+                "void writer() {",
+                "    data = 42;                                        // 1",
+                "    ready.store(true, std::memory_order_release);     // 2: publish",
+                "}",
+                "",
+                "void reader() {",
+                "    while (!ready.load(std::memory_order_acquire)) {} // 3: wait",
+                "    assert(data == 42);                               // 4: always true",
+                "}"
+              ]
+            },
+            "With `relaxed` ordering the assert could fail, because the compiler or CPU may let the store to `ready` become visible before the store to `data`."
+          ]
+        },
+        {
+          "question": "What is std::atomic_flag and how do you write a spinlock with it?",
+          "answer": [
+            "`std::atomic_flag` is the simplest atomic type (always lock-free). `test_and_set()` sets it and returns the previous value, `clear()` resets it.",
+            {
+              "code": [
+                "class Spinlock {",
+                "    std::atomic_flag flag = ATOMIC_FLAG_INIT;",
+                "public:",
+                "    void lock()   { while (flag.test_and_set(std::memory_order_acquire)) { /* spin */ } }",
+                "    void unlock() { flag.clear(std::memory_order_release); }",
+                "};"
+              ]
+            },
+            "Use only for very short critical sections. Real code often adds a CPU pause instruction or yields while spinning."
+          ]
+        },
+        {
+          "question": "What is false sharing and how do you avoid it?",
+          "answer": [
+            "CPUs move memory in **cache lines** (usually 64 bytes). If two threads write to *different* variables that sit in the *same* cache line, the line bounces between the cores, and performance drops badly, even though no data is shared logically.",
+            {
+              "code": [
+                "struct Bad  { std::atomic<int> a; std::atomic<int> b; };   // a and b share one cache line",
+                "",
+                "struct Good {",
+                "    alignas(64) std::atomic<int> a;                          // each on its own cache line",
+                "    alignas(64) std::atomic<int> b;",
+                "};",
+                "// C++17: std::hardware_destructive_interference_size gives the right size"
+              ]
+            },
+            "Typical case: an array of per-thread counters. Pad each element to a cache line, or give each thread a local counter and sum them at the end."
+          ]
+        },
+        {
+          "question": "What is cache coherence and what is a memory barrier (fence)?",
+          "answer": [
+            "**Cache coherence:** the hardware keeps the per-core caches consistent, so all cores agree on the value of one memory location. It does **not** guarantee the order in which writes to *different* locations become visible.",
+            "A **memory barrier (fence)** prevents the compiler and CPU from reordering memory operations across it. In C++ use `std::atomic_thread_fence(order)` or the memory order on atomic operations. Mutex lock and unlock also act as acquire and release barriers."
+          ]
+        },
+        {
+          "question": "What is the 'happens-before' relationship?",
+          "answer": [
+            "If operation A *happens-before* operation B, then the effects of A (all its writes) are guaranteed to be visible to B. Within one thread, program order gives it. Between threads you create it with synchronisation: unlocking a mutex happens-before the next lock of it; a release store happens-before the acquire load that reads it; `thread` start happens-before the thread function begins; thread end happens-before `join` returns.",
+            "A data race is exactly two conflicting accesses that are **not** ordered by happens-before."
+          ]
+        },
+        {
+          "question": "Can the compiler or CPU reorder my code? Why does this matter for threads?",
+          "answer": [
+            "Yes. The compiler and CPU may reorder or optimise instructions as long as a **single thread** cannot tell the difference. Another thread can see the changes in a different order, or never see a change (the compiler may keep a variable in a register).",
+            {
+              "code": [
+                "bool stop = false;                 // plain bool, NOT atomic",
+                "",
+                "void worker() {",
+                "    while (!stop) { work(); }      // compiler may read 'stop' once -> infinite loop",
+                "}",
+                "// FIX: std::atomic<bool> stop{false};"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Is std::atomic<std::shared_ptr> needed? Is shared_ptr thread-safe?",
+          "answer": [
+            "A `shared_ptr` control block (the reference count) is thread-safe, so different threads can safely copy, destroy and hold **different** shared_ptr objects that point to the same object.",
+            "But reading and writing the **same shared_ptr variable** from different threads is a data race (it has two members, the pointer and the control block, that must change together). Since C++20 use `std::atomic<std::shared_ptr<T>>` (earlier: `std::atomic_load/store` free functions). And the object being pointed to is never protected automatically."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp20-and-newer",
+      "title": "Modern C++ Concurrency (C++17 / C++20)",
+      "description": "jthread, stop_token, latch, barrier, semaphores, atomic wait and parallel algorithms.",
+      "questions": [
+        {
+          "question": "What is std::jthread (C++20) and how is it better than std::thread?",
+          "answer": [
+            "`std::jthread` **joins automatically in its destructor**, so you cannot accidentally hit `std::terminate`. It also supports cooperative cancellation: it owns a `std::stop_source`, and the thread function can accept a `std::stop_token` as its first parameter.",
+            {
+              "code": [
+                "#include <thread>",
+                "",
+                "std::jthread t([](std::stop_token st) {",
+                "    while (!st.stop_requested()) {",
+                "        do_work();",
+                "    }",
+                "});",
+                "// ...",
+                "t.request_stop();   // ask it to stop (optional)",
+                "// destructor: request_stop() + join() automatically"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What are std::latch, std::barrier and std::counting_semaphore (C++20)?",
+          "answer": [
+            "- **std::latch:** a one-time countdown. Threads call `count_down()`; waiters in `wait()` continue when it reaches 0. Cannot be reused.\n- **std::barrier:** like a pthread barrier, **reusable** for many phases, and can run a completion function once per phase.\n- **std::counting_semaphore / binary_semaphore:** the C++ version of POSIX semaphores (`acquire`, `release`).",
+            {
+              "code": [
+                "std::latch ready(3);                     // wait for 3 workers",
+                "for (int i = 0; i < 3; ++i)",
+                "    std::jthread([&]{ init(); ready.count_down(); }).detach();",
+                "ready.wait();                            // continues when all 3 are done"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What are condition_variable_any and atomic wait/notify (C++20)?",
+          "answer": [
+            "`std::condition_variable_any` works with **any lock type** (not only `unique_lock<mutex>`), and in C++20 supports a `stop_token` in its `wait`, so a waiting thread can be woken by a stop request.",
+            "C++20 atomics also have `wait(old)`, `notify_one()` and `notify_all()`: a thread can sleep until the atomic changes from `old`, without needing a mutex and condition variable."
+          ]
+        },
+        {
+          "question": "What are parallel algorithms in C++17?",
+          "answer": [
+            "Many standard algorithms accept an **execution policy** as the first argument, so they can run in parallel: `std::execution::seq`, `par`, `par_unseq`.",
+            {
+              "code": [
+                "#include <algorithm>",
+                "#include <execution>",
+                "#include <vector>",
+                "",
+                "std::vector<int> v(1'000'000, 1);",
+                "std::sort(std::execution::par, v.begin(), v.end());",
+                "int sum = std::reduce(std::execution::par, v.begin(), v.end(), 0);"
+              ]
+            },
+            "With GCC you need to link with TBB (`-ltbb`). The functions you pass must be free of data races."
+          ]
+        },
+        {
+          "question": "What is std::osyncstream and why is it useful?",
+          "answer": [
+            "Printing with `std::cout` from several threads can produce mixed up lines. `std::osyncstream` (C++20) buffers the output and writes it to the stream **as one block** when destroyed.",
+            {
+              "code": [
+                "#include <syncstream>",
+                "std::osyncstream(std::cout) << \"thread \" << id << \" finished\\n\";"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "What are coroutines and how do they relate to threads?",
+          "answer": [
+            "C++20 coroutines are functions that can **suspend and resume** (`co_await`, `co_yield`, `co_return`). They are not threads: they are lightweight and run on whichever thread resumes them. They are used for asynchronous I/O and generators, so thousands of tasks can run on a few threads without blocking them."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns",
+      "title": "Classic Problems and Patterns",
+      "description": "Frequently asked coding problems and design patterns for concurrent programs.",
+      "questions": [
+        {
+          "question": "What is the readers-writers problem?",
+          "answer": [
+            "Many threads read shared data, some write it. Readers may overlap, but a writer needs exclusive access. A read-write lock solves it (`pthread_rwlock`, `std::shared_mutex`).",
+            "Variants differ in who gets priority. **Readers-preference** can starve writers; **writers-preference** can starve readers; a **fair** version serves requests in arrival order."
+          ]
+        },
+        {
+          "question": "What is a thread pool and why do we use it?",
+          "answer": [
+            "A fixed set of worker threads created once, that take tasks from a queue. It avoids the cost of creating and destroying a thread for every task, limits the number of threads (so the system is not overloaded), and gives a simple way to run many small jobs.",
+            "Pool size: for CPU-bound work use about the **number of cores**; for I/O-bound work use more threads, or better asynchronous I/O."
+          ]
+        },
+        {
+          "question": "What is the difference between CPU-bound and I/O-bound work for choosing the number of threads?",
+          "answer": [
+            "A **CPU-bound** thread keeps the core busy, so more threads than cores only add context switching. An **I/O-bound** thread spends most of its time waiting for disk or network, so many more threads than cores can still make sense, because other threads run while some wait.",
+            "A rough formula: `threads = cores × (1 + wait_time / compute_time)`. Always measure."
+          ]
+        },
+        {
+          "question": "What is the reactor and what is the difference between thread-per-connection and event-driven (epoll) servers?",
+          "answer": [
+            "**Thread-per-connection:** simple, but thousands of threads cost memory and context switches. **Event-driven (reactor):** a few threads wait on many sockets using `epoll` (or `select`/`poll`) and handle whichever is ready, without blocking. It scales much better, and is the design of nginx and Node.js. A common hybrid: an event loop that hands slow work to a thread pool."
+          ]
+        },
+        {
+          "question": "What is the active object / message-passing approach, and why is it often safer than shared memory?",
+          "answer": [
+            "Instead of many threads locking shared data, one thread **owns** the data and others send it messages through a thread-safe queue. Because only the owner touches the data, there is no data race and no lock ordering to worry about. It is the idea behind actors and Go-style channels (\"share memory by communicating\")."
+          ]
+        },
+        {
+          "question": "Implement a simple thread-safe counter / bank account class (monitor style) in C++.",
+          "answer": [
+            "Keep the data private and lock inside every public method. For operations that involve two objects, lock both with `std::scoped_lock`.",
+            {
+              "code": [
+                "class Account {",
+                "    mutable std::mutex m_;",
+                "    int balance_;",
+                "public:",
+                "    explicit Account(int b) : balance_(b) {}",
+                "",
+                "    int balance() const {",
+                "        std::lock_guard<std::mutex> g(m_);",
+                "        return balance_;",
+                "    }",
+                "    void deposit(int x) {",
+                "        std::lock_guard<std::mutex> g(m_);",
+                "        balance_ += x;",
+                "    }",
+                "    bool withdraw(int x) {                    // check and update in ONE critical section",
+                "        std::lock_guard<std::mutex> g(m_);",
+                "        if (balance_ < x) return false;",
+                "        balance_ -= x;",
+                "        return true;",
+                "    }",
+                "    friend bool transfer(Account& a, Account& b, int x) {",
+                "        if (&a == &b) return false;",
+                "        std::scoped_lock lock(a.m_, b.m_);    // no deadlock",
+                "        if (a.balance_ < x) return false;",
+                "        a.balance_ -= x;",
+                "        b.balance_ += x;",
+                "        return true;",
+                "    }",
+                "};"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Parallel sum of an array using threads (divide and conquer).",
+          "answer": [
+            "Split the array into chunks, let each thread compute its own partial sum **without sharing any variable**, then add the partial results after joining. This avoids locks and false sharing.",
+            {
+              "code": [
+                "#include <numeric>",
+                "#include <thread>",
+                "#include <vector>",
+                "",
+                "long long parallel_sum(const std::vector<int>& v, unsigned nthreads) {",
+                "    std::vector<long long> partial(nthreads, 0);",
+                "    std::vector<std::thread> ts;",
+                "    size_t chunk = v.size() / nthreads;",
+                "",
+                "    for (unsigned i = 0; i < nthreads; ++i) {",
+                "        size_t b = i * chunk;",
+                "        size_t e = (i == nthreads - 1) ? v.size() : b + chunk;",
+                "        ts.emplace_back([&, i, b, e] {",
+                "            long long s = 0;                       // local sum, no sharing",
+                "            for (size_t k = b; k < e; ++k) s += v[k];",
+                "            partial[i] = s;",
+                "        });",
+                "    }",
+                "    for (auto& t : ts) t.join();",
+                "    return std::accumulate(partial.begin(), partial.end(), 0LL);",
+                "}"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "performance-debugging",
+      "title": "Performance and Debugging Multithreaded Code",
+      "description": "Tools and techniques to find races, deadlocks and bottlenecks.",
+      "questions": [
+        {
+          "question": "How do you detect data races? (ThreadSanitizer and Helgrind)",
+          "answer": [
+            "**ThreadSanitizer (TSan):** compile with `-fsanitize=thread -g`. It reports data races (with stack traces of both accesses), lock-order inversions and misuse of mutexes. About 5 to 15 times slower.",
+            "**Valgrind Helgrind / DRD:** no recompile needed, but slower; reports races and lock-order problems.",
+            {
+              "code": [
+                "g++ -std=c++17 -g -O1 -fsanitize=thread race.cpp -o race -pthread",
+                "./race",
+                "# WARNING: ThreadSanitizer: data race ...",
+                "",
+                "valgrind --tool=helgrind ./prog"
+              ]
+            },
+            "Do not combine TSan with AddressSanitizer in the same build. Tools only detect races that actually happen in the run, so run tests many times."
+          ]
+        },
+        {
+          "question": "My program works with 1 thread but crashes or gives wrong results with many. How do you debug it?",
+          "answer": [
+            "1. Run with TSan or Helgrind to find data races.\n2. Check every shared variable: who writes it, and which lock protects it?\n3. Look for check-then-act, unprotected `shared_ptr` or container access, and pointers to stack data passed to threads.\n4. Run under `gdb`; use `thread apply all bt` on a hang to see all stacks.\n5. Add logging with the thread id (lock the output).\n6. Try to make the bug more likely: more threads, `sleep` or `yield` inserted at suspicious places, a stress test in a loop, `taskset` to limit cores.\n7. Reduce threads to 1 to confirm the logic is right."
+          ]
+        },
+        {
+          "question": "Why can adding more threads make a program slower?",
+          "answer": [
+            "- **Lock contention:** threads spend time waiting for the same mutex (this is the serial part in Amdahl's law).\n- **Context switching** and cache misses when there are more runnable threads than cores.\n- **False sharing** of cache lines.\n- **Memory bandwidth** is the real bottleneck.\n- **Thread creation cost** is bigger than the work done.\n- **Allocator contention** (a global `malloc` lock).",
+            "Fix by reducing shared state, using per-thread data, bigger work chunks, a thread pool and reducing the time under locks."
+          ]
+        },
+        {
+          "question": "How do you reduce lock contention?",
+          "answer": [
+            "- Hold locks for a shorter time (do the heavy work outside).\n- **Lock striping / fine-grained locks:** split one big lock into many (for example one lock per hash bucket).\n- Use **read-write locks** for read-heavy data.\n- Use **atomics** for simple counters and flags.\n- Use **thread-local** data and merge at the end.\n- **Batch** operations (take many items from the queue per lock).\n- Use **lock-free** structures or copy-on-write snapshots for the hottest paths."
+          ]
+        },
+        {
+          "question": "How do you find which thread is using the CPU, or why a process is stuck?",
+          "answer": [
+            "- `top -H -p <pid>` or `ps -L -p <pid>` shows each thread.\n- `gdb -p <pid>` then `info threads` and `thread apply all bt`.\n- `pstack <pid>` or `eu-stack -p <pid>` for a quick stack dump.\n- `strace -f -p <pid>` shows the system calls of all threads (a thread stuck in `futex(...)` is waiting for a lock or condition variable).\n- `perf top`, `perf record -g` for CPU hot spots, and `/proc/<pid>/task/` and `/proc/<pid>/status` for thread counts."
+          ]
+        },
+        {
+          "question": "What is a futex?",
+          "answer": [
+            "A futex (\"fast userspace mutex\") is the Linux kernel mechanism under pthread mutexes, condition variables and semaphores. A lock is a number in user memory. If the lock is free, taking it is just an atomic instruction with **no system call**. Only when there is contention does the thread call the kernel (`futex(FUTEX_WAIT)`) to sleep, and the unlocker calls `FUTEX_WAKE`. This is why uncontended mutexes are very cheap."
+          ]
+        },
+        {
+          "question": "How many threads can a process create? What limits it?",
+          "answer": [
+            "Limits include the stack size per thread (virtual address space: 8 MB × N), `ulimit -u` (max user processes/threads), `/proc/sys/kernel/threads-max`, `/proc/sys/vm/max_map_count`, cgroup `pids.max` in containers, and RAM. `pthread_create` returns `EAGAIN` when a limit is reached.",
+            "Practically, tens of thousands of threads is possible but a bad design. Use a thread pool or an event-driven model instead."
+          ]
+        },
+        {
+          "question": "How do you name a thread for debugging, and set its stack or look at all stack sizes?",
+          "answer": [
+            "`pthread_setname_np(thread, \"worker-1\")` (Linux, name max 15 characters) shows the name in `top -H`, `ps -L` and gdb (`info threads`). Use `pthread_attr_setstacksize` to change the stack, and `pthread_getattr_np` to read the real one."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tricky",
+      "title": "Tricky Questions (Looks Easy, Often Answered Wrong)",
+      "description": "Short questions where even experienced developers often slip.",
+      "questions": [
+        {
+          "question": "Two threads each do counter++ 1,000,000 times on a plain int. What is the final value?",
+          "answer": [
+            "Not 2,000,000. It is **unpredictable and less than or equal to** 2,000,000, because the increments are not atomic and updates get lost. In fact it is a data race, so the C and C++ standards say the behaviour is **undefined**, not just \"wrong number\".",
+            "Fix: `std::atomic<int>`, or protect with a mutex."
+          ]
+        },
+        {
+          "question": "Is it enough to make each method of a class thread-safe?",
+          "answer": [
+            "No. Each call may be safe alone, but a **sequence** of calls is not atomic. For example `if (!map.contains(k)) map.insert(k, v);` can insert twice, or `if (!q.empty()) x = q.front(); q.pop();` can pop an empty queue if another thread acts in between.",
+            "Provide combined operations such as `insert_if_absent` or `try_pop`, which lock once for the whole check-and-act."
+          ]
+        },
+        {
+          "question": "Does a mutex guarantee fairness (first come, first served)?",
+          "answer": [
+            "No. Standard mutexes do not promise any order. A thread that unlocks and immediately locks again can keep winning (barging), and others can starve. If fairness matters, build it with a ticket lock or a queue."
+          ]
+        },
+        {
+          "question": "Is std::map::operator[] safe for readers?",
+          "answer": [
+            "No. `operator[]` **inserts** a new element if the key is missing, so it is a *write*. Even reading with `[]` from several threads is a data race when a key may not exist. Use `find()` or `at()` for read-only access, and `const` references to show intent."
+          ]
+        },
+        {
+          "question": "Is the vector<bool> or a vector of plain bools safe to modify from different threads at different indexes?",
+          "answer": [
+            "A normal `std::vector<int>`: different threads may write to **different elements** safely (they are different memory locations), as long as the vector itself is not resized. But `std::vector<bool>` is **packed into bits**, so neighbouring elements share one byte, and writing different indexes can race. Use `std::vector<char>` or `std::vector<std::atomic<bool>>`."
+          ]
+        },
+        {
+          "question": "Does std::thread t(f); guarantee that f has started running when the constructor returns?",
+          "answer": [
+            "No. The thread is created, but it may not have been scheduled yet. Never assume ordering between the creating thread and the new thread without synchronisation. (What is guaranteed: everything before the constructor *happens-before* the start of `f`.)"
+          ]
+        },
+        {
+          "question": "Can a thread join itself or can two threads join the same thread?",
+          "answer": [
+            "Joining yourself gives a deadlock (`pthread_join` returns `EDEADLK`; `std::thread::join` throws `std::system_error` with `resource_deadlock_would_occur`). Joining the same thread from two threads at once is undefined behaviour for pthreads. In C++ a thread can be joined only once; after that `joinable()` is false."
+          ]
+        },
+        {
+          "question": "What does this print: lock_guard<mutex>(m); (without a variable name)?",
+          "answer": [
+            "A famous bug. Without a name, `std::lock_guard<std::mutex>(m);` is parsed as a **declaration** of a variable named `m` of type lock_guard (it shadows your mutex), so nothing is locked. Or if written as a temporary expression, it is destroyed (and unlocks) immediately at the end of the statement.",
+            {
+              "code": [
+                "std::lock_guard<std::mutex>(m);        // BUG: does not protect anything",
+                "std::lock_guard<std::mutex> lock(m);   // correct: the guard has a name and lives until the end of the scope"
+              ]
+            }
+          ]
+        },
+        {
+          "question": "Is a function-local static variable initialised in a thread-safe way?",
+          "answer": [
+            "In C++11 and later, **yes**. The initialisation happens exactly once and other threads wait. In C++03 it was not guaranteed. But the *use* of the object after initialisation is not automatically thread-safe, and a plain `static int counter = 0; counter++;` inside a function is still a data race."
+          ]
+        },
+        {
+          "question": "What does pthread_cond_wait return and what is the state of the mutex afterwards?",
+          "answer": [
+            "It returns 0 on success, and the calling thread **owns the mutex again** (it is locked), even if it woke because of a spurious wakeup or an error such as timeout with `timedwait`. That is why after the wait returns you can safely check the predicate and use the shared data, and you must unlock the mutex yourself."
+          ]
+        },
+        {
+          "question": "Is it safe to destroy a mutex or a condition variable just after unlocking it or signalling?",
+          "answer": [
+            "Only if no other thread can still be using it. A common bug: the last thread signals a condition variable that lives in a structure which the main thread frees right after being woken. The signalling thread may still be inside `notify`. Keep the lock while notifying, or use `shared_ptr` to keep the object alive, or `join` the threads before destroying shared objects."
+          ]
+        },
+        {
+          "question": "Do more threads always mean faster code on a machine with 4 cores?",
+          "answer": [
+            "No. For CPU-bound work, more than 4 runnable threads only adds context switching. The speed-up is limited by Amdahl's law (the serial part), memory bandwidth, lock contention and false sharing. Often 4 well-designed threads beat 40 badly designed ones."
+          ]
+        },
+        {
+          "question": "What is the difference between a thread and an async task? Does std::async always create a new thread?",
+          "answer": [
+            "No. With the default policy the implementation may run the task **deferred** (lazily, in the thread that calls `get()`), so no thread is created. Use `std::launch::async` to force a new thread. Also, `std::async` is a one-shot task returning a future, while a `std::thread` is a long-lived path of execution."
+          ]
+        },
+        {
+          "question": "Can you lock a mutex in one thread and unlock it in another?",
+          "answer": [
+            "No, not with `pthread_mutex_t` or `std::mutex`: the thread that locked it must unlock it (otherwise undefined behaviour). If you need this signalling behaviour, use a **semaphore** (any thread can `post`), or a condition variable with a flag."
+          ]
+        },
+        {
+          "question": "Why is sleep() not a correct way to synchronise threads?",
+          "answer": [
+            "Sleeping only guesses that the other thread will be done in time. On a slow, busy or heavily loaded machine the guess is wrong, and the bug is hard to reproduce. Real synchronisation (join, mutex, condition variable, future, latch) waits for the **actual event**, not for a time."
+          ]
+        }
+      ]
+    }
+  ]
+}

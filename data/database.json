@@ -1,1 +1,2513 @@
-{"topics":[{"id":"sql-basics","title":"SQL Basics","description":"Read and filter relational data.","questions":[{"question":"What does SELECT do?","answer":["SELECT retrieves data from one or more tables. WHERE filters the rows."],"code":"SELECT name FROM employees WHERE active = 1;"}]},{"id":"joins","title":"Joins","description":"Combine related tables.","questions":[{"question":"What is an INNER JOIN?","answer":["An INNER JOIN returns combinations of rows where the join condition matches in both inputs."],"code":"SELECT e.name, d.name\nFROM employees e\nINNER JOIN departments d ON e.department_id = d.id;"}]}]}
+{
+  "topics": [
+    {
+      "id": "database-foundations",
+      "title": "01. Database Fundamentals",
+      "description": "Start here: terminology, architecture, and how databases work.",
+      "questions": [
+        {
+          "question": "What is a database?",
+          "answer": [
+            "An organized collection of information that software can store, search, and update.",
+            "**Example:** A banking database stores customers, accounts, and transactions.",
+            "**Remember:** Database = organized data."
+          ]
+        },
+        {
+          "question": "What is a DBMS?",
+          "answer": [
+            "A Database Management System is software that manages databases, permissions, queries, and recovery.",
+            "**Example:** PostgreSQL and MySQL are DBMS products.",
+            "**Remember:** DBMS = manager; database = data."
+          ]
+        },
+        {
+          "question": "What is an RDBMS?",
+          "answer": [
+            "A relational DBMS stores data in tables connected using keys.",
+            "**Example:** Customers and Orders are separate tables connected by customer_id.",
+            "**Remember:** Relational = related tables."
+          ]
+        },
+        {
+          "question": "What is SQL?",
+          "answer": [
+            "Structured Query Language is used to read and change relational data.",
+            "**Example:** SELECT finds accounts; UPDATE changes account status.",
+            "**Remember:** SQL = language, DBMS = software."
+          ]
+        },
+        {
+          "question": "What is a table, row, and column?",
+          "answer": [
+            "A table represents a kind of entity; a row is one record; a column is one attribute.",
+            "**Example:** Employees table; one row for Asha; salary column.",
+            "**Remember:** Table = sheet, row = item, column = property."
+          ]
+        },
+        {
+          "question": "What is a schema?",
+          "answer": [
+            "A schema defines how data is organized: tables, columns, types, and relationships; in some DBMSs it is also a namespace.",
+            "**Example:** An orders table has order_id INT and amount DECIMAL.",
+            "**Remember:** Schema = blueprint."
+          ]
+        },
+        {
+          "question": "What is metadata?",
+          "answer": [
+            "Metadata is information describing data rather than business records.",
+            "**Example:** Column names, index definitions, and constraints are metadata.",
+            "**Remember:** Metadata = data about data."
+          ]
+        },
+        {
+          "question": "What is a database instance?",
+          "answer": [
+            "The running DBMS process and its managed state; terminology varies by vendor.",
+            "**Example:** A PostgreSQL server instance hosts several databases.",
+            "**Remember:** Instance = running system."
+          ]
+        },
+        {
+          "question": "What is a relational model?",
+          "answer": [
+            "It models data as relations with attributes and tuples, and uses keys and constraints.",
+            "**Example:** A customer ID connects an order to its customer.",
+            "**Remember:** Think tables + rules + relationships."
+          ]
+        },
+        {
+          "question": "What is a primary key?",
+          "answer": [
+            "A column or set of columns that uniquely identifies each row and cannot be NULL.",
+            "**Example:** customer_id uniquely identifies one customer.",
+            "**Remember:** PK = row identity."
+          ]
+        },
+        {
+          "question": "What is a foreign key?",
+          "answer": [
+            "A constraint requiring a value to refer to a valid key in another or the same table, subject to NULL rules.",
+            "**Example:** orders.customer_id refers to customers.customer_id.",
+            "**Remember:** FK = relationship guard."
+          ]
+        },
+        {
+          "question": "What is a candidate key?",
+          "answer": [
+            "A minimal set of columns capable of uniquely identifying a row.",
+            "**Example:** An employee may have unique employee_id and unique work_email.",
+            "**Remember:** Candidate = possible PK."
+          ]
+        },
+        {
+          "question": "What is a composite key?",
+          "answer": [
+            "A key made from two or more columns.",
+            "**Example:** order_items uses (order_id, line_number).",
+            "**Remember:** Composite = combination."
+          ]
+        },
+        {
+          "question": "What is a unique key?",
+          "answer": [
+            "A constraint that ensures all values in a column are different.",
+            "**Example:** users table keeps email addresses unique while user_id is the primary key.",
+            "**Remember:** Unique = no duplicates, allows NULLs."
+          ]
+        },
+        {
+          "question": "What is a surrogate key?",
+          "answer": [
+            "An artificial identifier created for a row rather than a business attribute.",
+            "**Example:** An auto-generated customer_id instead of using email.",
+            "**Remember:** Surrogate = technical ID."
+          ]
+        },
+        {
+          "question": "What is a natural key?",
+          "answer": [
+            "A business value that already uniquely identifies an entity in its domain.",
+            "**Example:** A country ISO code can be a natural key.",
+            "**Remember:** Natural = real-world identity."
+          ]
+        },
+        {
+          "question": "What are constraints?",
+          "answer": [
+            "Rules enforced by the database to protect data quality.",
+            "**Example:** NOT NULL prevents missing names; CHECK prevents negative quantities.",
+            "**Remember:** Constraints stop bad data."
+          ]
+        },
+        {
+          "question": "What is referential integrity?",
+          "answer": [
+            "Relationships remain valid because foreign keys prevent invalid references.",
+            "**Example:** An order cannot reference a nonexistent customer when the FK is enforced.",
+            "**Remember:** No orphan references."
+          ]
+        },
+        {
+          "question": "What is cardinality in relationships?",
+          "answer": [
+            "It describes how many records can relate: one-to-one, one-to-many, or many-to-many.",
+            "**Example:** One customer has many orders.",
+            "**Remember:** 1:1, 1:N, M:N."
+          ]
+        },
+        {
+          "question": "How do you model many-to-many relationships?",
+          "answer": [
+            "Use a junction table with foreign keys to both entities.",
+            "**Example:** student_courses(student_id, course_id).",
+            "**Remember:** M:N becomes two 1:N links."
+          ]
+        },
+        {
+          "question": "What is the difference between OLTP and OLAP?",
+          "answer": [
+            "OLTP handles frequent small transactions; OLAP handles large analytical queries.",
+            "**Example:** Card payments are OLTP; yearly revenue reports are OLAP.",
+            "**Remember:** OLTP = operations, OLAP = analysis."
+          ]
+        },
+        {
+          "question": "What is a database transaction?",
+          "answer": [
+            "A logical unit of work that succeeds or fails as a unit.",
+            "**Example:** Transfer money: debit one account and credit another.",
+            "**Remember:** Transaction = all or nothing."
+          ]
+        },
+        {
+          "question": "What is an ER diagram?",
+          "answer": [
+            "An Entity-Relationship diagram shows entities, attributes, and their relationships.",
+            "**Example:** Customer 1-to-many Order.",
+            "**Remember:** ERD = visual data map."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sql-basics",
+      "title": "02. SQL Basics",
+      "description": "Core statements and query order.",
+      "questions": [
+        {
+          "question": "What are DDL, DML, DQL, DCL, and TCL?",
+          "answer": [
+            "DDL defines structures; DML changes rows; DQL reads rows; DCL controls access; TCL controls transactions.",
+            "**Example:** CREATE = DDL, INSERT = DML, SELECT = DQL, GRANT = DCL, COMMIT = TCL.",
+            "**Remember:** Define, Modify, Query, Control, Transaction."
+          ]
+        },
+        {
+          "question": "What does SELECT do?",
+          "answer": [
+            "SELECT retrieves data from one or more tables. WHERE filters the rows."
+          ],
+          "code": "SELECT name FROM employees WHERE active = 1;"
+        },
+        {
+          "question": "What is WHERE?",
+          "answer": [
+            "WHERE keeps only rows matching a condition before aggregation.",
+            "**Example:** SELECT * FROM orders WHERE amount > 100;",
+            "**Remember:** WHERE filters rows."
+          ]
+        },
+        {
+          "question": "What is ORDER BY?",
+          "answer": [
+            "It sorts query results; without it, result order is not guaranteed.",
+            "**Example:** SELECT * FROM employees ORDER BY salary DESC;",
+            "**Remember:** ORDER BY = predictable order."
+          ]
+        },
+        {
+          "question": "What is DISTINCT?",
+          "answer": [
+            "It removes duplicate result rows based on selected expressions.",
+            "**Example:** SELECT DISTINCT city FROM customers;",
+            "**Remember:** DISTINCT = unique output."
+          ]
+        },
+        {
+          "question": "What is LIMIT or FETCH FIRST?",
+          "answer": [
+            "It limits the number of rows returned; syntax differs across databases.",
+            "**Example:** SELECT * FROM orders ORDER BY id DESC LIMIT 10;",
+            "**Remember:** Always combine top-N with ORDER BY."
+          ]
+        },
+        {
+          "question": "What is an alias?",
+          "answer": [
+            "A temporary name for a column or table inside a query.",
+            "**Example:** SELECT salary * 12 AS annual_salary FROM employees;",
+            "**Remember:** Alias = nickname."
+          ]
+        },
+        {
+          "question": "What is INSERT?",
+          "answer": [
+            "INSERT adds new rows.",
+            "**Example:** INSERT INTO customers(id,name) VALUES (1,'Asha');",
+            "**Remember:** INSERT = add."
+          ]
+        },
+        {
+          "question": "What is UPDATE?",
+          "answer": [
+            "UPDATE changes existing rows; WHERE controls which rows change.",
+            "**Example:** UPDATE customers SET active=0 WHERE id=1;",
+            "**Remember:** Check WHERE before UPDATE."
+          ]
+        },
+        {
+          "question": "What is DELETE?",
+          "answer": [
+            "DELETE removes matching rows and can usually be rolled back inside a transaction.",
+            "**Example:** DELETE FROM orders WHERE id=9;",
+            "**Remember:** DELETE = remove selected rows."
+          ]
+        },
+        {
+          "question": "What is the difference between DELETE, TRUNCATE, and DROP?",
+          "answer": [
+            "DELETE removes rows; TRUNCATE quickly empties a table with DB-specific transaction behavior; DROP removes the table definition.",
+            "**Example:** DELETE FROM logs WHERE created_at < '2025-01-01'; TRUNCATE TABLE staging; DROP TABLE old_logs;",
+            "**Remember:** DELETE rows, TRUNCATE all rows, DROP table."
+          ]
+        },
+        {
+          "question": "What is NULL?",
+          "answer": [
+            "NULL means missing or unknown, not zero or an empty string (vendor-specific exceptions exist).",
+            "**Example:** A customer may have NULL middle_name.",
+            "**Remember:** NULL = unknown."
+          ]
+        },
+        {
+          "question": "Why does = NULL not work?",
+          "answer": [
+            "SQL uses three-valued logic; comparisons with NULL yield UNKNOWN, not TRUE.",
+            "**Example:** Use WHERE phone IS NULL, not phone = NULL.",
+            "**Remember:** Use IS NULL."
+          ]
+        },
+        {
+          "question": "What are AND, OR, and NOT?",
+          "answer": [
+            "Logical operators combine or reverse conditions; parentheses clarify precedence.",
+            "**Example:** WHERE active=1 AND (city='Pune' OR city='Mumbai').",
+            "**Remember:** Parentheses prevent surprises."
+          ]
+        },
+        {
+          "question": "What is BETWEEN?",
+          "answer": [
+            "BETWEEN checks an inclusive range.",
+            "**Example:** WHERE price BETWEEN 100 AND 200 includes both ends.",
+            "**Remember:** BETWEEN includes boundaries."
+          ]
+        },
+        {
+          "question": "What is IN?",
+          "answer": [
+            "IN tests membership in a list or subquery.",
+            "**Example:** WHERE status IN ('OPEN','PENDING').",
+            "**Remember:** IN = any of these."
+          ]
+        },
+        {
+          "question": "What is LIKE?",
+          "answer": [
+            "LIKE matches patterns using % for many characters and _ for one character in common SQL dialects.",
+            "**Example:** WHERE name LIKE 'A%' finds names starting with A.",
+            "**Remember:** % many, _ one."
+          ]
+        },
+        {
+          "question": "What is CASE?",
+          "answer": [
+            "CASE returns a value based on conditions.",
+            "**Example:** SELECT CASE WHEN amount>=1000 THEN 'Large' ELSE 'Small' END FROM orders;",
+            "**Remember:** CASE = SQL if/else."
+          ]
+        },
+        {
+          "question": "What is COALESCE?",
+          "answer": [
+            "It returns the first non-NULL expression.",
+            "**Example:** SELECT COALESCE(nickname, name, 'Unknown') FROM customers;",
+            "**Remember:** COALESCE = first available."
+          ]
+        },
+        {
+          "question": "What is CAST?",
+          "answer": [
+            "CAST converts a value to another compatible type.",
+            "**Example:** SELECT CAST('42' AS INTEGER);",
+            "**Remember:** CAST = change type."
+          ]
+        },
+        {
+          "question": "What is the logical order of SQL execution?",
+          "answer": [
+            "Conceptually FROM/JOIN, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, LIMIT/FETCH; optimizers may physically execute differently.",
+            "**Example:** A SELECT alias usually cannot be used in WHERE because WHERE is logically earlier.",
+            "**Remember:** Think FROM → WHERE → GROUP → SELECT → SORT."
+          ]
+        },
+        {
+          "question": "What is SQL injection?",
+          "answer": [
+            "An attacker changes a query by supplying malicious input that gets joined into SQL text.",
+            "**Example:** Never concatenate a user name into WHERE; use a bound parameter.",
+            "**Remember:** Parameters, not string concatenation."
+          ]
+        },
+        {
+          "question": "What are prepared statements?",
+          "answer": [
+            "SQL with placeholders and separately bound values, helping safety and reuse.",
+            "**Example:** SELECT * FROM users WHERE email = ? with email bound by the driver.",
+            "**Remember:** Prepare SQL, bind values."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "joins",
+      "title": "03. SQL Joins",
+      "description": "Combine rows across tables; a frequent interview favorite.",
+      "questions": [
+        {
+          "question": "What is an INNER JOIN?",
+          "answer": [
+            "An INNER JOIN returns combinations of rows where the join condition matches in both inputs."
+          ],
+          "code": "SELECT e.name, d.name\nFROM employees e\nINNER JOIN departments d ON e.department_id = d.id;"
+        },
+        {
+          "question": "What is a LEFT JOIN?",
+          "answer": [
+            "It returns every left-side row and matching right rows; unmatched right columns become NULL.",
+            "**Example:** Show all customers even if they have never ordered.",
+            "**Remember:** LEFT = keep left."
+          ],
+          "code": "SELECT c.id, o.id AS order_id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id;"
+        },
+        {
+          "question": "What is a RIGHT JOIN?",
+          "answer": [
+            "It preserves all right-side rows and matches from the left.",
+            "**Example:** Show every department, even without employees, with RIGHT JOIN.",
+            "**Remember:** RIGHT = keep right."
+          ]
+        },
+        {
+          "question": "What is a FULL OUTER JOIN?",
+          "answer": [
+            "It keeps matched rows and unmatched rows from both sides, filling missing columns with NULL; not supported directly by every DBMS.",
+            "**Example:** List all customers and all loyalty accounts, including unmatched ones.",
+            "**Remember:** FULL = keep both."
+          ]
+        },
+        {
+          "question": "What is a CROSS JOIN?",
+          "answer": [
+            "It produces every combination of left and right rows.",
+            "**Example:** 3 sizes × 4 colors = 12 combinations.",
+            "**Remember:** CROSS = combinations."
+          ]
+        },
+        {
+          "question": "What is a SELF JOIN?",
+          "answer": [
+            "A table joins to itself using different aliases.",
+            "**Example:** Employees join employees to show their managers.",
+            "**Remember:** SELF = same table twice."
+          ]
+        },
+        {
+          "question": "What is a non-equi join?",
+          "answer": [
+            "A join condition uses something other than equality.",
+            "**Example:** Match salaries to salary bands using BETWEEN.",
+            "**Remember:** Non-equi = not just equals."
+          ]
+        },
+        {
+          "question": "What is the difference between ON and WHERE in an OUTER JOIN?",
+          "answer": [
+            "ON controls matches; WHERE filters the resulting rows and can remove NULL-extended rows.",
+            "**Example:** LEFT JOIN orders o ON o.customer_id=c.id AND o.status='OPEN' keeps all customers; putting o.status='OPEN' in WHERE drops unmatched customers.",
+            "**Remember:** ON matches, WHERE filters."
+          ]
+        },
+        {
+          "question": "How do you find records without matches?",
+          "answer": [
+            "Use LEFT JOIN ... WHERE right_key IS NULL, or NOT EXISTS.",
+            "**Example:** Find customers with no orders.",
+            "**Remember:** Anti-join = missing matches."
+          ],
+          "code": "SELECT c.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.id IS NULL;"
+        },
+        {
+          "question": "What is a semi-join?",
+          "answer": [
+            "It returns left rows that have at least one match without duplicating them for multiple matches; EXISTS is a common expression.",
+            "**Example:** Find customers who have at least one order.",
+            "**Remember:** EXISTS = has a match."
+          ]
+        },
+        {
+          "question": "What is the difference between EXISTS and IN?",
+          "answer": [
+            "Both test membership; EXISTS checks whether a subquery returns any row, while IN compares a value to returned values. NULL behavior can differ.",
+            "**Example:** NOT EXISTS is safer than NOT IN when the subquery may return NULL.",
+            "**Remember:** Watch NULL with NOT IN."
+          ]
+        },
+        {
+          "question": "Why do joins produce duplicate-looking rows?",
+          "answer": [
+            "One-to-many relationships produce one result for every matching pair.",
+            "**Example:** One customer with 3 orders appears 3 times.",
+            "**Remember:** Duplicates may be correct relationships."
+          ]
+        },
+        {
+          "question": "What is the difference between UNION and JOIN?",
+          "answer": [
+            "JOIN combines columns from related rows; UNION stacks compatible result rows.",
+            "**Example:** JOIN customer + order columns; UNION active and archived customer rows.",
+            "**Remember:** JOIN sideways, UNION downward."
+          ]
+        },
+        {
+          "question": "What is a NATURAL JOIN and why avoid it?",
+          "answer": [
+            "It automatically joins same-named columns, which can change unexpectedly when schemas change.",
+            "**Example:** Adding a column named status to both tables may change join behavior.",
+            "**Remember:** Explicit ON is safer."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aggregations",
+      "title": "04. Aggregation & Grouping",
+      "description": "Summaries and grouped reports",
+      "questions": [
+        {
+          "question": "What does COUNT(*) do?",
+          "answer": [
+            "It counts all rows, including rows with NULL values.",
+            "**Example:** SELECT COUNT(*) FROM orders;",
+            "**Remember:** COUNT(*) counts rows."
+          ]
+        },
+        {
+          "question": "What is the difference between COUNT(*) and COUNT(column)?",
+          "answer": [
+            "COUNT(*) counts rows; COUNT(column) counts non-NULL values in that column.",
+            "**Example:** 3 rows with one NULL email: COUNT(*)=3 and COUNT(email)=2.",
+            "**Remember:** COUNT(column) skips NULL."
+          ]
+        },
+        {
+          "question": "What do SUM, AVG, MIN, and MAX do?",
+          "answer": [
+            "They calculate totals, averages, minimums, and maximums; most aggregates ignore NULL.",
+            "**Example:** SELECT AVG(salary) FROM employees;",
+            "**Remember:** Aggregate = summarize."
+          ]
+        },
+        {
+          "question": "What is GROUP BY?",
+          "answer": [
+            "It groups rows so aggregates can be computed for each group.",
+            "**Example:** SELECT department_id, COUNT(*) FROM employees GROUP BY department_id;",
+            "**Remember:** GROUP BY = one summary per group."
+          ],
+          "code": "SELECT department_id, COUNT(*) AS employees\nFROM employees\nGROUP BY department_id;"
+        },
+        {
+          "question": "What is HAVING?",
+          "answer": [
+            "It filters groups after aggregation; WHERE filters rows before grouping.",
+            "**Example:** GROUP BY department_id HAVING COUNT(*) > 5.",
+            "**Remember:** WHERE rows, HAVING groups."
+          ],
+          "code": "SELECT department_id, COUNT(*) AS employees\nFROM employees\nGROUP BY department_id\nHAVING COUNT(*) > 5;"
+        },
+        {
+          "question": "Can you use WHERE and HAVING together?",
+          "answer": [
+            "Yes. WHERE first filters source rows, then HAVING filters grouped results.",
+            "**Example:** Only active employees, then departments with 5+ active employees.",
+            "**Remember:** Filter early, filter groups later."
+          ]
+        },
+        {
+          "question": "What is conditional aggregation?",
+          "answer": [
+            "Use CASE inside aggregate functions to count or sum selected categories.",
+            "**Example:** SUM(CASE WHEN status='PAID' THEN 1 ELSE 0 END) counts paid orders.",
+            "**Remember:** CASE inside SUM."
+          ]
+        },
+        {
+          "question": "What is GROUPING SETS?",
+          "answer": [
+            "It calculates multiple groupings in one query; syntax varies by DBMS.",
+            "**Example:** Report totals by region, by product, and grand total.",
+            "**Remember:** Several group levels at once."
+          ]
+        },
+        {
+          "question": "What are ROLLUP and CUBE?",
+          "answer": [
+            "ROLLUP adds hierarchical subtotals; CUBE adds combinations of subtotals.",
+            "**Example:** Sales by region, store, and grand total with ROLLUP.",
+            "**Remember:** ROLLUP hierarchy, CUBE combinations."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "subqueries",
+      "title": "05. Subqueries, CTEs & Set Operations",
+      "description": "Build readable queries from smaller queries",
+      "questions": [
+        {
+          "question": "What is a subquery?",
+          "answer": [
+            "A query nested inside another SQL statement.",
+            "**Example:** Find employees earning more than (SELECT AVG(salary) FROM employees).",
+            "**Remember:** Query inside query."
+          ]
+        },
+        {
+          "question": "What is a correlated subquery?",
+          "answer": [
+            "An inner query references a row from the outer query.",
+            "**Example:** Find orders whose amount exceeds the average for that customer's orders.",
+            "**Remember:** Correlated = depends on outer row."
+          ]
+        },
+        {
+          "question": "What is a CTE?",
+          "answer": [
+            "A Common Table Expression names a temporary result within one statement using WITH.",
+            "**Example:** WITH totals AS (SELECT customer_id, SUM(amount) total FROM orders GROUP BY customer_id) SELECT * FROM totals;",
+            "**Remember:** CTE = named query step."
+          ],
+          "code": "WITH totals AS (\n  SELECT customer_id, SUM(amount) AS total\n  FROM orders GROUP BY customer_id\n)\nSELECT * FROM totals WHERE total > 1000;"
+        },
+        {
+          "question": "What is a recursive CTE?",
+          "answer": [
+            "A CTE that repeatedly references its own result to traverse hierarchies or generate sequences.",
+            "**Example:** Walk an employee-manager hierarchy.",
+            "**Remember:** Recursive = repeat until no new rows."
+          ]
+        },
+        {
+          "question": "What is a derived table?",
+          "answer": [
+            "A subquery used in FROM like a temporary table.",
+            "**Example:** SELECT * FROM (SELECT department_id, COUNT(*) n FROM employees GROUP BY department_id) x;",
+            "**Remember:** Derived = subquery in FROM."
+          ]
+        },
+        {
+          "question": "What is UNION?",
+          "answer": [
+            "It combines compatible query results and removes duplicate rows.",
+            "**Example:** Current customers UNION archived customers.",
+            "**Remember:** UNION = stack and deduplicate."
+          ]
+        },
+        {
+          "question": "What is UNION ALL?",
+          "answer": [
+            "It combines compatible query results and keeps duplicates.",
+            "**Example:** Append current and archived events without deduplication.",
+            "**Remember:** UNION ALL = stack everything."
+          ]
+        },
+        {
+          "question": "What are INTERSECT and EXCEPT?",
+          "answer": [
+            "INTERSECT returns common rows; EXCEPT returns rows in the first result absent from the second; availability varies.",
+            "**Example:** Find IDs in both lists or only the first list.",
+            "**Remember:** INTERSECT common, EXCEPT difference."
+          ]
+        },
+        {
+          "question": "When is EXISTS preferable to a JOIN?",
+          "answer": [
+            "Use EXISTS when you only need to know whether related data exists; it avoids duplicates from multiple matches.",
+            "**Example:** Find customers who placed orders without listing each order.",
+            "**Remember:** Existence, not detail."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "window-functions",
+      "title": "06. Window Functions",
+      "description": "Analytics without collapsing detail rows",
+      "questions": [
+        {
+          "question": "What is a window function?",
+          "answer": [
+            "It calculates across related rows while retaining each input row.",
+            "**Example:** Show each employee salary alongside department average.",
+            "**Remember:** Window keeps rows."
+          ]
+        },
+        {
+          "question": "What does OVER() do?",
+          "answer": [
+            "It defines the window for a window function, optionally using PARTITION BY and ORDER BY.",
+            "**Example:** AVG(salary) OVER (PARTITION BY department_id).",
+            "**Remember:** OVER = calculation context."
+          ]
+        },
+        {
+          "question": "What is ROW_NUMBER()?",
+          "answer": [
+            "It numbers rows within each partition in the chosen order, without ties sharing numbers.",
+            "**Example:** Number each customer's orders newest first.",
+            "**Remember:** ROW_NUMBER always unique within partition."
+          ]
+        },
+        {
+          "question": "What is RANK()?",
+          "answer": [
+            "It gives tied values the same rank and leaves gaps afterward.",
+            "**Example:** Scores 100, 100, 90 get ranks 1, 1, 3.",
+            "**Remember:** RANK skips after ties."
+          ]
+        },
+        {
+          "question": "What is DENSE_RANK()?",
+          "answer": [
+            "It gives ties the same rank without leaving gaps.",
+            "**Example:** Scores 100, 100, 90 get 1, 1, 2.",
+            "**Remember:** DENSE = no gaps."
+          ]
+        },
+        {
+          "question": "What are LAG and LEAD?",
+          "answer": [
+            "LAG reads a prior row; LEAD reads a later row within the window ordering.",
+            "**Example:** Compare today's balance to yesterday's balance.",
+            "**Remember:** LAG behind, LEAD ahead."
+          ]
+        },
+        {
+          "question": "How do you calculate a running total?",
+          "answer": [
+            "Use SUM(...) OVER with ORDER BY and an explicit ROWS frame.",
+            "**Example:** SUM(amount) OVER (ORDER BY order_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW).",
+            "**Remember:** Running = cumulative."
+          ]
+        },
+        {
+          "question": "How do you find the latest row per group?",
+          "answer": [
+            "Use ROW_NUMBER partitioned by group, ordered newest first, then filter rn=1.",
+            "**Example:** Latest transaction for every account.",
+            "**Remember:** Partition, sort, pick 1."
+          ],
+          "code": "WITH ranked AS (\n SELECT o.*, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC, id DESC) AS rn\n FROM orders o\n)\nSELECT * FROM ranked WHERE rn = 1;"
+        },
+        {
+          "question": "What is a window frame?",
+          "answer": [
+            "It selects the subset of rows around the current row used by certain window functions.",
+            "**Example:** A 3-day moving average uses two previous rows plus current row if one row represents each day.",
+            "**Remember:** Frame = nearby rows."
+          ]
+        },
+        {
+          "question": "What is NTILE?",
+          "answer": [
+            "It distributes ordered rows into a chosen number of approximately equal-sized buckets.",
+            "**Example:** Divide customers into 4 spending quartiles.",
+            "**Remember:** NTILE = buckets."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keys-constraints",
+      "title": "07. Keys, Constraints & Data Types",
+      "description": "Rules that keep information correct",
+      "questions": [
+        {
+          "question": "What is UNIQUE?",
+          "answer": [
+            "A constraint that prevents duplicate values for a key; treatment of NULL varies by DBMS.",
+            "**Example:** work_email UNIQUE prevents two employees using the same non-NULL email.",
+            "**Remember:** UNIQUE = no repeated key."
+          ]
+        },
+        {
+          "question": "What is NOT NULL?",
+          "answer": [
+            "It requires a column to have a value.",
+            "**Example:** orders.amount DECIMAL NOT NULL.",
+            "**Remember:** NOT NULL = mandatory."
+          ]
+        },
+        {
+          "question": "What is CHECK?",
+          "answer": [
+            "It enforces a condition on inserted or updated values.",
+            "**Example:** CHECK (quantity >= 0).",
+            "**Remember:** CHECK = business rule."
+          ]
+        },
+        {
+          "question": "What is DEFAULT?",
+          "answer": [
+            "It supplies a value when none is provided.",
+            "**Example:** status DEFAULT 'NEW'.",
+            "**Remember:** DEFAULT = fallback."
+          ]
+        },
+        {
+          "question": "What is ON DELETE CASCADE?",
+          "answer": [
+            "Deleting a parent automatically deletes matching child rows when configured.",
+            "**Example:** Deleting a draft cart also deletes its cart items.",
+            "**Remember:** CASCADE = follow parent; use carefully."
+          ]
+        },
+        {
+          "question": "What is ON DELETE RESTRICT?",
+          "answer": [
+            "It blocks deleting a parent when referenced children exist, with timing differences among engines.",
+            "**Example:** Cannot delete a customer with existing orders.",
+            "**Remember:** RESTRICT = protect references."
+          ]
+        },
+        {
+          "question": "What is a sequence or identity column?",
+          "answer": [
+            "A database-managed mechanism for generating identifiers; syntax varies.",
+            "**Example:** order_id GENERATED ... AS IDENTITY.",
+            "**Remember:** Generated ID is not necessarily gapless."
+          ]
+        },
+        {
+          "question": "Why use DECIMAL instead of FLOAT for money?",
+          "answer": [
+            "DECIMAL stores exact decimal values within its declared precision; binary floating-point can introduce rounding differences.",
+            "**Example:** Store ₹10.10 as DECIMAL(12,2), not FLOAT.",
+            "**Remember:** Money = DECIMAL."
+          ]
+        },
+        {
+          "question": "What is VARCHAR vs CHAR?",
+          "answer": [
+            "VARCHAR stores variable-length strings; CHAR uses fixed declared length and may pad values.",
+            "**Example:** Country code CHAR(2); full name VARCHAR(100).",
+            "**Remember:** Fixed vs variable."
+          ]
+        },
+        {
+          "question": "What are DATE, TIME, and TIMESTAMP?",
+          "answer": [
+            "They store calendar date, clock time, and date-time; timezone support differs by type and vendor.",
+            "**Example:** Birth date is DATE; payment event uses timezone-aware timestamp when supported.",
+            "**Remember:** Choose time semantics carefully."
+          ]
+        },
+        {
+          "question": "What is collation?",
+          "answer": [
+            "Rules for comparing and sorting text, including case and locale behavior.",
+            "**Example:** A case-insensitive collation may treat 'Asha' and 'asha' as equal.",
+            "**Remember:** Collation = text comparison rules."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "normalization",
+      "title": "08. Normalization & Data Modeling",
+      "description": "Avoid duplication and update problems",
+      "questions": [
+        {
+          "question": "What is normalization?",
+          "answer": [
+            "Organizing tables to reduce unnecessary repetition and data anomalies.",
+            "**Example:** Keep customer address once in Customers instead of repeating it on every order.",
+            "**Remember:** Normalize = reduce repetition."
+          ]
+        },
+        {
+          "question": "What is 1NF?",
+          "answer": [
+            "Each field holds one value from its intended domain and rows can be identified; no repeating groups.",
+            "**Example:** Store phone numbers in a separate table instead of phone1, phone2, phone3.",
+            "**Remember:** 1NF = one value per field."
+          ]
+        },
+        {
+          "question": "What is 2NF?",
+          "answer": [
+            "In 1NF, every non-key attribute depends on the entire candidate key, not part of a composite key.",
+            "**Example:** In order_items(order_id, product_id), product_name depends on product_id alone, so move it to Products.",
+            "**Remember:** 2NF = whole key."
+          ]
+        },
+        {
+          "question": "What is 3NF?",
+          "answer": [
+            "In 2NF, non-key attributes should not depend transitively on a key through another non-key attribute (formal definition uses functional dependencies).",
+            "**Example:** Store department_name in Departments rather than beside every employee's department_id.",
+            "**Remember:** 3NF = no non-key-to-non-key dependency."
+          ]
+        },
+        {
+          "question": "What is BCNF?",
+          "answer": [
+            "For every nontrivial functional dependency X→Y, X must be a superkey; it is stronger than 3NF.",
+            "**Example:** If an instructor uniquely determines a course but instructor is not a superkey, redesign may be needed.",
+            "**Remember:** BCNF = every determinant a superkey."
+          ]
+        },
+        {
+          "question": "What are 4NF and 5NF?",
+          "answer": [
+            "4NF addresses independent multivalued dependencies; 5NF addresses certain join dependencies.",
+            "**Example:** Separate independent employee_skills and employee_languages rather than combining every pair.",
+            "**Remember:** Advanced normalization handles complex redundancy."
+          ]
+        },
+        {
+          "question": "What is denormalization?",
+          "answer": [
+            "Deliberately duplicating or precomputing data to improve read performance at the cost of update complexity.",
+            "**Example:** Store total_order_amount on Orders to avoid repeated summing.",
+            "**Remember:** Denormalize = faster reads, harder writes."
+          ]
+        },
+        {
+          "question": "What are insertion, update, and deletion anomalies?",
+          "answer": [
+            "Poor design causes unintended problems when adding, changing, or removing data.",
+            "**Example:** Deleting the last order should not erase the customer's address.",
+            "**Remember:** Anomalies = unintended side effects."
+          ]
+        },
+        {
+          "question": "What is a functional dependency?",
+          "answer": [
+            "X→Y means X determines Y for all valid rows.",
+            "**Example:** employee_id determines employee_name.",
+            "**Remember:** X determines Y."
+          ]
+        },
+        {
+          "question": "What is a star schema?",
+          "answer": [
+            "A central fact table connects to dimension tables for analytics.",
+            "**Example:** Sales fact joins Date, Product, and Store dimensions.",
+            "**Remember:** Star = facts in center."
+          ]
+        },
+        {
+          "question": "What is a snowflake schema?",
+          "answer": [
+            "Dimensions are further normalized into related tables.",
+            "**Example:** Product dimension references Category dimension.",
+            "**Remember:** Snowflake = branched dimensions."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "indexes",
+      "title": "09. Indexes & Query Performance",
+      "description": "How databases find rows efficiently",
+      "questions": [
+        {
+          "question": "What is an index?",
+          "answer": [
+            "An auxiliary structure that speeds up certain lookups but consumes storage and adds write overhead.",
+            "**Example:** Index orders(customer_id) to find one customer's orders faster.",
+            "**Remember:** Index = book index."
+          ]
+        },
+        {
+          "question": "What is a B-tree index?",
+          "answer": [
+            "A balanced ordered index suited to equality, ranges, and ordered scans; many DBMSs use B+tree variants.",
+            "**Example:** WHERE amount BETWEEN 100 AND 500 may benefit.",
+            "**Remember:** B-tree = ordered lookup."
+          ]
+        },
+        {
+          "question": "What is a hash index?",
+          "answer": [
+            "A hash-based lookup structure mainly suited to equality; support varies by DBMS.",
+            "**Example:** Find a session by exact token.",
+            "**Remember:** Hash = exact match."
+          ]
+        },
+        {
+          "question": "What is a composite index?",
+          "answer": [
+            "An index on multiple columns in a defined order.",
+            "**Example:** INDEX(customer_id, order_date) supports filtering customer then sorting date.",
+            "**Remember:** Column order matters."
+          ],
+          "code": "CREATE INDEX idx_orders_customer_date\nON orders(customer_id, order_date);"
+        },
+        {
+          "question": "What is the leftmost-prefix rule?",
+          "answer": [
+            "For common B-tree indexes, predicates on leading columns are usually most useful; exact behavior varies.",
+            "**Example:** Index(a,b,c) commonly helps WHERE a=1 or a=1 AND b=2.",
+            "**Remember:** Start from the left."
+          ]
+        },
+        {
+          "question": "What is a covering index?",
+          "answer": [
+            "An index contains all columns needed by a query, possibly allowing it to avoid reading base table rows.",
+            "**Example:** Index(customer_id, amount) can cover SELECT amount WHERE customer_id=7.",
+            "**Remember:** Covering = all needed data in index."
+          ]
+        },
+        {
+          "question": "What is a clustered index?",
+          "answer": [
+            "An index or table organization that determines physical or logical row storage order; implementation varies.",
+            "**Example:** In SQL Server a clustered index organizes table data by its key.",
+            "**Remember:** Clustered = row organization."
+          ]
+        },
+        {
+          "question": "What is a nonclustered index?",
+          "answer": [
+            "A separate lookup structure referencing table rows rather than defining their storage organization.",
+            "**Example:** An index on customer email points to customer records.",
+            "**Remember:** Nonclustered = separate lookup."
+          ]
+        },
+        {
+          "question": "What is selectivity?",
+          "answer": [
+            "How well a condition narrows down rows; highly selective predicates return few rows.",
+            "**Example:** customer_id=123 is often more selective than active=1.",
+            "**Remember:** Selective = few matches."
+          ]
+        },
+        {
+          "question": "What is index cardinality?",
+          "answer": [
+            "The number of distinct key values, sometimes used as an optimizer statistic.",
+            "**Example:** A country column has fewer distinct values than order_id.",
+            "**Remember:** Cardinality = distinct values (for indexes)."
+          ]
+        },
+        {
+          "question": "What is a full table scan?",
+          "answer": [
+            "Reading all or most table rows to find results; sometimes it is optimal.",
+            "**Example:** A report needing 90% of rows may scan faster than using an index.",
+            "**Remember:** Scan is not always bad."
+          ]
+        },
+        {
+          "question": "What is a query execution plan?",
+          "answer": [
+            "A plan describing how the DBMS intends to run a query, including scans, joins, and sorts.",
+            "**Example:** EXPLAIN shows whether orders uses an index.",
+            "**Remember:** Plan = execution roadmap."
+          ]
+        },
+        {
+          "question": "What is EXPLAIN ANALYZE?",
+          "answer": [
+            "In supporting engines, it runs the query and reports observed execution metrics; exact syntax differs.",
+            "**Example:** Compare estimated rows to actual rows.",
+            "**Remember:** Measure, don't guess."
+          ]
+        },
+        {
+          "question": "What is a sargable predicate?",
+          "answer": [
+            "A condition structured so an index can efficiently search a column.",
+            "**Example:** created_at >= '2026-01-01' often indexes better than YEAR(created_at)=2026.",
+            "**Remember:** Avoid functions on indexed columns when possible."
+          ]
+        },
+        {
+          "question": "Why can too many indexes hurt?",
+          "answer": [
+            "Indexes take disk space and must be maintained during writes.",
+            "**Example:** Ten indexes can slow bulk inserts into Orders.",
+            "**Remember:** Indexes speed reads but tax writes."
+          ]
+        },
+        {
+          "question": "What is a partial or filtered index?",
+          "answer": [
+            "An index that stores only rows meeting a condition, where supported.",
+            "**Example:** Index only orders WHERE status='OPEN'.",
+            "**Remember:** Index only what matters."
+          ]
+        },
+        {
+          "question": "What is a unique index?",
+          "answer": [
+            "An index that also enforces uniqueness, subject to DB-specific NULL semantics.",
+            "**Example:** Unique index on username.",
+            "**Remember:** Unique index = speed + rule."
+          ]
+        },
+        {
+          "question": "What are statistics and why do they matter?",
+          "answer": [
+            "The optimizer uses row counts and value distributions to estimate query costs.",
+            "**Example:** Stale statistics can lead to a poor join order.",
+            "**Remember:** Statistics guide the planner."
+          ]
+        },
+        {
+          "question": "What is parameter sniffing?",
+          "answer": [
+            "Some engines compile a plan using initial parameter values that may perform poorly for different values.",
+            "**Example:** A plan tuned for a rare customer is reused for a huge customer.",
+            "**Remember:** One plan may not fit all."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "query-tuning",
+      "title": "10. SQL Optimization & Troubleshooting",
+      "description": "Practical performance interview questions",
+      "questions": [
+        {
+          "question": "How do you troubleshoot a slow query?",
+          "answer": [
+            "Measure latency, inspect the plan, check row estimates, indexes, joins, filters, locks, and I/O, then test changes.",
+            "**Example:** A report slows after table growth: inspect EXPLAIN and missing indexes.",
+            "**Remember:** Measure → plan → fix → measure."
+          ]
+        },
+        {
+          "question": "Why is SELECT * sometimes harmful?",
+          "answer": [
+            "It transfers unneeded columns, may prevent covering-index use, and increases coupling to schema.",
+            "**Example:** A listing page needs id and name, not a large JSON document.",
+            "**Remember:** Select only needed columns."
+          ]
+        },
+        {
+          "question": "What is the N+1 query problem?",
+          "answer": [
+            "One query fetches N parents, then N more queries fetch their children.",
+            "**Example:** Load 100 customers, then query orders 100 times.",
+            "**Remember:** N+1 = too many round trips."
+          ]
+        },
+        {
+          "question": "How can you fix N+1?",
+          "answer": [
+            "Use a suitable join, batched IN query, or eager loading, considering row multiplication.",
+            "**Example:** Fetch orders for all 100 customer IDs in one query.",
+            "**Remember:** Batch related reads."
+          ]
+        },
+        {
+          "question": "What is keyset pagination?",
+          "answer": [
+            "Fetching the next page using the last seen sort key instead of skipping many rows.",
+            "**Example:** WHERE (created_at,id) < (:last_date,:last_id) ORDER BY created_at DESC,id DESC LIMIT 20.",
+            "**Remember:** Seek, don't skip."
+          ]
+        },
+        {
+          "question": "What is OFFSET pagination?",
+          "answer": [
+            "Skip a specified number of rows before returning results; large offsets can become expensive and concurrent changes can shift pages.",
+            "**Example:** LIMIT 20 OFFSET 100000.",
+            "**Remember:** Simple but costly deep pages."
+          ]
+        },
+        {
+          "question": "Why is ORDER BY expensive sometimes?",
+          "answer": [
+            "Sorting large sets may require memory or disk if no useful index supplies order.",
+            "**Example:** Sort millions of orders by unindexed note field.",
+            "**Remember:** Sorting has a cost."
+          ]
+        },
+        {
+          "question": "What is predicate pushdown?",
+          "answer": [
+            "The optimizer applies filters close to data access to reduce intermediate rows.",
+            "**Example:** Filter status='OPEN' before an expensive join when semantics allow.",
+            "**Remember:** Filter early."
+          ]
+        },
+        {
+          "question": "What is partition pruning?",
+          "answer": [
+            "The engine skips partitions that cannot match the filter.",
+            "**Example:** Only read October partitions for October sales.",
+            "**Remember:** Prune = skip irrelevant chunks."
+          ]
+        },
+        {
+          "question": "What is a materialized view?",
+          "answer": [
+            "A stored result of a query that must be refreshed or maintained, depending on DBMS.",
+            "**Example:** Precompute daily sales totals.",
+            "**Remember:** Materialized = saved result."
+          ]
+        },
+        {
+          "question": "How do you avoid duplicate rows in joins?",
+          "answer": [
+            "Understand the relationship cardinality and join conditions; use EXISTS or aggregate if only existence or summary is needed.",
+            "**Example:** Joining customer to 5 orders produces 5 rows by design.",
+            "**Remember:** Fix relationship, not with blind DISTINCT."
+          ]
+        },
+        {
+          "question": "How do you detect missing indexes?",
+          "answer": [
+            "Look at frequent slow queries, execution plans, scans, row estimates, and workload patterns.",
+            "**Example:** Repeated lookup by external_order_id may justify an index.",
+            "**Remember:** Index based on workload."
+          ]
+        },
+        {
+          "question": "What is a dead tuple or table bloat?",
+          "answer": [
+            "In MVCC systems, obsolete row versions may consume space until cleanup.",
+            "**Example:** PostgreSQL VACUUM reclaims reusable space.",
+            "**Remember:** MVCC versions need cleanup."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acid-transactions",
+      "title": "11. Transactions & ACID",
+      "description": "Correctness under failure and concurrency",
+      "questions": [
+        {
+          "question": "What does ACID mean?",
+          "answer": [
+            "Atomicity, Consistency, Isolation, Durability are the main transaction properties.",
+            "**Example:** A money transfer must not debit without credit.",
+            "**Remember:** ACID = reliable transactions."
+          ]
+        },
+        {
+          "question": "What is atomicity?",
+          "answer": [
+            "All changes in a transaction commit together or are rolled back.",
+            "**Example:** Debit ₹100 and credit ₹100, or do neither.",
+            "**Remember:** Atomic = all or none."
+          ]
+        },
+        {
+          "question": "What is consistency?",
+          "answer": [
+            "A committed transaction preserves enforced database rules and application invariants when correctly implemented.",
+            "**Example:** A CHECK prevents negative stock quantity.",
+            "**Remember:** Consistency = valid state."
+          ]
+        },
+        {
+          "question": "What is isolation?",
+          "answer": [
+            "Concurrent transactions should behave according to the selected isolation level.",
+            "**Example:** Two users updating one account should not silently corrupt its balance.",
+            "**Remember:** Isolation = controlled concurrency."
+          ]
+        },
+        {
+          "question": "What is durability?",
+          "answer": [
+            "Once a commit is acknowledged, its changes survive failures according to the DBMS durability guarantees and configuration.",
+            "**Example:** Committed payment remains after a restart.",
+            "**Remember:** Durable = stays saved."
+          ]
+        },
+        {
+          "question": "What are COMMIT and ROLLBACK?",
+          "answer": [
+            "COMMIT makes a transaction permanent; ROLLBACK discards uncommitted changes.",
+            "**Example:** BEGIN; UPDATE accounts...; COMMIT;",
+            "**Remember:** Commit save, rollback undo."
+          ],
+          "code": "BEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\nCOMMIT;\n-- Add balance checks and error handling in production."
+        },
+        {
+          "question": "What is SAVEPOINT?",
+          "answer": [
+            "A marker within a transaction allowing partial rollback.",
+            "**Example:** Undo the last line-item insertion without undoing the whole order.",
+            "**Remember:** Savepoint = checkpoint."
+          ]
+        },
+        {
+          "question": "What is autocommit?",
+          "answer": [
+            "A mode where individual statements automatically commit unless enclosed in an explicit transaction.",
+            "**Example:** An isolated UPDATE commits when it succeeds.",
+            "**Remember:** Autocommit = each statement its own transaction."
+          ]
+        },
+        {
+          "question": "What is a dirty read?",
+          "answer": [
+            "Reading another transaction's uncommitted change that might later be rolled back.",
+            "**Example:** You see a ₹500 deposit that never commits.",
+            "**Remember:** Dirty = uncommitted."
+          ]
+        },
+        {
+          "question": "What is a non-repeatable read?",
+          "answer": [
+            "The same row read twice returns different committed values because another transaction changed it.",
+            "**Example:** Price reads 100, then 120 in one transaction.",
+            "**Remember:** Same row changes."
+          ]
+        },
+        {
+          "question": "What is a phantom read?",
+          "answer": [
+            "Repeating a predicate query yields a different set of rows because another transaction inserted or removed matching rows.",
+            "**Example:** Count open orders twice and get 5 then 6.",
+            "**Remember:** Phantom = matching rows appear/disappear."
+          ]
+        },
+        {
+          "question": "What is a lost update?",
+          "answer": [
+            "Two transactions read the same old value, each writes a change, and one overwrites the other.",
+            "**Example:** Two withdrawals both calculate from balance 100.",
+            "**Remember:** Lost update = overwrite."
+          ]
+        },
+        {
+          "question": "What is write skew?",
+          "answer": [
+            "Concurrent transactions each read a shared condition and update different rows, violating an invariant together.",
+            "**Example:** Two on-call doctors each see the other on duty and both go off duty.",
+            "**Remember:** Write skew = combined rule broken."
+          ]
+        },
+        {
+          "question": "What are isolation levels?",
+          "answer": [
+            "Common SQL levels are READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE; actual behavior differs by engine.",
+            "**Example:** Use SERIALIZABLE for strong guarantees when needed and handle retries.",
+            "**Remember:** Stronger isolation usually costs more."
+          ]
+        },
+        {
+          "question": "What is SERIALIZABLE?",
+          "answer": [
+            "The result is equivalent to some serial order of committed transactions, though the engine may abort and require retries.",
+            "**Example:** Two concurrent seat bookings cannot both violate the same capacity rule when correctly implemented.",
+            "**Remember:** Serializable = as if one by one."
+          ]
+        },
+        {
+          "question": "What is MVCC?",
+          "answer": [
+            "Multi-Version Concurrency Control keeps row versions so reads and writes can overlap under defined visibility rules.",
+            "**Example:** A report reads a stable snapshot while another transaction updates rows.",
+            "**Remember:** MVCC = multiple versions."
+          ]
+        },
+        {
+          "question": "What is snapshot isolation?",
+          "answer": [
+            "A transaction reads from a consistent snapshot and usually detects some write conflicts, but write skew may remain.",
+            "**Example:** Two doctors both read the same staffing snapshot.",
+            "**Remember:** Snapshot is not always serializable."
+          ]
+        },
+        {
+          "question": "What is optimistic concurrency control?",
+          "answer": [
+            "Proceed without holding long locks, then detect conflicts before commit or update.",
+            "**Example:** UPDATE accounts SET balance=?, version=version+1 WHERE id=? AND version=?;",
+            "**Remember:** Optimistic = check version."
+          ]
+        },
+        {
+          "question": "What is pessimistic locking?",
+          "answer": [
+            "Lock data before changing it to prevent conflicting concurrent operations.",
+            "**Example:** SELECT ... FOR UPDATE before adjusting a balance.",
+            "**Remember:** Pessimistic = lock first."
+          ]
+        },
+        {
+          "question": "What is SELECT FOR UPDATE?",
+          "answer": [
+            "It locks selected rows for update in supporting DBMSs, usually until transaction end.",
+            "**Example:** Reserve stock after locking the stock row.",
+            "**Remember:** FOR UPDATE = reserve row lock."
+          ]
+        },
+        {
+          "question": "What is a deadlock?",
+          "answer": [
+            "Transactions wait on locks held by each other so none can proceed; the DBMS typically aborts one.",
+            "**Example:** T1 locks A then wants B; T2 locks B then wants A.",
+            "**Remember:** Deadlock = circular wait."
+          ]
+        },
+        {
+          "question": "How do you prevent deadlocks?",
+          "answer": [
+            "Use consistent lock order, short transactions, appropriate indexes, and retry aborted transactions.",
+            "**Example:** Always lock accounts in ascending account_id order.",
+            "**Remember:** Same order, short locks, retry."
+          ]
+        },
+        {
+          "question": "What is transaction retry logic?",
+          "answer": [
+            "Retry an entire transaction after retryable conflicts, with bounded attempts and backoff.",
+            "**Example:** Retry after a serialization failure or deadlock victim error.",
+            "**Remember:** Retry the whole unit safely."
+          ]
+        },
+        {
+          "question": "What is idempotency?",
+          "answer": [
+            "Repeating an operation has the same intended effect as doing it once.",
+            "**Example:** Payment request with unique idempotency key should not charge twice.",
+            "**Remember:** Idempotent = safe repeat."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "locking",
+      "title": "12. Locks & Concurrency",
+      "description": "Understand contention and correctness",
+      "questions": [
+        {
+          "question": "What are shared and exclusive locks?",
+          "answer": [
+            "Shared locks permit compatible readers; exclusive locks block conflicting access; exact rules vary.",
+            "**Example:** Many readers can share a lock, but a writer needs exclusive access.",
+            "**Remember:** Shared read, exclusive write."
+          ]
+        },
+        {
+          "question": "What is row-level locking?",
+          "answer": [
+            "Locks individual rows instead of a whole table, reducing contention for unrelated rows.",
+            "**Example:** Two customers update different accounts concurrently.",
+            "**Remember:** Fine-grained = less contention."
+          ]
+        },
+        {
+          "question": "What is table-level locking?",
+          "answer": [
+            "A lock applies to a table or a broad operation; it may block many sessions.",
+            "**Example:** Schema changes can require strong table locks.",
+            "**Remember:** Broad locks affect more users."
+          ]
+        },
+        {
+          "question": "What is lock escalation?",
+          "answer": [
+            "Some engines replace many fine-grained locks with a larger lock to reduce lock overhead.",
+            "**Example:** Thousands of row locks may become a table lock in SQL Server.",
+            "**Remember:** Escalation = bigger lock."
+          ]
+        },
+        {
+          "question": "What is a lock timeout?",
+          "answer": [
+            "A transaction stops waiting for a lock after a configured period.",
+            "**Example:** Checkout fails quickly instead of waiting forever.",
+            "**Remember:** Timeout = bounded wait."
+          ]
+        },
+        {
+          "question": "What is a race condition?",
+          "answer": [
+            "A result depends on the timing of concurrent operations.",
+            "**Example:** Two threads check stock=1 and both sell it.",
+            "**Remember:** Race = timing changes correctness."
+          ]
+        },
+        {
+          "question": "What is the difference between blocking and deadlock?",
+          "answer": [
+            "Blocking is waiting for another transaction; deadlock is a circular dependency with no progress.",
+            "**Example:** T2 waiting for T1 is blocking; T1 waiting for T2 too is deadlock.",
+            "**Remember:** Deadlock is circular blocking."
+          ]
+        },
+        {
+          "question": "What is advisory locking?",
+          "answer": [
+            "Application-defined locks managed by the database, not necessarily tied to specific rows.",
+            "**Example:** Only one worker processes report 42 at a time.",
+            "**Remember:** Advisory = application coordination."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stored-programs",
+      "title": "13. Views, Procedures, Functions & Triggers",
+      "description": "Reusable database logic",
+      "questions": [
+        {
+          "question": "What is a view?",
+          "answer": [
+            "A stored query exposed like a virtual table; ordinary views usually do not store rows.",
+            "**Example:** CREATE VIEW active_customers AS SELECT * FROM customers WHERE active=1;",
+            "**Remember:** View = saved query."
+          ]
+        },
+        {
+          "question": "What is a stored procedure?",
+          "answer": [
+            "A database-side routine that performs operations; syntax and transaction behavior differ by DBMS.",
+            "**Example:** A procedure closes an accounting period.",
+            "**Remember:** Procedure = database workflow."
+          ]
+        },
+        {
+          "question": "What is a database function?",
+          "answer": [
+            "A database routine that returns a value or result, with restrictions depending on the engine.",
+            "**Example:** A function calculates tax from an amount.",
+            "**Remember:** Function = returns result."
+          ]
+        },
+        {
+          "question": "What is a trigger?",
+          "answer": [
+            "Database code automatically invoked by a specified data event.",
+            "**Example:** After an order update, record an audit event.",
+            "**Remember:** Trigger = automatic reaction."
+          ]
+        },
+        {
+          "question": "What are BEFORE and AFTER triggers?",
+          "answer": [
+            "BEFORE runs before the triggering change; AFTER runs afterward, with DB-specific semantics.",
+            "**Example:** Validate data before insert; audit after update.",
+            "**Remember:** Before validate, after react."
+          ]
+        },
+        {
+          "question": "What is an INSTEAD OF trigger?",
+          "answer": [
+            "In supported DBMSs, it runs in place of an attempted operation, often on a view.",
+            "**Example:** Make a complex view writable by routing updates to tables.",
+            "**Remember:** Instead of = replace action."
+          ]
+        },
+        {
+          "question": "What are the risks of triggers?",
+          "answer": [
+            "Hidden side effects, recursion, unexpected latency, and difficult debugging.",
+            "**Example:** Updating Orders silently inserts audit rows and updates Inventory.",
+            "**Remember:** Triggers hide work."
+          ]
+        },
+        {
+          "question": "What is a temporary table?",
+          "answer": [
+            "A table intended for intermediate data, often scoped to a session or transaction depending on engine.",
+            "**Example:** Store intermediate report results.",
+            "**Remember:** Temporary = short-lived workspace."
+          ]
+        },
+        {
+          "question": "What is a cursor?",
+          "answer": [
+            "A mechanism to process query results row by row; often slower than set-based SQL.",
+            "**Example:** Process special per-row actions where a single UPDATE cannot express logic.",
+            "**Remember:** Prefer sets over loops."
+          ]
+        },
+        {
+          "question": "What is dynamic SQL?",
+          "answer": [
+            "SQL statements constructed at runtime; bind values and carefully validate dynamic identifiers.",
+            "**Example:** Build a report with a validated column sort choice.",
+            "**Remember:** Dynamic identifiers need allowlists."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "database-design",
+      "title": "14. Database Design Scenarios",
+      "description": "Apply concepts to real systems",
+      "questions": [
+        {
+          "question": "How would you design an e-commerce database?",
+          "answer": [
+            "Use Customers, Products, Orders, OrderItems, Payments, and relevant keys and constraints.",
+            "**Example:** OrderItems references Orders and Products; quantity must be positive.",
+            "**Remember:** Model entities and relationships first."
+          ]
+        },
+        {
+          "question": "How would you design a banking transfer?",
+          "answer": [
+            "Store accounts and an immutable transfer or ledger record; perform balance changes atomically and prevent duplicate requests.",
+            "**Example:** Transfer ₹500 from A to B inside one transaction.",
+            "**Remember:** Money needs ACID + idempotency."
+          ]
+        },
+        {
+          "question": "How would you design a ledger?",
+          "answer": [
+            "Prefer append-only balanced entries, transaction identifiers, and strong reconciliation rules.",
+            "**Example:** Debit and credit entries sum to zero for a transfer.",
+            "**Remember:** Ledger = immutable history."
+          ]
+        },
+        {
+          "question": "How would you design an audit trail?",
+          "answer": [
+            "Record who changed what and when, ideally with old/new values or immutable events.",
+            "**Example:** Order status changed by user 17 at 14:00.",
+            "**Remember:** Audit = who, what, when."
+          ]
+        },
+        {
+          "question": "How would you implement soft delete?",
+          "answer": [
+            "Add deleted_at or is_deleted instead of physically deleting, and consistently filter active records.",
+            "**Example:** Set deleted_at on a customer; keep history.",
+            "**Remember:** Soft delete = hidden, not removed."
+          ]
+        },
+        {
+          "question": "What is optimistic versioning for updates?",
+          "answer": [
+            "Add a version column and update only if it still matches the version read.",
+            "**Example:** UPDATE items SET qty=5,version=3 WHERE id=7 AND version=2;",
+            "**Remember:** Version guards stale writes."
+          ]
+        },
+        {
+          "question": "How do you store money and currencies?",
+          "answer": [
+            "Store amount in an exact decimal or integer minor units with a currency code; define rounding rules.",
+            "**Example:** amount=1250 cents, currency='USD'.",
+            "**Remember:** Money = amount + currency + rules."
+          ]
+        },
+        {
+          "question": "How would you model historical records?",
+          "answer": [
+            "Use effective_from and effective_to or append-only versions; define non-overlap and current-row rules.",
+            "**Example:** Track each model portfolio allocation valid during a date range.",
+            "**Remember:** History needs time boundaries."
+          ]
+        },
+        {
+          "question": "How do you prevent duplicate order submission?",
+          "answer": [
+            "Use unique business request keys and transactions; make retries idempotent.",
+            "**Example:** UNIQUE(client_request_id) for orders.",
+            "**Remember:** Unique key protects retries."
+          ]
+        },
+        {
+          "question": "How would you design inventory reservation?",
+          "answer": [
+            "Use atomic conditional updates or row locks and expiration rules.",
+            "**Example:** UPDATE stock SET available=available-1 WHERE sku=? AND available>=1.",
+            "**Remember:** Check and change atomically."
+          ]
+        },
+        {
+          "question": "How would you manage schema migrations?",
+          "answer": [
+            "Version changes, plan backward compatibility, migrate data safely, and deploy in stages.",
+            "**Example:** Add nullable column, backfill, then enforce NOT NULL.",
+            "**Remember:** Expand → migrate → contract."
+          ]
+        },
+        {
+          "question": "What is zero-downtime migration?",
+          "answer": [
+            "Changing schema and application in compatible stages so old and new versions can run during rollout.",
+            "**Example:** Write to old and new fields temporarily before switching reads.",
+            "**Remember:** Compatibility before cleanup."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "partitioning",
+      "title": "15. Partitioning, Sharding & Scaling",
+      "description": "Scaling large data sets",
+      "questions": [
+        {
+          "question": "What is partitioning?",
+          "answer": [
+            "Split one logical table into smaller physical partitions using a rule.",
+            "**Example:** Orders partitioned by month.",
+            "**Remember:** Partition = split one table."
+          ]
+        },
+        {
+          "question": "What is range partitioning?",
+          "answer": [
+            "Partitions cover ranges of a key.",
+            "**Example:** Orders for January vs February.",
+            "**Remember:** Range = intervals."
+          ]
+        },
+        {
+          "question": "What is hash partitioning?",
+          "answer": [
+            "Hash a key to distribute rows among partitions.",
+            "**Example:** Hash customer_id across 8 partitions.",
+            "**Remember:** Hash = spread values."
+          ]
+        },
+        {
+          "question": "What is list partitioning?",
+          "answer": [
+            "Partitions store specified discrete values.",
+            "**Example:** Region IN ('IN','SG') in one partition.",
+            "**Remember:** List = named groups."
+          ]
+        },
+        {
+          "question": "What is sharding?",
+          "answer": [
+            "Split data across multiple database nodes, often by a shard key.",
+            "**Example:** Customers 1–1M on server A, others on B.",
+            "**Remember:** Sharding = across servers."
+          ]
+        },
+        {
+          "question": "What is a shard key?",
+          "answer": [
+            "The attribute used to decide where a record lives.",
+            "**Example:** tenant_id determines the tenant's shard.",
+            "**Remember:** Shard key decides location."
+          ]
+        },
+        {
+          "question": "What is horizontal vs vertical scaling?",
+          "answer": [
+            "Horizontal adds nodes; vertical adds resources to a node.",
+            "**Example:** Add read replicas vs upgrade one server CPU.",
+            "**Remember:** Horizontal = more machines."
+          ]
+        },
+        {
+          "question": "What is replication?",
+          "answer": [
+            "Maintain copies of data on multiple nodes for availability or read scaling.",
+            "**Example:** Primary sends changes to replicas.",
+            "**Remember:** Replication = copies."
+          ]
+        },
+        {
+          "question": "What is replication lag?",
+          "answer": [
+            "Delay between primary commit and a replica applying the change.",
+            "**Example:** A new payment may not appear on a replica immediately.",
+            "**Remember:** Replica reads may be stale."
+          ]
+        },
+        {
+          "question": "What is read-after-write consistency?",
+          "answer": [
+            "A client can see its own successful write on subsequent reads.",
+            "**Example:** After profile update, read from primary or wait for replica catch-up.",
+            "**Remember:** Read your own changes."
+          ]
+        },
+        {
+          "question": "What is leader-follower replication?",
+          "answer": [
+            "One leader accepts writes and followers copy them; specific DBMS designs vary.",
+            "**Example:** Primary handles orders; replicas serve reports.",
+            "**Remember:** Leader writes, followers replicate."
+          ]
+        },
+        {
+          "question": "What is failover?",
+          "answer": [
+            "Switch service to another node after a failure.",
+            "**Example:** Promote a replica when the primary crashes.",
+            "**Remember:** Failover = replacement node."
+          ]
+        },
+        {
+          "question": "What is connection pooling?",
+          "answer": [
+            "Reuse a limited number of DB connections rather than opening one per request.",
+            "**Example:** A service handles 1000 requests using a pool of 30 connections.",
+            "**Remember:** Pool = reuse expensive connections."
+          ]
+        },
+        {
+          "question": "What is backpressure?",
+          "answer": [
+            "Limit incoming work when the database cannot keep up.",
+            "**Example:** Reject or queue requests when connection pool is full.",
+            "**Remember:** Slow intake to protect system."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distributed",
+      "title": "16. Distributed Databases & CAP",
+      "description": "Trade-offs across machines",
+      "questions": [
+        {
+          "question": "What does CAP theorem say?",
+          "answer": [
+            "Under a network partition, a distributed system must choose between guaranteeing availability and guaranteeing strong consistency for requests; CAP terminology has precise meanings.",
+            "**Example:** If two replicas cannot communicate, refuse some writes or risk diverging values.",
+            "**Remember:** CAP trade-off matters during partition."
+          ]
+        },
+        {
+          "question": "What is consistency in CAP?",
+          "answer": [
+            "A linearizable view: reads observe the latest completed write as if operations happened atomically.",
+            "**Example:** After confirmed balance update, every subsequent read sees it.",
+            "**Remember:** CAP C is not ACID C."
+          ]
+        },
+        {
+          "question": "What is eventual consistency?",
+          "answer": [
+            "Replicas may temporarily differ but converge if updates stop and delivery succeeds.",
+            "**Example:** A profile photo takes seconds to appear globally.",
+            "**Remember:** Eventual = later convergence."
+          ]
+        },
+        {
+          "question": "What is strong consistency?",
+          "answer": [
+            "Operations behave as though there is one up-to-date authoritative value, depending on defined model.",
+            "**Example:** A stock reservation must not oversell.",
+            "**Remember:** Strong = latest agreed state."
+          ]
+        },
+        {
+          "question": "What is quorum?",
+          "answer": [
+            "A required number of replicas participate in reads or writes; guarantees depend on protocol.",
+            "**Example:** 3 replicas, write quorum 2.",
+            "**Remember:** Quorum = enough votes."
+          ]
+        },
+        {
+          "question": "What is distributed transaction?",
+          "answer": [
+            "A logical operation spanning multiple independent resources.",
+            "**Example:** Payment database and inventory database must coordinate.",
+            "**Remember:** Distributed = many participants."
+          ]
+        },
+        {
+          "question": "What is two-phase commit?",
+          "answer": [
+            "A coordinator asks participants to prepare, then tells them to commit or abort; it can block under some failures.",
+            "**Example:** Coordinate writes across two databases.",
+            "**Remember:** 2PC = prepare then commit."
+          ]
+        },
+        {
+          "question": "What is a saga?",
+          "answer": [
+            "A sequence of local transactions with compensating actions on failure.",
+            "**Example:** Reserve inventory, charge payment, refund if shipment fails.",
+            "**Remember:** Saga = steps + compensation."
+          ]
+        },
+        {
+          "question": "What is an outbox pattern?",
+          "answer": [
+            "Write business data and an event to an outbox in one local transaction, then publish asynchronously.",
+            "**Example:** Order and OrderCreated event are saved together.",
+            "**Remember:** Outbox = atomic data + event record."
+          ]
+        },
+        {
+          "question": "What is CQRS?",
+          "answer": [
+            "Separate write commands from read query models when they have different needs.",
+            "**Example:** Write normalized orders, read denormalized order dashboard.",
+            "**Remember:** CQRS = separate read/write models."
+          ]
+        },
+        {
+          "question": "What is event sourcing?",
+          "answer": [
+            "Store state-changing events as the source of truth and rebuild state from them.",
+            "**Example:** AccountCreated, MoneyDeposited, MoneyWithdrawn.",
+            "**Remember:** Events = history builds state."
+          ]
+        },
+        {
+          "question": "What is the difference between event sourcing and audit logging?",
+          "answer": [
+            "Event sourcing uses events to derive current state; audit logging records changes alongside another source of truth.",
+            "**Example:** A bank ledger drives balance vs a separate log recording balance edits.",
+            "**Remember:** Event source vs record of changes."
+          ]
+        },
+        {
+          "question": "What is the consistency vs availability trade-off?",
+          "answer": [
+            "During partitions, serving every request may conflict with returning one agreed value.",
+            "**Example:** A payment system may reject writes until it can guarantee correctness.",
+            "**Remember:** Choose by business requirement."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nosql",
+      "title": "17. NoSQL & SQL Comparison",
+      "description": "Choose storage based on access patterns",
+      "questions": [
+        {
+          "question": "What is NoSQL?",
+          "answer": [
+            "A broad family of non-relational databases including document, key-value, wide-column, and graph stores.",
+            "**Example:** Redis, MongoDB, Cassandra, Neo4j serve different needs.",
+            "**Remember:** NoSQL is not one single model."
+          ]
+        },
+        {
+          "question": "What is a document database?",
+          "answer": [
+            "It stores documents such as JSON-like records, often with flexible schemas.",
+            "**Example:** One product document contains name, tags, and specifications.",
+            "**Remember:** Document = record with nested fields."
+          ]
+        },
+        {
+          "question": "What is a key-value store?",
+          "answer": [
+            "It maps keys to values with fast direct lookup.",
+            "**Example:** session:123 → serialized session data.",
+            "**Remember:** Key → value."
+          ]
+        },
+        {
+          "question": "What is a wide-column database?",
+          "answer": [
+            "It organizes data for distributed high-scale access by partition and clustering keys; not simply a wide SQL table.",
+            "**Example:** Time-series events grouped by device and time in Cassandra.",
+            "**Remember:** Design around query patterns."
+          ]
+        },
+        {
+          "question": "What is a graph database?",
+          "answer": [
+            "It stores entities and relationships optimized for traversals.",
+            "**Example:** Find friends-of-friends or fraud rings.",
+            "**Remember:** Graph = nodes and edges."
+          ]
+        },
+        {
+          "question": "When should you choose SQL over NoSQL?",
+          "answer": [
+            "Choose relational databases for rich joins, constraints, and transactional relationships; choose alternatives for specific access and scaling needs.",
+            "**Example:** Banking ledger typically benefits from relational transactions.",
+            "**Remember:** Requirements decide technology."
+          ]
+        },
+        {
+          "question": "What is schema-on-read vs schema-on-write?",
+          "answer": [
+            "Schema-on-write validates structure when storing; schema-on-read interprets structure when querying; real products may mix approaches.",
+            "**Example:** A data lake parses JSON at query time.",
+            "**Remember:** Write rules vs read interpretation."
+          ]
+        },
+        {
+          "question": "What is BASE?",
+          "answer": [
+            "Basically Available, Soft state, Eventual consistency is a loose description of some distributed system approaches, not a formal guarantee for all NoSQL systems.",
+            "**Example:** A social feed may accept delayed replica updates.",
+            "**Remember:** BASE is not synonymous with NoSQL."
+          ]
+        },
+        {
+          "question": "What is Redis used for?",
+          "answer": [
+            "Often caching, sessions, queues, counters, and fast in-memory data structures; persistence and durability depend on configuration.",
+            "**Example:** Cache frequently requested exchange rates with expiration.",
+            "**Remember:** Redis = fast shared data structures."
+          ]
+        },
+        {
+          "question": "What is a cache-aside pattern?",
+          "answer": [
+            "Application checks cache, loads from database on miss, then fills cache.",
+            "**Example:** Read product price from cache; on miss query DB and cache result.",
+            "**Remember:** Cache-aside = app manages cache."
+          ]
+        },
+        {
+          "question": "What is cache invalidation?",
+          "answer": [
+            "Removing or updating cached values when underlying data changes.",
+            "**Example:** Invalidate customer cache after address update.",
+            "**Remember:** Stale cache = wrong answer."
+          ]
+        },
+        {
+          "question": "What is TTL?",
+          "answer": [
+            "Time To Live sets when a cached entry expires.",
+            "**Example:** Cache currency rate for 30 seconds.",
+            "**Remember:** TTL = expiry timer."
+          ]
+        },
+        {
+          "question": "What is a graph traversal?",
+          "answer": [
+            "Following relationships through connected nodes.",
+            "**Example:** Find accounts connected through shared phone numbers.",
+            "**Remember:** Traverse links."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "18. Security, Access & Compliance",
+      "description": "Protect sensitive information",
+      "questions": [
+        {
+          "question": "What is authentication vs authorization?",
+          "answer": [
+            "Authentication proves identity; authorization decides permitted actions.",
+            "**Example:** Login verifies user; role decides who can refund.",
+            "**Remember:** AuthN = who, AuthZ = what."
+          ]
+        },
+        {
+          "question": "What is least privilege?",
+          "answer": [
+            "Give accounts only the permissions they need.",
+            "**Example:** Report service gets SELECT but not DELETE.",
+            "**Remember:** Minimum necessary access."
+          ]
+        },
+        {
+          "question": "What is GRANT and REVOKE?",
+          "answer": [
+            "Commands to give and remove permissions, with vendor-specific syntax.",
+            "**Example:** GRANT SELECT ON orders TO analyst;",
+            "**Remember:** GRANT give, REVOKE remove."
+          ]
+        },
+        {
+          "question": "What is a database role?",
+          "answer": [
+            "A named collection of permissions that can be assigned to users or services.",
+            "**Example:** read_only_role can SELECT reporting tables.",
+            "**Remember:** Role = permission bundle."
+          ]
+        },
+        {
+          "question": "What is encryption at rest?",
+          "answer": [
+            "Encrypt stored database files or volumes to protect data if storage is accessed improperly.",
+            "**Example:** Encrypted disk containing customer records.",
+            "**Remember:** At rest = stored data."
+          ]
+        },
+        {
+          "question": "What is encryption in transit?",
+          "answer": [
+            "Protect network traffic between application and database, commonly with TLS.",
+            "**Example:** Application connects to PostgreSQL over TLS.",
+            "**Remember:** In transit = moving data."
+          ]
+        },
+        {
+          "question": "What is row-level security?",
+          "answer": [
+            "Database-enforced rules limiting which rows a user can access, where supported.",
+            "**Example:** Tenant A cannot read tenant B's invoices.",
+            "**Remember:** RLS = row visibility rules."
+          ]
+        },
+        {
+          "question": "What is data masking?",
+          "answer": [
+            "Hide or transform sensitive values for viewers without full access.",
+            "**Example:** Show card number as ****1234.",
+            "**Remember:** Mask = conceal sensitive parts."
+          ]
+        },
+        {
+          "question": "What is SQL injection prevention?",
+          "answer": [
+            "Use parameterized queries, validate identifiers, least privilege, and avoid untrusted SQL string construction.",
+            "**Example:** Bind customer_id instead of inserting raw input into SQL.",
+            "**Remember:** Bind values, allowlist identifiers."
+          ]
+        },
+        {
+          "question": "What is database auditing?",
+          "answer": [
+            "Record access or changes for accountability and investigation.",
+            "**Example:** Log which admin read sensitive customer data.",
+            "**Remember:** Audit = trace actions."
+          ]
+        },
+        {
+          "question": "What is PII?",
+          "answer": [
+            "Personally identifiable information requiring appropriate protection and retention rules.",
+            "**Example:** Email, phone number, and identity details.",
+            "**Remember:** PII = identifiable data."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "backup-recovery",
+      "title": "19. Backup, Recovery & Operations",
+      "description": "Prepare for failures before they happen",
+      "questions": [
+        {
+          "question": "What is a full backup?",
+          "answer": [
+            "A complete copy of data at a chosen point, according to backup tool semantics.",
+            "**Example:** Nightly full backup of Orders database.",
+            "**Remember:** Full = complete snapshot."
+          ]
+        },
+        {
+          "question": "What is an incremental backup?",
+          "answer": [
+            "It stores changes since a previous backup, often the last backup in a chain.",
+            "**Example:** Backup only blocks changed since yesterday.",
+            "**Remember:** Incremental = changes since last backup."
+          ]
+        },
+        {
+          "question": "What is a differential backup?",
+          "answer": [
+            "It stores changes since the most recent full backup in systems supporting this distinction.",
+            "**Example:** Thursday differential includes changes since Sunday full.",
+            "**Remember:** Differential = since full."
+          ]
+        },
+        {
+          "question": "What is point-in-time recovery?",
+          "answer": [
+            "Restore to a specific moment using a base backup plus transaction logs or equivalent.",
+            "**Example:** Restore to 10:14 before accidental deletion at 10:15.",
+            "**Remember:** PITR = rewind to time."
+          ]
+        },
+        {
+          "question": "What is WAL or transaction log?",
+          "answer": [
+            "A log recording changes needed for recovery and replication; implementation varies.",
+            "**Example:** PostgreSQL writes WAL records before flushing changed data pages.",
+            "**Remember:** Log supports recovery."
+          ]
+        },
+        {
+          "question": "What is RPO?",
+          "answer": [
+            "Recovery Point Objective is the maximum acceptable data-loss window.",
+            "**Example:** RPO 5 minutes means tolerate up to about 5 minutes of lost changes.",
+            "**Remember:** RPO = how much data loss."
+          ]
+        },
+        {
+          "question": "What is RTO?",
+          "answer": [
+            "Recovery Time Objective is the target time to restore service.",
+            "**Example:** RTO 30 minutes means service should return within 30 minutes.",
+            "**Remember:** RTO = how long downtime."
+          ]
+        },
+        {
+          "question": "Why test backups?",
+          "answer": [
+            "A backup is only useful if it can actually be restored within the required time.",
+            "**Example:** Practice restoring last night's backup to a test server.",
+            "**Remember:** Untested backup = unknown recovery."
+          ]
+        },
+        {
+          "question": "What is high availability?",
+          "answer": [
+            "Designing systems to minimize downtime using redundancy, monitoring, and failover.",
+            "**Example:** Primary plus standby with health checks.",
+            "**Remember:** HA = keep service running."
+          ]
+        },
+        {
+          "question": "What is disaster recovery?",
+          "answer": [
+            "A plan to restore service after major incidents affecting systems or locations.",
+            "**Example:** Recover the DB in another region after a data center outage.",
+            "**Remember:** DR = recover after disaster."
+          ]
+        },
+        {
+          "question": "What is a health check?",
+          "answer": [
+            "A check of service readiness or liveness; simple connectivity alone may not prove full health.",
+            "**Example:** Check DB accepts reads and replication lag is within threshold.",
+            "**Remember:** Healthy = able to serve workload."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpp-database",
+      "title": "20. Database Access from C++",
+      "description": "Interview topics for experienced C++ backend engineers",
+      "questions": [
+        {
+          "question": "How does a C++ application talk to a database?",
+          "answer": [
+            "It uses a driver or client library to open connections, prepare statements, bind values, execute, and read results.",
+            "**Example:** libpq for PostgreSQL or an ODBC driver.",
+            "**Remember:** Driver bridges C++ and DB."
+          ]
+        },
+        {
+          "question": "What is ODBC?",
+          "answer": [
+            "Open Database Connectivity is a standard API for connecting applications to different database drivers.",
+            "**Example:** One C++ service uses ODBC to talk to SQL Server.",
+            "**Remember:** ODBC = driver interface."
+          ]
+        },
+        {
+          "question": "Why use RAII for DB resources?",
+          "answer": [
+            "Resource Acquisition Is Initialization ties connection, statement, and transaction cleanup to C++ object lifetimes.",
+            "**Example:** A transaction wrapper rolls back in its destructor if not committed.",
+            "**Remember:** RAII = cleanup on scope exit."
+          ]
+        },
+        {
+          "question": "How should transactions handle C++ exceptions?",
+          "answer": [
+            "Roll back on failure, let RAII clean resources, and commit only after all required operations succeed.",
+            "**Example:** If updating the second account throws, rollback the first update.",
+            "**Remember:** Exception = no partial commit."
+          ]
+        },
+        {
+          "question": "How do you prevent SQL injection in C++?",
+          "answer": [
+            "Use parameterized statements and driver bindings rather than concatenating user input.",
+            "**Example:** Bind an account ID as a parameter in SELECT.",
+            "**Remember:** Never concatenate untrusted values."
+          ]
+        },
+        {
+          "question": "What is a connection pool in a C++ service?",
+          "answer": [
+            "A thread-safe manager reuses a bounded set of DB connections.",
+            "**Example:** Worker threads borrow connections and return them after use.",
+            "**Remember:** Borrow, use, return."
+          ]
+        },
+        {
+          "question": "Should a DB connection be shared across threads?",
+          "answer": [
+            "Only if the specific driver and connection object explicitly support the intended concurrent use; usually give each operation exclusive access or borrow from a pool.",
+            "**Example:** Two workers each acquire their own pooled connection.",
+            "**Remember:** Driver thread-safety matters."
+          ]
+        },
+        {
+          "question": "What is an ORM?",
+          "answer": [
+            "Object-Relational Mapping maps classes and objects to relational rows; it can simplify CRUD but hide SQL costs.",
+            "**Example:** Customer C++ object maps to customers table.",
+            "**Remember:** ORM maps objects ↔ rows."
+          ]
+        },
+        {
+          "question": "What is the impedance mismatch?",
+          "answer": [
+            "Object graphs and relational tables represent data differently, creating mapping challenges.",
+            "**Example:** C++ inheritance vs normalized SQL tables.",
+            "**Remember:** Objects and tables differ."
+          ]
+        },
+        {
+          "question": "What is a prepared statement lifecycle?",
+          "answer": [
+            "Prepare or parse SQL, bind parameters, execute, fetch results, and release or reuse resources.",
+            "**Example:** Prepare SELECT by id once, execute for many IDs.",
+            "**Remember:** Prepare → bind → execute → fetch."
+          ]
+        },
+        {
+          "question": "How do you handle large result sets in C++?",
+          "answer": [
+            "Fetch in batches or stream rows rather than loading everything into memory.",
+            "**Example:** Process one million trades 1000 at a time.",
+            "**Remember:** Stream, don't hoard."
+          ]
+        },
+        {
+          "question": "What is the N+1 problem in application code?",
+          "answer": [
+            "A loop issues one query per object, causing excessive network round trips.",
+            "**Example:** For each portfolio, fetch holdings separately.",
+            "**Remember:** Batch queries."
+          ]
+        },
+        {
+          "question": "How should you store timestamps in C++ and SQL?",
+          "answer": [
+            "Use clear UTC/offset semantics, suitable SQL types, and explicit conversions at boundaries.",
+            "**Example:** Store trade event time in UTC; format local time in UI.",
+            "**Remember:** Time zones are part of correctness."
+          ]
+        },
+        {
+          "question": "How do you avoid floating-point mistakes for financial data?",
+          "answer": [
+            "Use fixed-point or decimal types with defined precision and rounding; map carefully to SQL DECIMAL.",
+            "**Example:** Represent ₹123.45 as 12345 paise or decimal.",
+            "**Remember:** Money requires exact arithmetic."
+          ]
+        },
+        {
+          "question": "How do you handle transient DB failures?",
+          "answer": [
+            "Classify errors, retry only safe or idempotent operations, use backoff, and avoid retrying non-retryable constraints.",
+            "**Example:** Retry a serialization failure, not a duplicate primary key violation.",
+            "**Remember:** Retry safely, not blindly."
+          ]
+        },
+        {
+          "question": "How do you implement a transaction guard in C++?",
+          "answer": [
+            "A wrapper starts a transaction, commits explicitly, and rolls back in a noexcept destructor if still active.",
+            "**Example:** Transaction tx(conn); updateA(); updateB(); tx.commit();",
+            "**Remember:** Commit explicitly; rollback automatically."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interview-scenarios",
+      "title": "21. Advanced Interview Problems",
+      "description": "Hands-on scenarios and practical reasoning",
+      "questions": [
+        {
+          "question": "How do you find the second-highest salary?",
+          "answer": [
+            "Use DENSE_RANK for second distinct salary, or MAX below MAX; define whether ties count.",
+            "**Example:** SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);",
+            "**Remember:** Clarify distinct vs row rank."
+          ],
+          "code": "SELECT MAX(salary) AS second_highest\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);"
+        },
+        {
+          "question": "How do you find duplicate emails?",
+          "answer": [
+            "GROUP BY email HAVING COUNT(*) > 1; decide how to treat NULL.",
+            "**Example:** SELECT email,COUNT(*) FROM users GROUP BY email HAVING COUNT(*)>1;",
+            "**Remember:** GROUP + HAVING."
+          ],
+          "code": "SELECT email, COUNT(*) AS occurrences\nFROM users\nWHERE email IS NOT NULL\nGROUP BY email\nHAVING COUNT(*) > 1;"
+        },
+        {
+          "question": "How do you delete duplicate rows safely?",
+          "answer": [
+            "Define the business key and survivor, identify duplicates with ROW_NUMBER, then delete inside a tested transaction using a stable row ID.",
+            "**Example:** Keep the smallest id for each email.",
+            "**Remember:** Define survivor before DELETE."
+          ]
+        },
+        {
+          "question": "How do you find employees without departments?",
+          "answer": [
+            "Use LEFT JOIN and IS NULL, or NOT EXISTS.",
+            "**Example:** SELECT e.* FROM employees e LEFT JOIN departments d ON d.id=e.department_id WHERE d.id IS NULL;",
+            "**Remember:** LEFT + NULL."
+          ]
+        },
+        {
+          "question": "How do you find customers with no orders?",
+          "answer": [
+            "Use NOT EXISTS to avoid NULL pitfalls.",
+            "**Example:** SELECT * FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id=c.id);",
+            "**Remember:** NOT EXISTS."
+          ],
+          "code": "SELECT c.* FROM customers c\nWHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);"
+        },
+        {
+          "question": "How do you find the top 3 salaries per department?",
+          "answer": [
+            "Use DENSE_RANK partitioned by department if tied salaries should share rank; use ROW_NUMBER for exactly three rows.",
+            "**Example:** DENSE_RANK() OVER(PARTITION BY department_id ORDER BY salary DESC).",
+            "**Remember:** Decide ties first."
+          ],
+          "code": "WITH ranked AS (\n SELECT e.*, DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rnk\n FROM employees e\n)\nSELECT * FROM ranked WHERE rnk <= 3;"
+        },
+        {
+          "question": "How do you calculate monthly sales?",
+          "answer": [
+            "Group orders by a month bucket using DB-specific date functions and SUM.",
+            "**Example:** Sum October order amounts, excluding cancelled orders if business rules say so.",
+            "**Remember:** Define dates and status."
+          ]
+        },
+        {
+          "question": "How do you calculate a running balance?",
+          "answer": [
+            "Use SUM(amount) OVER with a deterministic ordering key.",
+            "**Example:** SUM(delta) OVER(PARTITION BY account_id ORDER BY event_time,id ROWS UNBOUNDED PRECEDING).",
+            "**Remember:** Deterministic order matters."
+          ]
+        },
+        {
+          "question": "How do you handle NULL in aggregates?",
+          "answer": [
+            "COUNT(column), SUM, and AVG usually ignore NULL; COUNT(*) counts rows; use COALESCE when appropriate.",
+            "**Example:** AVG(score) ignores missing scores rather than treating them as zero.",
+            "**Remember:** NULL is not zero."
+          ]
+        },
+        {
+          "question": "How do you compare current and previous records?",
+          "answer": [
+            "Use LAG or a self join ordered by a stable key.",
+            "**Example:** LAG(price) OVER(PARTITION BY product_id ORDER BY changed_at,id).",
+            "**Remember:** LAG = previous."
+          ]
+        },
+        {
+          "question": "How do you find gaps in sequential IDs?",
+          "answer": [
+            "Use LAG and compare current id to previous id+1, while remembering IDs may legitimately have gaps.",
+            "**Example:** Sequence 1,2,5 shows missing 3 and 4.",
+            "**Remember:** Gaps are not always errors."
+          ]
+        },
+        {
+          "question": "How do you find overlapping date ranges?",
+          "answer": [
+            "Two half-open ranges overlap if start1 < end2 AND start2 < end1.",
+            "**Example:** Two portfolio customizations cannot overlap for one account.",
+            "**Remember:** Half-open ranges simplify boundaries."
+          ]
+        },
+        {
+          "question": "How do you ensure only one current record per entity?",
+          "answer": [
+            "Use a unique partial index on current rows where supported, or another suitable constraint/design.",
+            "**Example:** One current model portfolio header per portfolio.",
+            "**Remember:** Enforce invariants in DB."
+          ]
+        },
+        {
+          "question": "How do you avoid double booking?",
+          "answer": [
+            "Use transactions and uniqueness or exclusion constraints where supported, with concurrency-safe locking.",
+            "**Example:** Two users cannot reserve the same seat and showtime.",
+            "**Remember:** Constraint beats check-then-insert."
+          ]
+        },
+        {
+          "question": "What happens when an index is added to a busy table?",
+          "answer": [
+            "Building it may consume I/O, CPU, storage, and locks; online/concurrent options vary by DBMS.",
+            "**Example:** CREATE INDEX CONCURRENTLY in PostgreSQL has specific trade-offs.",
+            "**Remember:** Plan production index builds."
+          ]
+        },
+        {
+          "question": "How do you handle millions of inserts?",
+          "answer": [
+            "Batch inserts, use bulk-load tools, manage indexes and transaction size, and measure bottlenecks.",
+            "**Example:** Load trade history in batches rather than one network call per row.",
+            "**Remember:** Batch + measure."
+          ]
+        },
+        {
+          "question": "How do you investigate high DB CPU?",
+          "answer": [
+            "Identify expensive queries, plans, concurrency, missing indexes, and resource saturation.",
+            "**Example:** One unindexed report repeatedly sorts millions of rows.",
+            "**Remember:** Find workload first."
+          ]
+        },
+        {
+          "question": "How do you investigate slow commits?",
+          "answer": [
+            "Check log flush latency, locks, replication settings, and storage performance.",
+            "**Example:** Commit waits for durable WAL flush.",
+            "**Remember:** Commit includes durability cost."
+          ]
+        },
+        {
+          "question": "How do you choose isolation for a money transfer?",
+          "answer": [
+            "Use atomic updates, suitable isolation/locking, and invariant checks; test race conditions and retry conflicts.",
+            "**Example:** Debit only if balance >= amount, credit destination in same transaction.",
+            "**Remember:** Correctness before speed."
+          ]
+        },
+        {
+          "question": "How do you explain a database design in an interview?",
+          "answer": [
+            "State requirements, entities, keys, constraints, queries, indexes, concurrency, failure handling, and trade-offs.",
+            "**Example:** For an order system, discuss duplicate requests and inventory races.",
+            "**Remember:** Requirements → model → correctness → performance."
+          ]
+        }
+      ]
+    }
+  ]
+}
