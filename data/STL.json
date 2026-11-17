@@ -1,0 +1,1940 @@
+{
+  "topics": [
+    {
+      "id": "stl-overview",
+      "title": "STL Fundamentals",
+      "description": "What the Standard Template Library is, how it is organised, and the core ideas behind it.",
+      "questions": [
+        {
+          "question": "What is the C++ STL?",
+          "answer": [
+            "The **Standard Template Library (STL)** is the part of the C++ standard library built around reusable, generic components. It lets you store data, process ranges of data and perform common operations without writing everything yourself.",
+            "Traditionally, STL is explained through four main building blocks:",
+            "- **Containers:** store data, for example `vector`, `map` and `set`.",
+            "- **Iterators:** provide a common way to access and move through container elements.",
+            "- **Algorithms:** perform operations on ranges, for example `sort`, `find` and `count`.",
+            "- **Function objects (callables):** customise behaviour, for example a comparator passed to `sort`.",
+            "Modern C++ also uses **ranges, views, allocators, utilities and concepts** around these ideas.",
+            "**Remember:** Containers hold, iterators connect, algorithms work, and callables customise.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Is STL the same as the C++ Standard Library?",
+          "answer": [
+            "Not exactly. The **C++ Standard Library** is the complete standard library: containers, strings, I/O, threading, filesystem, smart pointers, algorithms and much more.",
+            "STL originally referred to the generic-programming part centred on containers, iterators and algorithms. In everyday conversation, developers often use “STL” loosely to mean standard containers and algorithms.",
+            "**Interview point:** `std::string`, `std::thread` and `std::unique_ptr` are standard-library facilities, but they are not usually described as classic STL containers.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How is STL grouped?",
+          "answer": [
+            "One useful interview classification is:",
+            "- **Sequence containers:** `array`, `vector`, `deque`, `list`, `forward_list`.",
+            "- **Ordered associative containers:** `set`, `multiset`, `map`, `multimap`.",
+            "- **Unordered associative containers:** `unordered_set`, `unordered_multiset`, `unordered_map`, `unordered_multimap`.",
+            "- **Container adaptors:** `stack`, `queue`, `priority_queue`.",
+            "- **Other standard-library facilities:** `string`, `bitset`, `span`, `optional`, `variant`, and more. These are useful, but are not all containers in the strict STL classification.",
+            "Algorithms and iterators are separate from containers and work across iterator ranges.",
+            "**Remember:** Sequence = position/order; ordered associative = sorted key; unordered = hash; adaptor = restricted interface.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Why is STL called generic?",
+          "answer": [
+            "STL uses **templates** so the same implementation can work with many types. `std::vector<int>` and `std::vector<std::string>` are different specialisations of the same class template.",
+            "Algorithms are also generic: `std::sort` can sort many types as long as the iterator and comparison requirements are satisfied.",
+            {
+              "code": [
+                "#include <algorithm>\n#include <vector>\n\nstd::vector<int> numbers{4, 1, 3};\nstd::sort(numbers.begin(), numbers.end());"
+              ]
+            },
+            "**Remember:** Templates let one implementation work with different types.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between a container, iterator and algorithm?",
+          "answer": [
+            "A container owns or organises elements. An iterator identifies a position in a range. An algorithm performs an operation using iterators.",
+            {
+              "code": [
+                "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> values{4, 2, 7, 1}; // container\n    auto first = values.begin();         // iterator\n    std::sort(first, values.end());      // algorithm\n}"
+              ]
+            },
+            "`std::sort` does not need to know that the range comes from a vector; it needs suitable random-access iterators.",
+            "**Remember:** Data structure + position + operation.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are the advantages of using STL?",
+          "answer": [
+            "- **Productivity:** tested, reusable operations reduce hand-written code.",
+            "- **Consistency:** common interfaces make code easier to read.",
+            "- **Performance:** implementations are designed for efficient use and can be optimised by the compiler.",
+            "- **Type safety:** templates preserve type information.",
+            "- **Interoperability:** iterator-based algorithms work with many containers.",
+            "STL does not automatically make every choice optimal. Select the container based on access patterns, insertion/deletion patterns, memory use and complexity.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are the common STL headers?",
+          "answer": [
+            "Common headers include:",
+            "- `<vector>`, `<array>`, `<deque>`, `<list>`, `<forward_list>`",
+            "- `<map>`, `<set>`, `<unordered_map>`, `<unordered_set>`",
+            "- `<stack>`, `<queue>`",
+            "- `<algorithm>`, `<numeric>`, `<iterator>`, `<functional>`",
+            "- `<string>`, `<memory>`, `<utility>`, `<tuple>`",
+            "Prefer including the specific header you use instead of relying on indirect includes.",
+            {
+              "code": [
+                "#include <algorithm>\n#include <iostream>\n#include <map>\n#include <string>\n#include <vector>"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sequence-containers",
+      "title": "Sequence Containers",
+      "description": "Containers that organise elements in a sequence. Compare access, insertion, deletion and iterator behaviour.",
+      "questions": [
+        {
+          "question": "What are sequence containers?",
+          "answer": [
+            "Sequence containers store elements in a linear sequence. The main ones are `array`, `vector`, `deque`, `list` and `forward_list`.",
+            "- `array`: fixed size, contiguous storage.",
+            "- `vector`: dynamic size, contiguous storage; the usual default choice.",
+            "- `deque`: double-ended queue with efficient insertion/removal at both ends.",
+            "- `list`: doubly linked list.",
+            "- `forward_list`: singly linked list.",
+            "**Remember:** array fixed; vector grows; deque both ends; list two-way links; forward_list one-way links.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::vector and why is it commonly used?",
+          "answer": [
+            "`std::vector` is a dynamic-size sequence container whose elements are stored contiguously. It supports fast random access and efficient insertion/removal at the end.",
+            "Typical complexity: indexing is **O(1)**; `push_back` is amortised **O(1)**; inserting or erasing in the middle is **O(n)** because later elements must be shifted.",
+            {
+              "code": [
+                "#include <vector>\n\nstd::vector<int> values;\nvalues.push_back(10);\nvalues.push_back(20);\nvalues.emplace_back(30);\nint x = values[1]; // 20"
+              ]
+            },
+            "Use `vector` as the default sequence container unless the workload gives a reason to choose another one.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between size() and capacity() in vector?",
+          "answer": [
+            "`size()` is the number of elements currently in the vector. `capacity()` is how many elements can fit in the currently allocated storage before a reallocation is needed.",
+            {
+              "code": [
+                "std::vector<int> v;\nv.reserve(100);\nv.push_back(10);\n// size() is 1; capacity() is at least 100"
+              ]
+            },
+            "`reserve(n)` changes capacity, not size. `resize(n)` changes the number of elements.",
+            "**Remember:** size = elements present; capacity = storage available.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between reserve() and resize()?",
+          "answer": [
+            "`reserve(n)` requests capacity for at least `n` elements. It does not create elements, so `size()` remains unchanged.",
+            "`resize(n)` changes the vector's size. If it grows, new elements are inserted; if it shrinks, trailing elements are removed.",
+            {
+              "code": [
+                "std::vector<int> v;\nv.reserve(5); // size 0, capacity >= 5\nv.resize(5);  // size 5, five elements"
+              ]
+            },
+            "**Remember:** reserve prepares space; resize changes the number of elements.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What causes vector reallocation and what are its effects?",
+          "answer": [
+            "When an insertion makes `size()` exceed `capacity()`, a vector typically allocates a larger block and moves or copies its elements.",
+            "Reallocation invalidates **all iterators, pointers and references** to elements, including the old `end()` iterator. The exact growth factor is implementation-dependent; do not assume it doubles.",
+            "Use `reserve()` when you have a reasonable estimate of the final size and want to reduce reallocations.",
+            {
+              "code": [
+                "std::vector<int> v;\nv.reserve(100); // helps avoid reallocations up to 100 elements\nfor (int i = 0; i < 100; ++i) v.push_back(i);"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between push_back() and emplace_back()?",
+          "answer": [
+            "`push_back` inserts an existing object (by copy or move). `emplace_back` forwards constructor arguments and constructs the element in place at the end.",
+            {
+              "code": [
+                "std::vector<std::string> names;\nstd::string name = \"Shil\";\nnames.push_back(name);        // copies name\nnames.push_back(std::move(name)); // moves name\nnames.emplace_back(5, 'A');   // constructs \"AAAAA\""
+              ]
+            },
+            "`emplace_back` can avoid a temporary in some cases, but it is not automatically faster in every situation. For an already-created object, `push_back` is often clearer.",
+            "**Remember:** push an object; emplace constructor arguments.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::array?",
+          "answer": [
+            "`std::array<T, N>` is a fixed-size container whose size is part of its type. It stores its elements contiguously and provides STL-style iterators and member functions.",
+            {
+              "code": [
+                "#include <array>\n\nstd::array<int, 3> a{10, 20, 30};\na[0] = 5;\na.at(1); // bounds-checked access"
+              ]
+            },
+            "Unlike a built-in array, `std::array` knows its size and supports assignment and standard container operations. It does not grow or shrink.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::deque and when would you use it?",
+          "answer": [
+            "`std::deque` is a double-ended sequence container. It supports efficient insertion and removal at both the front and back, plus random access.",
+            "Use it when you frequently add/remove at both ends. Unlike vector, its elements are not guaranteed to be one contiguous block.",
+            {
+              "code": [
+                "#include <deque>\n\nstd::deque<int> d;\nd.push_back(2);\nd.push_front(1);\nd.pop_back();\nd.pop_front();"
+              ]
+            },
+            "**Remember:** deque = double-ended queue.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between vector and deque?",
+          "answer": [
+            "- `vector`: contiguous storage; fast indexing; efficient append at the end; inserting at the front is expensive.",
+            "- `deque`: random access and efficient insertion/removal at both ends; storage is not one contiguous block.",
+            "- `vector` works with APIs requiring a contiguous range or `data()`; deque does not provide the same contiguous-storage guarantee.",
+            "Choose based on access and mutation patterns, not on a blanket claim that one is always faster.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are std::list and std::forward_list?",
+          "answer": [
+            "`std::list` is a doubly linked list; `std::forward_list` is a singly linked list.",
+            "- List supports traversal in both directions and insertion/erasure at a known position in O(1).",
+            "- Forward_list supports only forward traversal and is designed to have lower per-node overhead.",
+            "- Neither provides random access; finding the position is O(n).",
+            {
+              "code": [
+                "#include <list>\n\nstd::list<int> values{10, 20, 30};\nauto it = values.begin();\n++it;\nvalues.insert(it, 15);"
+              ]
+            },
+            "**Remember:** linked lists make known-position edits cheap, not searching.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "When is list better than vector?",
+          "answer": [
+            "A list can be a better fit when you frequently insert or erase elements at positions you already have iterators for, and stable iterators/references are important.",
+            "Vector is usually better for traversal-heavy workloads because of contiguous storage and cache locality. A list's pointer chasing and per-node allocations often make it slower in real workloads even when its big-O insertion complexity looks attractive.",
+            "**Interview answer:** Explain the workload and iterator stability; do not say list is always faster for insertion.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is iterator invalidation in sequence containers?",
+          "answer": [
+            "Iterator invalidation means an iterator, pointer or reference that used to refer to an element is no longer valid after a container operation.",
+            "- `vector`: reallocation invalidates all; insertion/erase can invalidate elements at and after the change point.",
+            "- `deque`: operations at ends have specific invalidation rules; middle insert/erase can invalidate broadly.",
+            "- `list` and `forward_list`: insertion preserves iterators/references; erasing invalidates only those to erased elements.",
+            "- `array`: no structural insertion/erase; iterators remain stable while the array object exists.",
+            "Always check the exact operation's invalidation rules before keeping iterators.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you remove elements from a vector while iterating?",
+          "answer": [
+            "Use the iterator returned by `erase`. Do not increment an iterator after erasing it because the old iterator is invalidated.",
+            {
+              "code": [
+                "for (auto it = values.begin(); it != values.end(); ) {\n    if (*it % 2 == 0)\n        it = values.erase(it);\n    else\n        ++it;\n}"
+              ]
+            },
+            "For a simple remove-by-value operation, the erase-remove idiom is also common: `v.erase(std::remove(v.begin(), v.end(), value), v.end());`.",
+            "**Remember:** erase returns the next valid iterator.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the erase-remove idiom?",
+          "answer": [
+            "`std::remove` does not change a container's size. It moves the elements to keep toward the beginning and returns the new logical end. `erase` then removes the unused tail.",
+            {
+              "code": [
+                "#include <algorithm>\n#include <vector>\n\nstd::vector<int> v{1, 2, 2, 3, 2};\nauto newEnd = std::remove(v.begin(), v.end(), 2);\nv.erase(newEnd, v.end()); // {1, 3}"
+              ]
+            },
+            "For C++20, `std::erase(v, value)` provides a simpler container-level operation for supported containers.",
+            "**Remember:** remove rearranges; erase actually shrinks.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "associative-containers",
+      "title": "Ordered Associative Containers",
+      "description": "Sorted tree-based containers: set, multiset, map and multimap.",
+      "questions": [
+        {
+          "question": "What are associative containers?",
+          "answer": [
+            "Associative containers organise elements by keys rather than by numeric position. The ordered versions keep keys sorted according to a comparison object, commonly `std::less`.",
+            "The four ordered associative containers are `set`, `multiset`, `map` and `multimap`. They are commonly implemented using balanced search trees, typically red-black trees, and provide logarithmic lookup/insertion/erasure.",
+            "**Remember:** set stores keys; map stores key-value pairs; multi allows duplicate keys.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::set?",
+          "answer": [
+            "`std::set` stores unique keys in sorted order. Inserting a key that already exists does not add a duplicate.",
+            {
+              "code": [
+                "#include <set>\n\nstd::set<int> s{30, 10, 20, 10};\ns.insert(15);\n// Elements iterate as: 10, 15, 20, 30\nif (s.find(20) != s.end()) { /* found */ }"
+              ]
+            },
+            "Typical search, insertion and removal complexity is O(log n).",
+            "**Remember:** set = sorted unique values.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::multiset?",
+          "answer": [
+            "`std::multiset` is like `set`, but it allows equivalent keys to appear more than once. Elements are still kept sorted.",
+            {
+              "code": [
+                "#include <set>\n\nstd::multiset<int> ms{2, 1, 2, 3};\nauto count = ms.count(2); // 2"
+              ]
+            },
+            "Use `equal_range`, `lower_bound` or `upper_bound` to work with groups of equivalent keys.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::map?",
+          "answer": [
+            "`std::map<Key, Value>` stores key-value pairs ordered by key. Each key is unique. It is useful for lookup by an identifier.",
+            {
+              "code": [
+                "#include <map>\n#include <string>\n\nstd::map<int, std::string> employees;\nemployees[101] = \"Asha\";\nemployees.emplace(102, \"Ravi\");\nauto it = employees.find(101);"
+              ]
+            },
+            "Lookup, insertion and erasure are typically O(log n). Iteration visits keys in sorted order.",
+            "**Remember:** map = unique sorted key + value.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::multimap?",
+          "answer": [
+            "`std::multimap` stores sorted key-value pairs but permits multiple entries with equivalent keys. It does not provide `operator[]` because a key can identify several values.",
+            {
+              "code": [
+                "#include <map>\n\nstd::multimap<int, std::string> courses;\ncourses.emplace(1, \"C++\");\ncourses.emplace(1, \"Algorithms\");\nauto [first, last] = courses.equal_range(1);"
+              ]
+            },
+            "Use it when one key naturally maps to multiple values and you want sorted-key iteration.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between set and map?",
+          "answer": [
+            "`set` stores keys only. `map` stores key-value pairs. Both keep unique keys in sorted order and usually provide O(log n) lookup.",
+            {
+              "code": [
+                "std::set<int> ids{10, 20};\nstd::map<int, std::string> names{{10, \"Asha\"}, {20, \"Ravi\"}};"
+              ]
+            },
+            "**Remember:** set answers “is this key present?”; map answers “what value belongs to this key?”",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between map and unordered_map?",
+          "answer": [
+            "`map` keeps keys sorted and typically uses a balanced tree: operations are O(log n). `unordered_map` uses hashing, has average O(1) lookup/insertion/erase, but worst-case O(n).",
+            "- Choose `map` when sorted iteration, range queries or predictable logarithmic complexity matter.",
+            "- Choose `unordered_map` when fast average key lookup matters and ordering is not needed.",
+            "**Remember:** map = sorted tree; unordered_map = hash table.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is operator[] in map and what is its risk?",
+          "answer": [
+            "`map::operator[]` returns a reference to the mapped value. If the key does not exist, it inserts that key and value-initialises the mapped object.",
+            {
+              "code": [
+                "std::map<int, int> counts;\n++counts[42]; // inserts key 42 with value 0, then increments to 1"
+              ]
+            },
+            "Use `find` or `contains` when you only want to check existence. Use `at` when you want access without inserting; `at` throws `std::out_of_range` if missing.",
+            "**Remember:** `[]` may insert; `at()` does not.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between insert, emplace and try_emplace in map?",
+          "answer": [
+            "`insert` inserts a value or pair. `emplace` constructs a value in the container if insertion succeeds, but its arguments may be used to form a candidate even when the key already exists. `try_emplace` does not construct the mapped value when the key already exists.",
+            {
+              "code": [
+                "std::map<int, std::string> m;\nm.insert({1, \"one\"});\nm.emplace(2, \"two\");\nm.try_emplace(3, \"three\");"
+              ]
+            },
+            "`try_emplace` is especially useful when mapped-value construction is expensive or uses move-only arguments.",
+            "**Remember:** try_emplace = try key; build mapped value only if new.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do lower_bound(), upper_bound() and equal_range() work?",
+          "answer": [
+            "`lower_bound(k)` returns the first iterator whose key is **not less than** `k` (first key >= k).",
+            "`upper_bound(k)` returns the first iterator whose key is **greater than** `k`.",
+            "`equal_range(k)` returns both boundaries for all keys equivalent to `k`.",
+            {
+              "code": [
+                "std::multiset<int> s{1, 2, 2, 2, 4};\nauto lo = s.lower_bound(2); // first 2\n auto hi = s.upper_bound(2); // first element after 2\nauto [first, last] = s.equal_range(2);"
+              ]
+            },
+            "**Remember:** lower = >= key; upper = > key; equal_range = both.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you provide a custom comparator to set or map?",
+          "answer": [
+            "Pass a strict-weak-ordering comparator as the container's comparison template argument. The comparator defines the ordering of keys.",
+            {
+              "code": [
+                "struct Descending {\n    bool operator()(int a, int b) const { return a > b; }\n};\nstd::set<int, Descending> values{1, 3, 2}; // 3, 2, 1"
+              ]
+            },
+            "The comparator must be consistent and must satisfy strict weak ordering. Do not use `a <= b`; equivalent values must compare false in both directions.",
+            "**Remember:** comparator answers “should a come before b?”",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can map keys be modified through an iterator?",
+          "answer": [
+            "No. A map iterator exposes a pair whose `first` (the key) is `const`, because changing a key in place could break the container's ordering.",
+            {
+              "code": [
+                "std::map<int, std::string> m{{1, \"one\"}};\nauto it = m.begin();\n// it->first = 2; // error: key is const\nit->second = \"ONE\"; // mapped value can be changed"
+              ]
+            },
+            "To change a key, extract the node, modify its key, and insert it again (node handles, C++17).",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is a node handle in associative containers?",
+          "answer": [
+            "C++17 node handles let you extract a node from a compatible associative container, modify its key or mapped value while it is outside the container, and insert it into another compatible container.",
+            {
+              "code": [
+                "std::map<int, std::string> m{{1, \"one\"}};\nauto node = m.extract(1);\nif (!node.empty()) {\n    node.key() = 2;\n    m.insert(std::move(node));\n}"
+              ]
+            },
+            "This can transfer nodes without allocating and copying the stored element, subject to allocator compatibility.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unordered-containers",
+      "title": "Unordered Containers and Hashing",
+      "description": "Hash-table containers, collision handling, load factor and custom hash functions.",
+      "questions": [
+        {
+          "question": "What are unordered containers?",
+          "answer": [
+            "Unordered associative containers store keys using a hash table. They do not maintain sorted order.",
+            "The main types are `unordered_set`, `unordered_multiset`, `unordered_map` and `unordered_multimap`.",
+            "Average lookup, insertion and erasure are O(1); worst-case complexity is O(n), for example when many keys collide.",
+            "**Remember:** unordered means hash-based, not sorted.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How does unordered_map work internally?",
+          "answer": [
+            "An `unordered_map` uses a hash function to convert a key into a hash value, then maps that value to a bucket. The bucket contains or leads to elements whose hashes map there. Equality comparison distinguishes keys that land in the same bucket.",
+            "Collisions are normal. A good hash function spreads keys across buckets. The standard does not require one specific internal collision strategy.",
+            "**Remember:** hash chooses bucket; equality confirms the key.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is a hash collision?",
+          "answer": [
+            "A collision occurs when two different keys map to the same bucket (or have the same hash value). The container must still compare keys and store both correctly.",
+            "Collisions reduce performance when too many keys gather in the same bucket, but they do not mean keys are treated as equal.",
+            "**Remember:** same bucket does not mean same key.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are load_factor() and max_load_factor()?",
+          "answer": [
+            "`load_factor()` is approximately `size() / bucket_count()`. It indicates how full the hash table is.",
+            "`max_load_factor()` is the threshold the container uses when deciding whether to rehash. Lowering it generally asks for a less crowded table, often using more memory.",
+            {
+              "code": [
+                "std::unordered_map<int, int> counts;\ncounts.max_load_factor(0.7f);\ncounts.reserve(1000);"
+              ]
+            },
+            "**Remember:** load factor = elements per bucket on average.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is rehashing and when does it happen?",
+          "answer": [
+            "Rehashing changes the bucket arrangement, usually by allocating a different number of buckets and redistributing elements.",
+            "It can happen when insertion causes the load factor to exceed the maximum. Rehashing is potentially expensive and invalidates iterators, but references and pointers to elements are not invalidated by rehashing.",
+            "Use `reserve(n)` when you know approximately how many elements will be inserted to reduce repeated rehashing.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you write a custom hash for unordered_map?",
+          "answer": [
+            "Provide a hash callable and, when needed, an equality predicate. Equal keys must always produce equal hash values.",
+            {
+              "code": [
+                "struct Point {\n    int x, y;\n    bool operator==(const Point& other) const {\n        return x == other.x && y == other.y;\n    }\n};\nstruct PointHash {\n    std::size_t operator()(const Point& p) const {\n        return std::hash<int>{}(p.x) ^\n               (std::hash<int>{}(p.y) << 1);\n    }\n};\nstd::unordered_map<Point, int, PointHash> scores;"
+              ]
+            },
+            "The sample hash is illustrative; production hash combination should be chosen carefully.",
+            "**Remember:** custom key needs equality + hash; equal keys => same hash.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between hash and key equality?",
+          "answer": [
+            "The hash function narrows the search to a bucket. The equality predicate determines whether two keys are actually equivalent.",
+            "Different keys may have the same hash. But if two keys compare equal, their hash values must be equal. Violating this rule breaks the container's requirements.",
+            "**Remember:** hash helps find; equality decides.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "When would you prefer unordered_map over map?",
+          "answer": [
+            "Use `unordered_map` when you need fast average key lookup and do not need sorted iteration or ordered range queries.",
+            "Use `map` when sorted traversal, `lower_bound`, range queries, or worst-case logarithmic behaviour is important.",
+            "Benchmark with realistic key distributions: hashing can have memory overhead and performance depends on hash quality.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "container-adaptors",
+      "title": "Container Adaptors",
+      "description": "Stack, queue and priority_queue: restricted interfaces built on underlying containers.",
+      "questions": [
+        {
+          "question": "What is a container adaptor?",
+          "answer": [
+            "A container adaptor provides a restricted interface on top of another container. It does not expose the full interface of the underlying container.",
+            "The standard adaptors are `stack`, `queue` and `priority_queue`.",
+            "**Remember:** adaptor = container underneath + limited behaviour on top.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::stack?",
+          "answer": [
+            "`std::stack` follows **LIFO**: Last In, First Out. You add with `push` or `emplace`, inspect the top with `top`, and remove with `pop`.",
+            {
+              "code": [
+                "#include <stack>\n\nstd::stack<int> st;\nst.push(10);\nst.push(20);\nint current = st.top(); // 20\nst.pop();               // removes 20"
+              ]
+            },
+            "`pop()` returns `void`; read `top()` before calling it. Check `empty()` before accessing `top()`.",
+            "**Remember:** stack = plates; last plate placed is first removed.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::queue?",
+          "answer": [
+            "`std::queue` follows **FIFO**: First In, First Out. Add at the back with `push`/`emplace`, inspect the front with `front`, and remove from the front with `pop`.",
+            {
+              "code": [
+                "#include <queue>\n\nstd::queue<int> q;\nq.push(10);\nq.push(20);\nint first = q.front(); // 10\nq.pop();"
+              ]
+            },
+            "`pop()` returns `void`. Check `empty()` before calling `front()` or `back()`.",
+            "**Remember:** queue = line of people; first person in is served first.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::priority_queue?",
+          "answer": [
+            "`std::priority_queue` exposes the highest-priority element at `top()`. By default it is a max-heap, so the largest value is on top.",
+            {
+              "code": [
+                "#include <queue>\n\nstd::priority_queue<int> pq;\npq.push(10);\npq.push(30);\npq.push(20);\nint highest = pq.top(); // 30"
+              ]
+            },
+            "`push` and `pop` are O(log n); `top` is O(1). `pop()` returns `void`.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you create a min-heap using priority_queue?",
+          "answer": [
+            "Use `std::greater<T>` as the comparator. This makes the smallest element appear at the top.",
+            {
+              "code": [
+                "#include <functional>\n#include <queue>\n\nstd::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;\nminHeap.push(30);\nminHeap.push(10);\nminHeap.push(20);\n// minHeap.top() == 10"
+              ]
+            },
+            "Template order: value type, underlying container, comparator.",
+            "**Remember:** default priority_queue = max; `greater` = min.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you define a custom priority_queue comparator?",
+          "answer": [
+            "The comparator defines heap priority. Be careful: its meaning can feel reversed compared with sorting. For a min-priority queue of a custom type, a comparator can make larger values lower priority.",
+            {
+              "code": [
+                "struct Task { int priority; int id; };\nstruct LowerPriorityFirst {\n    bool operator()(const Task& a, const Task& b) const {\n        return a.priority > b.priority;\n    }\n};\nstd::priority_queue<Task, std::vector<Task>, LowerPriorityFirst> tasks;"
+              ]
+            },
+            "Test with two simple values before relying on a custom comparator. The comparator must establish a strict weak ordering.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "iterators",
+      "title": "Iterators",
+      "description": "Iterator categories, operations, const correctness, reverse iterators and invalidation.",
+      "questions": [
+        {
+          "question": "What is an iterator?",
+          "answer": [
+            "An iterator is an object that identifies a position in a sequence or range and provides operations to access elements and move through that range.",
+            "Iterators let algorithms work with different containers through a common interface.",
+            {
+              "code": [
+                "std::vector<int> v{10, 20, 30};\nfor (auto it = v.begin(); it != v.end(); ++it) {\n    std::cout << *it << '\\n';\n}"
+              ]
+            },
+            "**Remember:** iterator is like a generalised pointer into a range.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are the iterator categories?",
+          "answer": [
+            "The classic iterator categories are:",
+            "- **Input:** read values while moving forward; single-pass.",
+            "- **Output:** write values while moving forward; single-pass.",
+            "- **Forward:** read/write as permitted and make multi-pass forward traversal.",
+            "- **Bidirectional:** forward and backward traversal (`++`, `--`).",
+            "- **Random access:** jump by offsets and compare distances (`+`, `-`, `[]`).",
+            "C++20 adds the iterator concepts, including `contiguous_iterator`, which expresses stronger guarantees than random access.",
+            "**Remember:** input/output → forward → bidirectional → random access; contiguous is stronger still.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which iterator category does each common container support?",
+          "answer": [
+            "- `array`, `vector`, `deque`: random-access iterators; their iterators are contiguous for array/vector, but deque is not contiguous.",
+            "- `list`: bidirectional.",
+            "- `forward_list`: forward.",
+            "- `set`, `map` and their multi versions: bidirectional.",
+            "- unordered associative containers: forward.",
+            "- `stack`, `queue`, `priority_queue`: do not expose iterators.",
+            "Knowing this explains why `std::sort` works with vector but not list or map.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between begin() and end()?",
+          "answer": [
+            "`begin()` points to the first element. `end()` points one position past the last element; it is a boundary marker and must not be dereferenced.",
+            "For an empty container, `begin() == end()`.",
+            {
+              "code": [
+                "for (auto it = v.begin(); it != v.end(); ++it) {\n    // it is valid to dereference here\n}"
+              ]
+            },
+            "**Remember:** end is past-the-end, not the last element.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between iterator and const_iterator?",
+          "answer": [
+            "`iterator` generally permits modifying the element when the container permits it. `const_iterator` provides read-only access through that iterator.",
+            {
+              "code": [
+                "std::vector<int> v{1, 2, 3};\nstd::vector<int>::iterator it = v.begin();\n*it = 10;\nstd::vector<int>::const_iterator cit = v.cbegin();\n// *cit = 20; // error"
+              ]
+            },
+            "Use `cbegin()` and `cend()` when you want to make read-only intent explicit.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are reverse iterators?",
+          "answer": [
+            "Reverse iterators traverse a range in the opposite direction. `rbegin()` refers to the last element and `rend()` is the reverse past-the-end position.",
+            {
+              "code": [
+                "std::vector<int> v{1, 2, 3};\nfor (auto it = v.rbegin(); it != v.rend(); ++it)\n    std::cout << *it << ' '; // 3 2 1"
+              ]
+            },
+            "**Remember:** reverse begin starts at the normal last element.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is iterator invalidation?",
+          "answer": [
+            "An iterator is invalidated when a container operation makes it unsafe to use. The rules depend on the container and operation.",
+            "Common example: vector reallocation invalidates every iterator, pointer and reference. Erasing an element from a list invalidates only iterators/references to that erased element.",
+            "Never assume an iterator stays valid after insertion, erasure, reserve or rehash. Check the specific container rule.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::distance and std::advance?",
+          "answer": [
+            "`std::distance(first, last)` returns the number of iterator steps between two iterators. `std::advance(it, n)` moves an iterator by `n` positions.",
+            {
+              "code": [
+                "auto distance = std::distance(v.begin(), v.end());\nauto it = v.begin();\nstd::advance(it, 2);"
+              ]
+            },
+            "For random-access iterators these operations are O(1); for weaker iterator categories they may be O(n).",
+            "**Remember:** distance measures; advance moves.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::next and std::prev?",
+          "answer": [
+            "`std::next(it, n)` returns an iterator advanced by `n`; `std::prev(it, n)` returns one moved backward. They do not modify the original iterator.",
+            {
+              "code": [
+                "auto second = std::next(v.begin());\nauto last = std::prev(v.end());"
+              ]
+            },
+            "Use `prev` only where moving backward is supported, such as bidirectional iterators.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "algorithms-nonmodifying",
+      "title": "Algorithms: Searching and Inspection",
+      "description": "Common non-modifying algorithms from <algorithm> and their iterator requirements.",
+      "questions": [
+        {
+          "question": "What are STL algorithms?",
+          "answer": [
+            "STL algorithms are reusable functions, mainly declared in `<algorithm>`, that operate on iterator ranges. They are not tied to one specific container.",
+            "Most algorithms use a half-open range `[first, last)`: first is included and last is excluded.",
+            {
+              "code": [
+                "std::vector<int> v{4, 2, 4, 1};\nauto it = std::find(v.begin(), v.end(), 4);"
+              ]
+            },
+            "**Remember:** algorithms operate on ranges, not on containers directly.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between find() and binary_search()?",
+          "answer": [
+            "`std::find` works on a general input range and checks elements one by one: O(n).",
+            "`std::binary_search` requires the range to be partitioned/sorted according to the same ordering and answers only whether a matching value exists. With random-access iterators it takes O(log n) comparisons.",
+            {
+              "code": [
+                "auto it = std::find(v.begin(), v.end(), target);\nbool exists = std::binary_search(v.begin(), v.end(), target); // sorted range"
+              ]
+            },
+            "**Remember:** find works unsorted; binary search needs sorted/partitioned data.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between count() and count_if()?",
+          "answer": [
+            "`count` counts elements equal to a given value. `count_if` counts elements for which a predicate returns true.",
+            {
+              "code": [
+                "int twos = std::count(v.begin(), v.end(), 2);\nint evens = std::count_if(v.begin(), v.end(),\n                          [](int x) { return x % 2 == 0; });"
+              ]
+            },
+            "Both are linear in the number of elements.",
+            "**Remember:** count compares to a value; count_if tests a condition.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What do all_of(), any_of() and none_of() do?",
+          "answer": [
+            "`all_of` is true when every element satisfies the predicate. `any_of` is true when at least one does. `none_of` is true when no element does.",
+            {
+              "code": [
+                "bool allPositive = std::all_of(v.begin(), v.end(),\n                                [](int x) { return x > 0; });\nbool hasNegative = std::any_of(v.begin(), v.end(),\n                               [](int x) { return x < 0; });\nbool noZero = std::none_of(v.begin(), v.end(),\n                           [](int x) { return x == 0; });"
+              ]
+            },
+            "**Remember:** all = every; any = one or more; none = zero.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between find_if() and find_if_not()?",
+          "answer": [
+            "`find_if` returns the first element whose predicate is true. `find_if_not` returns the first element whose predicate is false.",
+            {
+              "code": [
+                "auto firstLarge = std::find_if(v.begin(), v.end(),\n                                [](int x) { return x > 10; });\nauto firstNotLarge = std::find_if_not(v.begin(), v.end(),\n                                     [](int x) { return x > 10; });"
+              ]
+            },
+            "Both return `last` when no matching element is found.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are min_element(), max_element() and minmax_element()?",
+          "answer": [
+            "`min_element` returns an iterator to the smallest element; `max_element` returns an iterator to the largest; `minmax_element` returns both iterators.",
+            {
+              "code": [
+                "auto minIt = std::min_element(v.begin(), v.end());\nauto maxIt = std::max_element(v.begin(), v.end());\nauto [minPos, maxPos] = std::minmax_element(v.begin(), v.end());"
+              ]
+            },
+            "They are linear. For an empty range, do not dereference the returned iterator(s).",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is accumulate()?",
+          "answer": [
+            "`std::accumulate`, from `<numeric>`, folds a range into one result, starting with an initial value.",
+            {
+              "code": [
+                "#include <numeric>\nstd::vector<int> v{1, 2, 3, 4};\nint sum = std::accumulate(v.begin(), v.end(), 0);\nint product = std::accumulate(v.begin(), v.end(), 1,\n    std::multiplies<int>{});"
+              ]
+            },
+            "The initial value matters: `0` gives integer accumulation; `0.0` can be used for floating-point accumulation. A too-small type can overflow.",
+            "**Remember:** accumulate = combine the range into one value.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::iota()?",
+          "answer": [
+            "`std::iota`, from `<numeric>`, fills a range with sequentially increasing values starting from a given value.",
+            {
+              "code": [
+                "#include <numeric>\nstd::vector<int> v(5);\nstd::iota(v.begin(), v.end(), 10);\n// 10, 11, 12, 13, 14"
+              ]
+            },
+            "**Remember:** iota = initialise with a sequence.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "algorithms-modifying",
+      "title": "Algorithms: Sorting and Modifying",
+      "description": "Sorting, partitioning, copying, transforming, replacing and removing elements.",
+      "questions": [
+        {
+          "question": "How does std::sort() work?",
+          "answer": [
+            "`std::sort(first, last)` sorts a range in ascending order by default. It requires random-access iterators, so it works with vector and array but not list or map iterators.",
+            "Complexity is O(N log N) comparisons in modern C++ standard requirements. `std::sort` is not stable: equivalent elements are not guaranteed to keep their original relative order.",
+            {
+              "code": [
+                "std::vector<int> v{4, 1, 3, 2};\nstd::sort(v.begin(), v.end());\nstd::sort(v.begin(), v.end(), std::greater<int>{});"
+              ]
+            },
+            "**Remember:** sort = fast ordering, but not stable.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between sort() and stable_sort()?",
+          "answer": [
+            "`sort` does not preserve the relative order of equivalent elements. `stable_sort` preserves it.",
+            "Use `stable_sort` when records with equal sort keys must retain their original order. It may use additional memory.",
+            {
+              "code": [
+                "struct Employee { int age; std::string name; };\nstd::stable_sort(employees.begin(), employees.end(),\n    [](const auto& a, const auto& b) { return a.age < b.age; });"
+              ]
+            },
+            "**Remember:** stable means equal-key elements stay in their previous relative order.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you sort a vector of pairs?",
+          "answer": [
+            "`std::pair` compares lexicographically by default: first compare `.first`, and if equal compare `.second`.",
+            {
+              "code": [
+                "std::vector<std::pair<int, int>> v{{2, 5}, {1, 9}, {2, 3}};\nstd::sort(v.begin(), v.end());\n// (1,9), (2,3), (2,5)"
+              ]
+            },
+            "Use a custom comparator when the required ordering differs from the default.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you sort objects using a lambda comparator?",
+          "answer": [
+            "Pass a lambda to `std::sort`. The comparator should return true when the first argument must come before the second.",
+            {
+              "code": [
+                "std::sort(items.begin(), items.end(),\n    [](const Item& a, const Item& b) {\n        return a.price < b.price;\n    });"
+              ]
+            },
+            "Do not use `<=` in a sort comparator. Sorting requires strict weak ordering.",
+            "**Remember:** comparator says “a comes before b”, not “a is less than or equal to b”.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::partition()?",
+          "answer": [
+            "`std::partition` rearranges a range so that elements satisfying a predicate come before elements that do not. It does not sort either group.",
+            "It returns the partition boundary. The relative order within each group is not guaranteed.",
+            {
+              "code": [
+                "auto boundary = std::partition(v.begin(), v.end(),\n                                [](int x) { return x % 2 == 0; });"
+              ]
+            },
+            "`stable_partition` preserves the relative order within both groups.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::transform()?",
+          "answer": [
+            "`std::transform` applies an operation to each element and writes the result to an output range. It can also combine two input ranges.",
+            {
+              "code": [
+                "std::vector<int> input{1, 2, 3}, output;\noutput.resize(input.size());\nstd::transform(input.begin(), input.end(), output.begin(),\n               [](int x) { return x * x; });"
+              ]
+            },
+            "**Remember:** transform = map each input to an output.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::for_each()?",
+          "answer": [
+            "`std::for_each` invokes a function for every element in a range. It is useful when each element needs an action rather than producing a transformed output range.",
+            {
+              "code": [
+                "std::for_each(v.begin(), v.end(),\n               [](int x) { std::cout << x << '\\n'; });"
+              ]
+            },
+            "In modern C++, a range-based for loop is often clearer for simple iteration.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between copy(), copy_if() and move() algorithms?",
+          "answer": [
+            "`copy` copies every element to an output range. `copy_if` copies only elements satisfying a predicate. `move` casts source elements to rvalues so move assignment/construction can be used by the output operation.",
+            {
+              "code": [
+                "std::copy(v.begin(), v.end(), std::back_inserter(out));\nstd::copy_if(v.begin(), v.end(), std::back_inserter(evens),\n             [](int x) { return x % 2 == 0; });\nstd::move(src.begin(), src.end(), std::back_inserter(dst));"
+              ]
+            },
+            "`std::move` algorithm does not erase the source elements; their values are valid but may be moved-from.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::replace() and replace_if()?",
+          "answer": [
+            "`replace` replaces every element equal to a value. `replace_if` replaces every element satisfying a predicate.",
+            {
+              "code": [
+                "std::replace(v.begin(), v.end(), 0, -1);\nstd::replace_if(v.begin(), v.end(),\n                [](int x) { return x < 0; }, 0);"
+              ]
+            },
+            "They modify elements in place; they do not change the container's size.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::unique()?",
+          "answer": [
+            "`std::unique` removes consecutive duplicate values logically by moving unique elements to the front and returns the new logical end. It does not shrink the container.",
+            "To remove all duplicates from a vector, sort first and then erase the tail.",
+            {
+              "code": [
+                "std::sort(v.begin(), v.end());\nauto newEnd = std::unique(v.begin(), v.end());\nv.erase(newEnd, v.end());"
+              ]
+            },
+            "**Remember:** sort groups duplicates; unique compacts adjacent duplicates; erase shrinks.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are merge() and inplace_merge()?",
+          "answer": [
+            "`std::merge` combines two already-sorted input ranges into a sorted output range. `std::inplace_merge` merges two consecutive sorted halves within one range.",
+            {
+              "code": [
+                "std::vector<int> a{1, 3, 5}, b{2, 4, 6}, out(6);\nstd::merge(a.begin(), a.end(), b.begin(), b.end(), out.begin());"
+              ]
+            },
+            "The inputs must already be sorted according to the same comparison.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is nth_element()?",
+          "answer": [
+            "`std::nth_element(first, nth, last)` rearranges the range so the element at `nth` is the same element that would be there after a full sort. Elements before it are not greater than it, and elements after it are not less than it (according to the comparator).",
+            "It is useful for finding medians or top-k boundaries without fully sorting the range.",
+            {
+              "code": [
+                "auto mid = v.begin() + v.size() / 2;\nstd::nth_element(v.begin(), mid, v.end());\nint medianCandidate = *mid;"
+              ]
+            },
+            "Average complexity is linear. Do not expect the whole range to be sorted.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lambdas-functional",
+      "title": "Lambdas, Predicates and Function Objects",
+      "description": "Customise algorithms and containers with callable objects, lambdas and standard function objects.",
+      "questions": [
+        {
+          "question": "What is a predicate in STL?",
+          "answer": [
+            "A predicate is a callable that returns a value usable as a condition, typically `bool`. Algorithms use predicates to decide which elements match.",
+            {
+              "code": [
+                "auto isEven = [](int x) { return x % 2 == 0; };\nauto count = std::count_if(v.begin(), v.end(), isEven);"
+              ]
+            },
+            "**Remember:** predicate = a function that answers yes/no.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is a function object (functor)?",
+          "answer": [
+            "A function object is an object whose type overloads `operator()`, allowing the object to be called like a function. It can store state and be passed to algorithms.",
+            {
+              "code": [
+                "struct IsGreaterThan {\n    int limit;\n    bool operator()(int x) const { return x > limit; }\n};\nauto n = std::count_if(v.begin(), v.end(), IsGreaterThan{10});"
+              ]
+            },
+            "Lambdas are a convenient way to create unnamed function objects.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is a lambda expression?",
+          "answer": [
+            "A lambda is an inline callable expression. It can capture local variables and define parameters and a body.",
+            {
+              "code": [
+                "int limit = 10;\nauto isLarge = [limit](int x) { return x > limit; };\nbool result = isLarge(15);"
+              ]
+            },
+            "Basic shape: `[captures](parameters) { body }`.",
+            "**Remember:** capture + parameters + body.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are lambda capture modes?",
+          "answer": [
+            "- `[]`: capture nothing.",
+            "- `[x]`: capture `x` by value.",
+            "- `[&x]`: capture `x` by reference.",
+            "- `[=]`: capture used local variables by value (deprecated implicit capture style with `=` when combined with explicit captures in some forms; follow project style).",
+            "- `[&]`: capture used local variables by reference.",
+            "- `[this]`: capture the current object pointer.",
+            "Be careful with reference captures: the referenced object must outlive the lambda's use.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between capture by value and capture by reference?",
+          "answer": [
+            "Capture by value stores a copy in the lambda closure. Capture by reference lets the lambda refer to the original variable.",
+            {
+              "code": [
+                "int x = 5;\nauto byValue = [x]() { return x; };\nauto byRef = [&x]() { return ++x; };"
+              ]
+            },
+            "By default, a value-captured variable cannot be modified inside a const lambda call operator; use `mutable` if you need to modify the lambda's stored copy.",
+            "**Remember:** value = own a copy; reference = use the original.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are std::less, std::greater and other function objects?",
+          "answer": [
+            "`<functional>` provides standard callable objects such as `std::less`, `std::greater`, `std::equal_to`, `std::plus` and `std::multiplies`.",
+            {
+              "code": [
+                "std::sort(v.begin(), v.end(), std::greater<int>{});\nint product = std::accumulate(v.begin(), v.end(), 1,\n                              std::multiplies<int>{});"
+              ]
+            },
+            "They are reusable, typed callables that can replace simple custom comparator code.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::function?",
+          "answer": [
+            "`std::function<R(Args...)>` is a type-erased wrapper that can store a compatible callable: function pointer, lambda or functor.",
+            {
+              "code": [
+                "std::function<int(int)> operation = [](int x) { return x * 2; };\nint result = operation(5);"
+              ]
+            },
+            "It is flexible but may have runtime overhead and can allocate. Use a template or `auto` for generic callables when type erasure is not needed.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "complexity-performance",
+      "title": "Complexity and Performance",
+      "description": "Choose containers and algorithms using complexity, memory layout and realistic workload.",
+      "questions": [
+        {
+          "question": "What is Big-O complexity and why does it matter for STL?",
+          "answer": [
+            "Big-O describes how an operation's work grows as the number of elements grows. It helps compare approaches for large inputs.",
+            "- O(1): constant, for example vector indexing.",
+            "- O(log n): logarithmic, for example map lookup.",
+            "- O(n): linear, for example find in an unsorted vector.",
+            "- O(n log n): common sorting complexity.",
+            "- O(n²): nested comparisons over a range.",
+            "Big-O is not the only performance factor: cache locality, allocations, constants and data distribution also matter.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Give a quick complexity comparison of common containers.",
+          "answer": [
+            "| Container | Access/search | Insert/erase | Key property |\n|---|---|---|---|\n| vector | index O(1), search O(n) | end amortised O(1), middle O(n) | contiguous |\n| deque | index O(1), search O(n) | ends O(1) | efficient both ends |\n| list | search O(n) | known position O(1) | bidirectional links |\n| set/map | key lookup O(log n) | O(log n) | sorted keys |\n| unordered_map/set | average O(1), worst O(n) | average O(1) | hash table |",
+            "These are typical complexity guarantees; exact constant-time behaviour and practical speed depend on the workload.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Why can vector outperform list even for insertions?",
+          "answer": [
+            "Vector stores elements contiguously, which improves cache locality and reduces per-element allocation overhead. A list node typically stores links plus the value and may require a separate allocation.",
+            "Although inserting into a list at a known iterator is O(1), finding that position is O(n). In many real workloads, vector's cache-friendly traversal and shifting are faster.",
+            "**Interview point:** compare the complete operation, including finding the insertion point and memory behaviour.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is cache locality?",
+          "answer": [
+            "Cache locality means accessing data close together in memory. CPUs fetch memory in cache lines, so contiguous data often lets one fetch serve several nearby elements.",
+            "`vector` usually has good spatial locality. Linked lists have pointer chasing, where each node may be far from the next.",
+            "**Remember:** contiguous data is usually friendlier to CPU caches.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How can you reduce vector reallocations?",
+          "answer": [
+            "Call `reserve()` when you know or can estimate the final element count. This requests enough capacity in advance.",
+            {
+              "code": [
+                "std::vector<Record> records;\nrecords.reserve(expectedCount);\nfor (const auto& r : input)\n    records.push_back(r);"
+              ]
+            },
+            "Do not call `reserve(size() + 1)` before every insertion; that can defeat geometric growth and cause repeated reallocations.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you choose between map and unordered_map in production code?",
+          "answer": [
+            "Ask these questions:",
+            "- Do you need sorted iteration or range queries? Choose `map`.",
+            "- Do you need average constant-time lookup and order does not matter? Consider `unordered_map`.",
+            "- Is worst-case predictability important? `map` has logarithmic operations; unordered containers can degrade to linear.",
+            "- Are memory use and hash quality acceptable? Benchmark representative data.",
+            "**Remember:** requirements first, benchmark second; do not choose only by average Big-O.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is amortised O(1) for vector push_back?",
+          "answer": [
+            "Most `push_back` operations are O(1). Occasionally, when capacity is exhausted, vector reallocates and moves/copies O(n) elements.",
+            "Across a long sequence of insertions, the expensive reallocations are spread over many cheap insertions, so the average cost per insertion is amortised O(1).",
+            "**Remember:** one insertion can be O(n), but a long sequence is amortised O(1) per append.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "memory-allocators",
+      "title": "Allocators and Memory",
+      "description": "How STL obtains storage, allocator-aware containers, PMR and object lifetime.",
+      "questions": [
+        {
+          "question": "What is an allocator in STL?",
+          "answer": [
+            "An allocator is an object that provides a policy for allocating and deallocating storage used by allocator-aware containers. The default allocator is usually `std::allocator<T>`.",
+            "Allocators separate a container's storage-management mechanism from its element-management logic. Custom allocators can support pools, arenas or specialised memory resources.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::allocator?",
+          "answer": [
+            "`std::allocator<T>` is the standard default allocator used by many containers. In modern C++, containers generally use it by default, so you rarely need to specify it explicitly.",
+            {
+              "code": [
+                "std::vector<int> values; // uses std::allocator<int> by default"
+              ]
+            },
+            "You normally manage elements through the container rather than calling allocator operations yourself.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::pmr?",
+          "answer": [
+            "`std::pmr` provides polymorphic memory-resource support. PMR containers use `std::pmr::polymorphic_allocator`, which delegates allocation to a runtime-selected `memory_resource`.",
+            "This can help allocate many objects from a pool or monotonic arena and reduce allocation overhead.",
+            {
+              "code": [
+                "#include <memory_resource>\n#include <vector>\n\nstd::byte buffer[4096];\nstd::pmr::monotonic_buffer_resource resource(\n    buffer, sizeof buffer);\nstd::pmr::vector<int> values{&resource};\nvalues.push_back(10);"
+              ]
+            },
+            "The resource must outlive every PMR object that uses it.",
+            "**Remember:** PMR = choose the memory resource at runtime.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is a monotonic_buffer_resource?",
+          "answer": [
+            "It is a memory resource that allocates from growing buffers and does not reclaim individual allocations when containers deallocate. Memory is released together when the resource is released or destroyed.",
+            "It is useful when many short-lived allocations share one lifetime, such as building a temporary parse tree.",
+            "Do not use it when you need memory returned after each individual erase; its design is bulk release.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do STL containers manage object lifetime?",
+          "answer": [
+            "Containers construct elements when inserting/resizing and destroy elements when erasing, clearing or destroying the container. They manage the storage and element lifetime according to the container's allocator and operation.",
+            "Use RAII containers and smart pointers rather than manually allocating memory for the container's internal storage.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between clear() and erase()?",
+          "answer": [
+            "`clear()` removes all elements from a container. `erase()` removes a selected element or range.",
+            "For vector, `clear()` destroys all elements and sets size to zero, but capacity is not required to shrink. Use `shrink_to_fit()` as a non-binding request to reduce capacity.",
+            {
+              "code": [
+                "v.erase(v.begin());\nv.erase(v.begin(), v.end()); // removes selected range\nv.clear();                  // removes all elements"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "modern-stl",
+      "title": "Modern C++ STL Features",
+      "description": "Useful C++11–C++23 additions: move semantics, views, ranges, span, erase helpers and more.",
+      "questions": [
+        {
+          "question": "What is the range-based for loop?",
+          "answer": [
+            "The range-based for loop iterates over elements without manually managing iterators.",
+            {
+              "code": [
+                "std::vector<int> values{1, 2, 3};\nfor (const auto& value : values) {\n    std::cout << value << '\\n';\n}"
+              ]
+            },
+            "Use `const auto&` to avoid copying when you only read potentially large elements. Use `auto&` when you need to modify them.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is structured binding and how is it used with map?",
+          "answer": [
+            "Structured bindings let you unpack tuple-like objects into named variables. A map element is a pair of key and mapped value.",
+            {
+              "code": [
+                "std::map<int, std::string> names{{1, \"Asha\"}};\nfor (const auto& [id, name] : names) {\n    std::cout << id << ' ' << name << '\\n';\n}"
+              ]
+            },
+            "Use `const auto&` for read-only iteration and `auto&` when changing the mapped value. The map key remains const.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::optional and is it a container?",
+          "answer": [
+            "`std::optional<T>` represents either a value of type `T` or no value. It is a vocabulary type, not a general-purpose STL container.",
+            {
+              "code": [
+                "std::optional<int> findId(bool found) {\n    if (found) return 42;\n    return std::nullopt;\n}"
+              ]
+            },
+            "Use `has_value()` or a boolean check before accessing the value. It represents one optional object, not a collection.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::variant?",
+          "answer": [
+            "`std::variant<Ts...>` is a type-safe union that holds one value from a fixed set of alternative types.",
+            {
+              "code": [
+                "std::variant<int, std::string> value = 42;\nstd::visit([](const auto& item) {\n    // item is the currently held alternative\n}, value);"
+              ]
+            },
+            "Unlike a raw union, variant tracks which alternative is active and manages its lifetime.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::string_view?",
+          "answer": [
+            "`std::string_view` is a non-owning view of a character sequence. It can refer to a string without copying it.",
+            {
+              "code": [
+                "void printName(std::string_view name) {\n    std::cout << name << '\\n';\n}\nstd::string text = \"hello\";\nprintName(text);"
+              ]
+            },
+            "It does not extend the lifetime of the characters. Never keep a view after the referenced storage has been destroyed or invalidated.",
+            "**Remember:** string owns; string_view observes.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::span?",
+          "answer": [
+            "`std::span<T>` is a non-owning view over a contiguous sequence of objects, such as an array or vector. It carries a pointer and a size.",
+            {
+              "code": [
+                "#include <span>\n\nvoid process(std::span<const int> values) {\n    for (int x : values) { /* read */ }\n}"
+              ]
+            },
+            "A span does not own or extend the lifetime of its elements. The referenced storage must remain valid.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What are C++20 ranges?",
+          "answer": [
+            "The ranges library provides range-based algorithms and composable views. It can make pipelines clearer and reduce intermediate containers.",
+            {
+              "code": [
+                "#include <ranges>\n#include <vector>\n\nstd::vector<int> values{1, 2, 3, 4, 5, 6};\nauto result = values\n    | std::views::filter([](int x) { return x % 2 == 0; })\n    | std::views::transform([](int x) { return x * x; });\nfor (int x : result) std::cout << x << ' ';"
+              ]
+            },
+            "Views are often lazy and non-owning. Ensure the underlying range outlives use of the view.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between std::sort and std::ranges::sort?",
+          "answer": [
+            "`std::sort` takes an iterator pair. `std::ranges::sort` is a C++20 range algorithm that can accept a range directly and supports projections.",
+            {
+              "code": [
+                "std::sort(v.begin(), v.end());\nstd::ranges::sort(v);"
+              ]
+            },
+            "Ranges algorithms use concepts to express requirements more clearly and can work directly with suitable range objects.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::erase and std::erase_if?",
+          "answer": [
+            "C++20 added non-member erase helpers for several standard containers. They provide a concise way to erase matching values or elements satisfying a predicate.",
+            {
+              "code": [
+                "std::vector<int> v{1, 2, 3, 4, 5};\nstd::erase(v, 3);\nstd::erase_if(v, [](int x) { return x % 2 == 0; });"
+              ]
+            },
+            "For associative containers, `erase_if` removes elements matching a predicate. Check availability for the specific container and language version.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between copy and move semantics in containers?",
+          "answer": [
+            "Copying creates an independent copy of an element. Moving transfers resources from an object when its type supports an efficient move operation.",
+            {
+              "code": [
+                "std::vector<std::string> source{\"hello\"};\nstd::vector<std::string> copied = source;\nstd::vector<std::string> moved = std::move(source);"
+              ]
+            },
+            "After moving, the source object remains valid but its value is unspecified unless the type documents more. Do not assume it is empty.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is std::initializer_list?",
+          "answer": [
+            "`std::initializer_list<T>` is a lightweight view over a compiler-created array of const elements. It enables brace-list initialisation for containers and user-defined types.",
+            {
+              "code": [
+                "std::vector<int> values{1, 2, 3, 4};"
+              ]
+            },
+            "Its elements are const, so moving elements out of an initializer_list generally does not behave like moving from a mutable range.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "common-pitfalls",
+      "title": "Common STL Mistakes and Tricky Questions",
+      "description": "Interview traps around bounds, erase, ownership, comparators, complexity and correctness.",
+      "questions": [
+        {
+          "question": "What is the difference between vector::at() and operator[]?",
+          "answer": [
+            "`operator[]` provides unchecked element access; using an out-of-range index causes undefined behaviour. `at()` checks the index and throws `std::out_of_range` when it is invalid.",
+            {
+              "code": [
+                "std::vector<int> v{10, 20};\nint a = v[1];\nint b = v.at(1);\n// v.at(5) throws std::out_of_range"
+              ]
+            },
+            "**Remember:** `[]` is unchecked; `at()` checks.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can you dereference end()?",
+          "answer": [
+            "No. `end()` is a past-the-end iterator and does not refer to an element. Dereferencing it is undefined behaviour.",
+            "To access the last element of a non-empty bidirectional or random-access container, use `back()` or `*std::prev(end())` where supported.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Why should you not modify a container while using a range-based for loop?",
+          "answer": [
+            "Structural modification can invalidate the loop's hidden iterators. For example, adding to a vector may reallocate, and erasing the current element invalidates the iterator used by the loop.",
+            "Use an explicit iterator loop with the returned iterator from `erase`, or use `std::erase_if` where appropriate.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Does std::remove erase elements from a container?",
+          "answer": [
+            "No. `std::remove` is an algorithm that rearranges values within the range and returns a new logical end. The container still has its original size.",
+            {
+              "code": [
+                "auto newEnd = std::remove(v.begin(), v.end(), value);\nv.erase(newEnd, v.end());"
+              ]
+            },
+            "**Remember:** remove does not erase; pair it with erase.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Is std::unordered_map always O(1)?",
+          "answer": [
+            "No. Lookup, insertion and erasure are average O(1), but worst-case O(n) due to collisions. Rehashing can also make an individual insertion expensive.",
+            "**Remember:** average constant time, worst-case linear.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Does map::find insert a missing key?",
+          "answer": [
+            "No. `find` only searches and returns `end()` when the key is not found. `operator[]` is the operation that inserts a missing key.",
+            {
+              "code": [
+                "if (m.find(key) == m.end()) {\n    // key is not present; map is unchanged\n}\nint value = m[key]; // inserts if absent"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can std::sort be used with std::list?",
+          "answer": [
+            "No. `std::sort` requires random-access iterators, while `std::list` provides bidirectional iterators.",
+            "Use the member function `list.sort()` for a list. It sorts the list by relinking nodes and preserves iterators/references to elements.",
+            {
+              "code": [
+                "std::list<int> values{3, 1, 2};\nvalues.sort();"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Why must a sort comparator be a strict weak ordering?",
+          "answer": [
+            "Sorting algorithms rely on a consistent ordering. A comparator must be irreflexive (`comp(x, x)` is false), asymmetric and transitive in the required strict-weak-order sense.",
+            "Using `a <= b` is wrong because `comp(a, a)` would be true. Use `a < b` for ascending order.",
+            {
+              "code": [
+                "std::sort(v.begin(), v.end(),\n          [](int a, int b) { return a < b; });"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What happens if you access an empty stack, queue or priority_queue?",
+          "answer": [
+            "Calling `top()`, `front()` or `back()` on an empty adaptor is invalid. Check `empty()` first.",
+            {
+              "code": [
+                "if (!st.empty()) {\n    int value = st.top();\n    st.pop();\n}"
+              ]
+            },
+            "**Remember:** check empty before reading or removing the next item.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Are STL containers thread-safe?",
+          "answer": [
+            "Standard containers do not make concurrent mutation automatically safe. Multiple threads can generally read the same container concurrently when no thread modifies it, subject to the standard's data-race rules.",
+            "Concurrent writes, or reading while another thread structurally modifies the container, require synchronisation. Different elements can sometimes be modified concurrently, with important exceptions such as `vector<bool>`; follow the standard guarantees and protect shared state.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is vector<bool> and why is it special?",
+          "answer": [
+            "`std::vector<bool>` is a space-optimised specialisation that may pack bits instead of storing ordinary `bool` objects. Its references and iterators are proxy types rather than normal `bool&` references.",
+            "That means some assumptions about addressability, references and concurrent modification do not apply. Use `std::array<bool, N>`, a byte container or another representation if you need ordinary bool objects.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between clear() and shrink_to_fit()?",
+          "answer": [
+            "`clear()` destroys all elements and sets size to zero, but does not have to release allocated capacity. `shrink_to_fit()` is a non-binding request to reduce capacity to fit the current size.",
+            "To release all vector storage in a common idiom, swapping with an empty vector may be used, but allocator and implementation details matter.",
+            {
+              "code": [
+                "v.clear();\nv.shrink_to_fit(); // request, not a guarantee"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can you store pointers in STL containers?",
+          "answer": [
+            "Yes. Containers can store raw pointers, smart pointers or pointer-like types. The container manages its stored pointer values, but a raw pointer container does not automatically own or delete the pointed-to objects.",
+            "Prefer `std::unique_ptr` for exclusive ownership and `std::shared_ptr` only when shared ownership is genuinely needed.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between storing objects and storing unique_ptr in vector?",
+          "answer": [
+            "`std::vector<T>` stores objects directly, giving contiguous `T` objects and simple value semantics. `std::vector<std::unique_ptr<T>>` stores owning pointers; the `T` objects live separately on the heap.",
+            "Use direct objects when practical. Use smart pointers when you need polymorphism, stable object addresses across vector reallocation, or explicit dynamic ownership.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coding-interview-patterns",
+      "title": "STL Coding Interview Patterns",
+      "description": "Frequently asked coding tasks solved with STL building blocks.",
+      "questions": [
+        {
+          "question": "How do you count the frequency of each number in an array?",
+          "answer": [
+            "Use `std::unordered_map` for average O(1) counting, or `std::map` if sorted keys are required.",
+            {
+              "code": [
+                "std::vector<int> values{1, 2, 1, 3, 2, 1};\nstd::unordered_map<int, int> frequency;\nfor (int x : values)\n    ++frequency[x];\n// 1 -> 3, 2 -> 2, 3 -> 1"
+              ]
+            },
+            "**Remember:** frequency counting = map[key]++.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you find the first non-repeating character?",
+          "answer": [
+            "Count each character, then scan the original string in order. The second pass preserves the meaning of “first”.",
+            {
+              "code": [
+                "std::string s = \"swiss\";\nstd::unordered_map<char, int> count;\nfor (char ch : s) ++count[ch];\nauto it = std::find_if(s.begin(), s.end(),\n    [&](char ch) { return count[ch] == 1; });\n// *it is 'w' if found"
+              ]
+            },
+            "Time is O(n) average; extra space is O(k), where k is the number of distinct characters.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you remove duplicates from a vector?",
+          "answer": [
+            "If order does not matter, sort then use `unique` and `erase`. If original order must be preserved, track seen values with an unordered_set and build a result.",
+            {
+              "code": [
+                "std::sort(v.begin(), v.end());\nv.erase(std::unique(v.begin(), v.end()), v.end());"
+              ]
+            },
+            "**Remember:** sort + unique + erase removes duplicates after grouping them.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you find the k largest elements?",
+          "answer": [
+            "Use `std::priority_queue` as a max-heap and pop k times, or maintain a min-heap of size k for O(n log k) processing.",
+            {
+              "code": [
+                "std::priority_queue<int> pq(values.begin(), values.end());\nfor (int i = 0; i < k && !pq.empty(); ++i) {\n    std::cout << pq.top() << '\\n';\n    pq.pop();\n}"
+              ]
+            },
+            "Building a heap from a range is linear; each pop is O(log n). For large n and small k, a size-k min-heap is often more efficient.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you find the top k frequent elements?",
+          "answer": [
+            "First count frequencies using an unordered_map. Then keep the best k entries in a heap, or sort the distinct entries by frequency.",
+            {
+              "code": [
+                "std::unordered_map<int, int> freq;\nfor (int x : values) ++freq[x];\nusing Entry = std::pair<int, int>; // frequency, value\nstd::priority_queue<Entry> pq;\nfor (const auto& [value, count] : freq)\n    pq.emplace(count, value);"
+              ]
+            },
+            "The map counts; the heap selects the highest frequencies. State tie-breaking rules if the interviewer asks.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you check whether two strings are anagrams?",
+          "answer": [
+            "An anagram has the same character frequencies. Count characters in one string and subtract counts using the other, or sort both strings and compare.",
+            {
+              "code": [
+                "bool isAnagram(std::string a, std::string b) {\n    if (a.size() != b.size()) return false;\n    std::sort(a.begin(), a.end());\n    std::sort(b.begin(), b.end());\n    return a == b;\n}"
+              ]
+            },
+            "Sorting solution is O(n log n). Frequency counting can be O(n) for a fixed character set.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you merge two sorted vectors?",
+          "answer": [
+            "Use `std::merge` into an output range. The input ranges must already be sorted.",
+            {
+              "code": [
+                "std::vector<int> a{1, 3, 5}, b{2, 4, 6};\nstd::vector<int> result(a.size() + b.size());\nstd::merge(a.begin(), a.end(), b.begin(), b.end(), result.begin());"
+              ]
+            },
+            "Time complexity is O(n + m).",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you find the intersection of two sorted vectors?",
+          "answer": [
+            "Use `std::set_intersection`. Both input ranges must be sorted, and the output range must have enough space or use an output iterator such as `back_inserter`.",
+            {
+              "code": [
+                "std::vector<int> a{1, 2, 2, 4}, b{2, 2, 3};\nstd::vector<int> result;\nstd::set_intersection(a.begin(), a.end(), b.begin(), b.end(),\n                      std::back_inserter(result));\n// result: 2, 2"
+              ]
+            },
+            "The algorithm preserves multiplicity up to the minimum count in the two ranges.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you use a map to find a pair with a target sum?",
+          "answer": [
+            "Scan the values. For each value x, check whether target - x has already been seen. Store the current value after checking so the same element is not used twice.",
+            {
+              "code": [
+                "std::unordered_map<int, int> seen;\nfor (int i = 0; i < values.size(); ++i) {\n    int need = target - values[i];\n    if (seen.contains(need)) {\n        // pair found: seen[need], i\n        break;\n    }\n    seen.emplace(values[i], i);\n}"
+              ]
+            },
+            "This is average O(n) time and O(n) extra space. `contains` requires C++20; use `find` in earlier standards.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you group anagrams using STL?",
+          "answer": [
+            "Use an unordered_map keyed by a canonical representation, such as the sorted characters of each word. Append each word to the matching group.",
+            {
+              "code": [
+                "std::unordered_map<std::string, std::vector<std::string>> groups;\nfor (const auto& word : words) {\n    std::string key = word;\n    std::sort(key.begin(), key.end());\n    groups[key].push_back(word);\n}"
+              ]
+            },
+            "The map groups; the sorted string is the signature shared by anagram words.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you maintain the median of a stream?",
+          "answer": [
+            "Use two heaps: a max-heap for the lower half and a min-heap for the upper half. Keep their sizes balanced so the lower heap has either the same number of elements or one extra.",
+            {
+              "code": [
+                "std::priority_queue<int> lower;\nstd::priority_queue<int, std::vector<int>, std::greater<int>> upper;\n// Insert into one heap, rebalance sizes, then read tops for median."
+              ]
+            },
+            "**Remember:** lower half max-heap; upper half min-heap. The median is at the heap tops.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "How do you implement an LRU cache using STL?",
+          "answer": [
+            "A common design uses `std::list` to maintain recency order and `std::unordered_map` to find list nodes quickly.",
+            "- Most recently used item is at the front; least recently used is at the back.",
+            "- The map stores key → list iterator.",
+            "- On access, splice the node to the front. On insertion beyond capacity, erase the back node and its map entry.",
+            {
+              "code": [
+                "std::list<std::pair<int, int>> items; // key, value\nstd::unordered_map<int, decltype(items.begin())> index;\n// index[key] points to the corresponding list node"
+              ]
+            },
+            "List gives O(1) splice/erase at a known iterator; unordered_map gives average O(1) lookup.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interview-rapid-fire",
+      "title": "STL Rapid-Fire Interview Questions",
+      "description": "Short questions interviewers often use to check whether fundamentals are clear.",
+      "questions": [
+        {
+          "question": "Which container should be the default choice for a sequence?",
+          "answer": [
+            "`std::vector` is usually the best default because it provides contiguous storage, fast random access and good cache locality. Change only when requirements justify another container.",
+            "**Remember:** start with vector; justify alternatives.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which container allows duplicate keys and sorted order?",
+          "answer": [
+            "`std::multiset` stores duplicate keys; `std::multimap` stores duplicate keys with mapped values. Both maintain sorted key order.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which containers provide random access iterators?",
+          "answer": [
+            "`std::array`, `std::vector` and `std::deque` provide random-access iterators. `std::list` is bidirectional and `std::forward_list` is forward-only.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which containers are contiguous?",
+          "answer": [
+            "`std::array` and `std::vector` store elements contiguously. `std::string` also stores its character sequence contiguously. `deque` is not guaranteed to be contiguous.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which container is best for frequent insertion at the front?",
+          "answer": [
+            "`std::deque` supports efficient insertion at both ends. `std::list` also supports constant-time insertion at a known position, but has different memory and traversal costs.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which container automatically sorts its keys?",
+          "answer": [
+            "`std::set`, `std::multiset`, `std::map` and `std::multimap` maintain sorted key order according to their comparator.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which container has average O(1) lookup by key?",
+          "answer": [
+            "`std::unordered_map` and `std::unordered_set` provide average O(1) lookup, with O(n) worst case.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which adaptor gives LIFO behaviour?",
+          "answer": [
+            "`std::stack` gives Last In, First Out behaviour.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which adaptor gives FIFO behaviour?",
+          "answer": [
+            "`std::queue` gives First In, First Out behaviour.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Which STL adaptor gives the largest element first by default?",
+          "answer": [
+            "`std::priority_queue` is a max-heap by default, so `top()` returns the largest element under the default ordering.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Does pop() return the removed element?",
+          "answer": [
+            "No. `pop()` returns `void` for stack, queue and priority_queue. Read `top()` or `front()` first, then call `pop()`.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Is std::sort stable?",
+          "answer": [
+            "No. Use `std::stable_sort` when the relative order of equivalent elements must be preserved.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can std::sort sort a map?",
+          "answer": [
+            "No. Map iterators are bidirectional and map keys are const. A map is already ordered by key. Copy entries to a suitable sequence if you need a different ordering.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What does emplace mean?",
+          "answer": [
+            "`emplace` forwards constructor arguments to construct an element in the container. It can avoid a separate temporary, but is not automatically faster or clearer than insert/push_back.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between front() and back()?",
+          "answer": [
+            "`front()` accesses the first element; `back()` accesses the last element. Both require a non-empty container.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between empty() and size() == 0?",
+          "answer": [
+            "Both can test whether a container has no elements. Prefer `empty()` because it expresses intent directly and is constant time for standard containers.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between insert() and emplace()?",
+          "answer": [
+            "`insert` receives an already-formed value (or pair/range). `emplace` forwards constructor arguments and constructs the element in the container if insertion occurs.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What does contains() do?",
+          "answer": [
+            "`contains(key)` returns whether an associative container has the key. It was added in C++20. Before C++20, use `find(key) != end()`.",
+            {
+              "code": [
+                "if (m.contains(key)) { /* found */ }\n// Before C++20:\nif (m.find(key) != m.end()) { /* found */ }"
+              ]
+            },
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between equal_range and find?",
+          "answer": [
+            "`find` returns one iterator to a matching key (or end). `equal_range` returns a pair of iterators delimiting all equivalent keys, which is especially useful for multi-containers.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "Can unordered_map iteration order be relied upon?",
+          "answer": [
+            "No. Its iteration order is unspecified and can change after rehashing or across implementations. Do not use it as a sorted or stable ordering.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        },
+        {
+          "question": "What is the difference between a view and a container?",
+          "answer": [
+            "A container owns or manages elements. A view provides a way to observe a range, usually without owning its elements. Examples include `std::span`, `std::string_view` and C++20 ranges views.",
+            "**Remember:** container owns; view observes.",
+            "**Interview tip:** State the use case, iterator requirements and time complexity where relevant."
+          ]
+        }
+      ]
+    }
+  ]
+}
