@@ -56,7 +56,7 @@
                     "answer": [
                         "C++98 (ISO/IEC 14882:1998) is the first standard.",
                         "C++03 the second (bug-fix release).",
-                        "C++11 is the third edition (a major update)", 
+                        "C++11 is the third edition (a major update)",
                         "C++14 the fourth",
                         "C++17 the fifth",
                         "C++20 the sixth",
@@ -208,6 +208,467 @@
             ]
         },
         {
+            "id": "cpp-interview-basics",
+            "title": "Interview: Basics",
+            "description": "Core C++ interview questions: pointers, references, `const`, `static`, memory and casts.",
+            "questions": [
+                {
+                    "question": "What is the difference between a pointer and a reference?",
+                    "answer": [
+                        "| Pointer | Reference |\n|---|---|\n| Can be `nullptr` | Cannot be null |\n| Can be reassigned to point elsewhere | Bound once, cannot be reseated |\n| Needs `*` to access the value | Used like a normal variable |\n| Has its own address and size | Is an alias for the same object |\n| Can be uninitialised (dangerous) | Must be initialised |"
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int a = 1, b = 2;\n\n    int* p = &a;\n    p = &b;                 // pointer re-pointed\n    std::cout << *p << std::endl;   // 2\n\n    int& r = a;\n    r = b;                  // copies b's value INTO a (not re-binding)\n    std::cout << a << std::endl;    // 2\n}"
+                },
+                {
+                    "question": "Explain the different uses of `const` with pointers.",
+                    "answer": [
+                        "Read the declaration **right to left**:\n- `const int* p` is a pointer to a **const int** (cannot change the value through `p`).\n- `int* const p` is a **const pointer** to int (cannot change where `p` points).\n- `const int* const p` is a const pointer to a const int (neither can change).",
+                        "*Rule:* `const` applies to whatever is on its **left** (or to the right if nothing is on the left)."
+                    ],
+                    "code": "int main() {\n    int a = 1, b = 2;\n\n    const int* p1 = &a;\n    // *p1 = 5;          // error: value is const\n    p1 = &b;              // OK\n\n    int* const p2 = &a;\n    *p2 = 5;              // OK\n    // p2 = &b;           // error: pointer is const\n\n    const int* const p3 = &a;\n    // *p3 = 1; p3 = &b;  // both are errors\n}"
+                },
+                {
+                    "question": "What does the `static` keyword do?",
+                    "answer": [
+                        "`static` has different meanings depending on where it is used:",
+                        "- **Local variable:** keeps its value between calls (lives for the whole program).\n- **Global variable / function:** has *internal linkage* (visible only in that file).\n- **Class data member:** one copy **shared by all objects**.\n- **Class member function:** can be called **without an object** and has no `this` pointer."
+                    ],
+                    "code": "#include <iostream>\n\nvoid counter() {\n    static int count = 0;      // initialised only once\n    ++count;\n    std::cout << count << \" \";\n}\n\nclass Item {\npublic:\n    static int total;          // shared by all objects\n    Item() { ++total; }\n    static int getTotal() { return total; }\n};\nint Item::total = 0;\n\nint main() {\n    counter(); counter(); counter();      // 1 2 3\n    Item a, b;\n    std::cout << Item::getTotal() << std::endl;   // 2\n}"
+                },
+                {
+                    "question": "What is the difference between stack and heap memory?",
+                    "answer": [
+                        "| Stack | Heap |\n|---|---|\n| Automatic allocation (local variables) | Manual (`new` / `delete`) or smart pointers |\n| Very fast | Slower |\n| Limited size (stack overflow) | Large (limited by system memory) |\n| Freed automatically at end of scope | Must be freed (or you get a **leak**) |\n| Memory is contiguous and ordered | Can become fragmented |"
+                    ],
+                    "code": "#include <memory>\n\nint main() {\n    int a = 10;                              // stack\n    int* p = new int(20);                    // heap\n    delete p;                                // must free\n\n    auto s = std::make_unique<int>(30);      // heap, freed automatically\n}"
+                },
+                {
+                    "question": "What is the difference between `new`/`delete` and `malloc`/`free`?",
+                    "answer": [
+                        "| `new` / `delete` | `malloc` / `free` |\n|---|---|\n| C++ operators | C library functions |\n| Call **constructors** / **destructors** | Do **not** call them |\n| Return the right type | Return `void*` (needs a cast) |\n| Throw `std::bad_alloc` on failure | Return `NULL` on failure |\n| Can be overloaded | Cannot be overloaded |",
+                        "**Never mix them:** memory from `new` must be freed with `delete`, and `new[]` with `delete[]`."
+                    ],
+                    "code": "#include <cstdlib>\n\nstruct S { S() {} ~S() {} };\n\nint main() {\n    S* a = new S;             // constructor runs\n    delete a;                 // destructor runs\n\n    S* arr = new S[3];\n    delete[] arr;             // use delete[] for arrays\n\n    void* m = std::malloc(16);   // no constructor\n    std::free(m);\n}"
+                },
+                {
+                    "question": "What are the four C++ casts?",
+                    "answer": [
+                        "- **`static_cast`:** normal, compile-time-checked conversions (`int` to `double`, base to derived without checks).\n- **`dynamic_cast`:** safe **run-time** cast in a polymorphic hierarchy (returns `nullptr` / throws on failure).\n- **`const_cast`:** adds or removes `const`.\n- **`reinterpret_cast`:** reinterprets raw bits as another type (dangerous)."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Base { virtual ~Base() {} };\nstruct Derived : Base { void hello() { std::cout << \"hi\" << std::endl; } };\n\nint main() {\n    double d = 3.9;\n    int i = static_cast<int>(d);               // 3\n\n    Base* b = new Derived;\n    if (Derived* dp = dynamic_cast<Derived*>(b))   // safe downcast\n        dp->hello();\n\n    const int c = 5;\n    int* p = const_cast<int*>(&c);             // legal cast, but do not modify c\n    (void)p; (void)i;\n    delete b;\n}"
+                },
+                {
+                    "question": "What is the difference between `struct` and `class`?",
+                    "answer": [
+                        "The **only** difference is the default access:\n- `struct`: members and inheritance are **public** by default.\n- `class`: members and inheritance are **private** by default.",
+                        "By convention, `struct` is used for simple data holders and `class` for types with behaviour and invariants."
+                    ]
+                },
+                {
+                    "question": "What is undefined behaviour (UB)? Give examples.",
+                    "answer": [
+                        "**Undefined behaviour** means the standard places **no requirement** on what the program does. It may crash, give wrong results, or appear to work.",
+                        "### Common examples",
+                        "- Dereferencing a null or dangling pointer\n- Out-of-bounds array access\n- Signed integer overflow\n- Using an uninitialised variable (erroneous in C++26)\n- Modifying a `const` object\n- Data races\n- Deleting the same pointer twice"
+                    ],
+                    "code": "#include <climits>\n\nint main() {\n    int arr[3] = {1, 2, 3};\n    // int x = arr[5];      // UB: out of bounds\n\n    int big = INT_MAX;\n    // big + 1;              // UB: signed overflow\n\n    int* p = nullptr;\n    // *p = 1;               // UB: null dereference\n    (void)arr; (void)big; (void)p;\n}"
+                },
+                {
+                    "question": "What are `inline`, `volatile` and `mutable`?",
+                    "answer": [
+                        "- **`inline`** allows a function or variable to be defined in several translation units (ODR-safe). It is also a hint to the optimiser.\n- **`volatile`** tells the compiler a value can change outside the program (hardware registers). It is **not** for thread synchronisation. Use `std::atomic` for that.\n- **`mutable`** lets a member change even inside a `const` member function (for example a cache or a mutex)."
+                    ],
+                    "code": "#include <iostream>\n\nclass Cache {\npublic:\n    int get() const {\n        ++hits;                 // allowed because 'hits' is mutable\n        return 42;\n    }\n    int hits_count() const { return hits; }\nprivate:\n    mutable int hits = 0;\n};\n\ninline int twice(int x) { return x * 2; }\n\nint main() {\n    Cache c;\n    c.get(); c.get();\n    std::cout << c.hits_count() << \" \" << twice(4) << std::endl;\n}"
+                },
+                {
+                    "question": "What is the difference between pass-by-value, pass-by-reference and pass-by-pointer?",
+                    "answer": [
+                        "- **By value:** a **copy** is made. Changes do not affect the original.\n- **By reference:** no copy, and changes **do** affect the original. Use `const T&` for large read-only arguments.\n- **By pointer:** like a reference, but the pointer can be `nullptr` and can be reassigned."
+                    ],
+                    "code": "#include <iostream>\n\nvoid byValue(int x)     { x = 100; }\nvoid byRef(int& x)      { x = 100; }\nvoid byPtr(int* x)      { if (x) *x = 100; }\n\nint main() {\n    int a = 1, b = 1, c = 1;\n    byValue(a);\n    byRef(b);\n    byPtr(&c);\n    std::cout << a << \" \" << b << \" \" << c << std::endl;   // 1 100 100\n}"
+                },
+                {
+                    "question": "What is the difference between `#include <file>` and `#include \"file\"`, and why use include guards?",
+                    "answer": [
+                        "- `<file>` searches the **system / standard** include paths.\n- `\"file\"` searches the **current directory first**, then the system paths.",
+                        "**Include guards** (`#ifndef` / `#define` / `#endif`, or `#pragma once`) stop a header from being included twice in one translation unit, which would cause redefinition errors."
+                    ],
+                    "code": "#ifndef MY_HEADER_H\n#define MY_HEADER_H\n\nstruct Point { int x; int y; };\n\n#endif  // MY_HEADER_H\n\n// or simply:\n// #pragma once"
+                }
+            ]
+        },
+        {
+            "id": "cpp-interview-oop",
+            "title": "Interview: OOP",
+            "description": "Object-oriented interview questions: constructors, virtual functions, inheritance and the Rule of 3/5/0.",
+            "questions": [
+                {
+                    "question": "What are the four pillars of OOP?",
+                    "answer": [
+                        "1. **Encapsulation:** bundle data and the functions that use it, and hide the internals (`private`).\n2. **Abstraction:** expose only what is needed (interfaces, abstract classes).\n3. **Inheritance:** a class reuses and extends another class.\n4. **Polymorphism:** the same call behaves differently for different types (compile-time: overloading and templates; run-time: virtual functions)."
+                    ]
+                },
+                {
+                    "question": "What are virtual functions and how does the vtable work?",
+                    "answer": [
+                        "A **virtual function** is chosen at **run time** based on the real type of the object, not the pointer type.",
+                        "### How it works",
+                        "- Each class with virtual functions has a **vtable** (table of function pointers).\n- Each object has a hidden **vptr** that points to its class's vtable.\n- A virtual call looks up the function through the vptr."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Animal {\n    virtual void speak() const { std::cout << \"...\" << std::endl; }\n    virtual ~Animal() = default;\n};\n\nstruct Dog : Animal {\n    void speak() const override { std::cout << \"Woof\" << std::endl; }\n};\n\nint main() {\n    Animal* a = new Dog;\n    a->speak();            // Woof (decided at run time)\n    delete a;\n}"
+                },
+                {
+                    "question": "Why should a base class destructor be virtual?",
+                    "answer": [
+                        "If you delete a derived object through a **base pointer** and the destructor is **not virtual**, only the base destructor runs. This is **undefined behaviour** and leaks the derived part.",
+                        "*Rule:* if a class has any virtual function, give it a virtual destructor."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Base {\n    virtual ~Base() { std::cout << \"~Base\" << std::endl; }\n};\nstruct Derived : Base {\n    ~Derived() override { std::cout << \"~Derived\" << std::endl; }\n};\n\nint main() {\n    Base* p = new Derived;\n    delete p;              // ~Derived then ~Base (because of virtual)\n}"
+                },
+                {
+                    "question": "What is a pure virtual function and an abstract class?",
+                    "answer": [
+                        "- A **pure virtual function** is declared with `= 0`. Derived classes must implement it.\n- A class with at least one pure virtual function is **abstract**: you cannot create objects of it. It works as an **interface**."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Shape {\n    virtual double area() const = 0;       // pure virtual\n    virtual ~Shape() = default;\n};\n\nstruct Square : Shape {\n    double s;\n    explicit Square(double s) : s(s) {}\n    double area() const override { return s * s; }\n};\n\nint main() {\n    // Shape x;                // error: abstract\n    Square sq(3);\n    std::cout << sq.area() << std::endl;\n}"
+                },
+                {
+                    "question": "What are the types of constructors?",
+                    "answer": [
+                        "- **Default constructor:** no arguments.\n- **Parameterised constructor:** takes arguments.\n- **Copy constructor:** `T(const T&)` creates an object from another object.\n- **Move constructor:** `T(T&&)` takes the resources of a temporary.\n- **Delegating constructor:** calls another constructor of the same class.\n- **Explicit constructor:** blocks implicit conversions."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    Person() : Person(\"unknown\") {}                           // delegating\n    explicit Person(std::string n) : name(std::move(n)) {}    // parameterised\n    Person(const Person& o) : name(o.name) {}                 // copy\n    Person(Person&& o) noexcept : name(std::move(o.name)) {}  // move\n\n    const std::string& getName() const { return name; }\nprivate:\n    std::string name;\n};\n\nint main() {\n    Person a;\n    Person b(\"Asha\");\n    Person c = b;                  // copy\n    Person d = std::move(b);       // move\n    std::cout << a.getName() << \" \" << c.getName() << \" \" << d.getName() << std::endl;\n}"
+                },
+                {
+                    "question": "What is the Rule of 3, Rule of 5 and Rule of 0?",
+                    "answer": [
+                        "- **Rule of 3:** if you need a custom **destructor**, **copy constructor** or **copy assignment**, you probably need all three.\n- **Rule of 5:** add the **move constructor** and **move assignment** to that list.\n- **Rule of 0:** best choice. Use RAII members (`std::string`, `std::vector`, smart pointers) so you write **none** of them."
+                    ],
+                    "code": "#include <cstring>\n#include <utility>\n\nclass Buffer {\n    char* data;\npublic:\n    Buffer(const char* s) : data(new char[std::strlen(s) + 1]) { std::strcpy(data, s); }\n    ~Buffer() { delete[] data; }                                   // 1\n    Buffer(const Buffer& o) : Buffer(o.data) {}                    // 2\n    Buffer& operator=(const Buffer& o) {                           // 3\n        if (this != &o) { Buffer tmp(o); std::swap(data, tmp.data); }\n        return *this;\n    }\n    Buffer(Buffer&& o) noexcept : data(std::exchange(o.data, nullptr)) {}   // 4\n    Buffer& operator=(Buffer&& o) noexcept {                       // 5\n        std::swap(data, o.data);\n        return *this;\n    }\n};\n\nint main() { Buffer b(\"hello\"); }"
+                },
+                {
+                    "question": "What is the difference between a copy constructor and an assignment operator?",
+                    "answer": [
+                        "- **Copy constructor:** creates a **new** object from an existing one (`T b = a;` or `T b(a);`).\n- **Copy assignment:** assigns to an **already existing** object (`b = a;`). It must free old resources and handle self-assignment."
+                    ],
+                    "code": "#include <iostream>\n\nstruct T {\n    T() {}\n    T(const T&) { std::cout << \"copy ctor\" << std::endl; }\n    T& operator=(const T&) { std::cout << \"assignment\" << std::endl; return *this; }\n};\n\nint main() {\n    T a;\n    T b = a;     // copy constructor\n    T c;\n    c = a;       // copy assignment\n}"
+                },
+                {
+                    "question": "What is object slicing?",
+                    "answer": [
+                        "Copying a derived object into a **base object by value** removes (\"slices off\") the derived part and loses polymorphism.",
+                        "**Fix:** pass by pointer or reference, or use smart pointers."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Base    { virtual void f() const { std::cout << \"Base\" << std::endl; } };\nstruct Derived : Base { void f() const override { std::cout << \"Derived\" << std::endl; } };\n\nvoid byValue(Base b)       { b.f(); }   // slicing\nvoid byRef(const Base& b)  { b.f(); }   // OK\n\nint main() {\n    Derived d;\n    byValue(d);    // Base\n    byRef(d);      // Derived\n}"
+                },
+                {
+                    "question": "What is the difference between overloading, overriding and hiding?",
+                    "answer": [
+                        "- **Overloading:** same name, **different parameters**, same scope (compile-time).\n- **Overriding:** a derived class replaces a **virtual** function with the same signature (run-time).\n- **Hiding:** a derived function with the same name hides **all** base overloads of that name. `using Base::f;` brings them back."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Base {\n    virtual void f(int) { std::cout << \"Base::f(int)\" << std::endl; }\n    void g(int)         { std::cout << \"Base::g(int)\" << std::endl; }\n};\n\nstruct Derived : Base {\n    void f(int) override { std::cout << \"Derived::f(int)\" << std::endl; }  // override\n    void g(double)       { std::cout << \"Derived::g(double)\" << std::endl; } // hides g(int)\n    void h(int) {}\n    void h(double) {}                                                        // overloads\n};\n\nint main() {\n    Derived d;\n    d.f(1);\n    d.g(1);        // calls g(double): Base::g(int) is hidden\n}"
+                },
+                {
+                    "question": "What is the diamond problem and virtual inheritance?",
+                    "answer": [
+                        "With multiple inheritance, a class can inherit the **same base twice** through two paths, giving two copies of the base and an ambiguous access.",
+                        "**Virtual inheritance** (`: virtual Base`) makes both paths **share one base subobject**."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Animal { int age = 5; };\nstruct Cat : virtual Animal {};\nstruct Dog : virtual Animal {};\nstruct CatDog : Cat, Dog {};\n\nint main() {\n    CatDog x;\n    std::cout << x.age << std::endl;   // no ambiguity: one Animal\n}"
+                },
+                {
+                    "question": "What does the `explicit` keyword do?",
+                    "answer": [
+                        "`explicit` stops the compiler from using a constructor (or conversion operator) for **implicit conversions**. This prevents surprising bugs."
+                    ],
+                    "code": "struct Meters {\n    explicit Meters(double v) : value(v) {}\n    double value;\n};\n\nvoid walk(Meters m) {}\n\nint main() {\n    // walk(5.0);           // error: no implicit conversion\n    walk(Meters(5.0));      // OK\n}"
+                },
+                {
+                    "question": "What is a friend function or class?",
+                    "answer": [
+                        "A **friend** is allowed to access the `private` and `protected` members of a class.",
+                        "- It is not a member of the class.\n- Friendship is **not inherited** and **not mutual**.\n- It is often used for `operator<<`."
+                    ],
+                    "code": "#include <iostream>\n\nclass Point {\n    int x, y;\npublic:\n    Point(int x, int y) : x(x), y(y) {}\n    friend std::ostream& operator<<(std::ostream& os, const Point& p) {\n        return os << \"(\" << p.x << \", \" << p.y << \")\";\n    }\n};\n\nint main() {\n    std::cout << Point(1, 2) << std::endl;\n}"
+                },
+                {
+                    "question": "What is the member initializer list and why use it?",
+                    "answer": [
+                        "It initialises members **before** the constructor body runs.",
+                        "It is **required** for `const` members, reference members and base classes without default constructors. It is also **more efficient** because members are not default-constructed and then assigned."
+                    ],
+                    "code": "#include <string>\n\nclass User {\n    const int id;\n    std::string& ref;\n    std::string name;\npublic:\n    User(int id, std::string& r, std::string n)\n        : id(id), ref(r), name(std::move(n)) {}   // initializer list\n};\n\nint main() {\n    std::string s;\n    User u(1, s, \"Asha\");\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp-interview-memory",
+            "title": "Interview: Memory and Modern C++",
+            "description": "RAII, smart pointers in depth, move semantics, perfect forwarding and copy elision.",
+            "questions": [
+                {
+                    "question": "What is RAII?",
+                    "answer": [
+                        "**RAII** (*Resource Acquisition Is Initialisation*) ties a resource's life to an object's life.",
+                        "- Acquire the resource in the **constructor**.\n- Release it in the **destructor**.\n- Cleanup happens automatically, even when an **exception** is thrown.",
+                        "Examples: `std::unique_ptr`, `std::lock_guard`, `std::fstream`, `std::vector`."
+                    ],
+                    "code": "#include <cstdio>\n#include <iostream>\n\nclass File {\n    std::FILE* f;\npublic:\n    explicit File(const char* name) : f(std::fopen(name, \"r\")) {}\n    ~File() { if (f) std::fclose(f); }       // always released\n    File(const File&) = delete;\n    File& operator=(const File&) = delete;\n    bool ok() const { return f != nullptr; }\n};\n\nint main() {\n    File file(\"data.txt\");\n    std::cout << file.ok() << std::endl;\n}   // file closed here automatically"
+                },
+                {
+                    "question": "What is a memory leak and a dangling pointer?",
+                    "answer": [
+                        "- **Memory leak:** memory is allocated but never freed.\n- **Dangling pointer:** a pointer to memory that has already been freed or gone out of scope.",
+                        "**Prevention:** use smart pointers and containers, follow RAII, set raw pointers to `nullptr` after `delete`, and use tools such as **AddressSanitizer** and **Valgrind**."
+                    ],
+                    "code": "int* leak() {\n    int* p = new int(5);\n    return nullptr;          // leak: p is never deleted\n}\n\nint* dangling() {\n    int x = 10;\n    return &x;               // dangling: x is destroyed on return\n}\n\nint main() {\n    int* a = new int(1);\n    delete a;\n    a = nullptr;             // good habit\n}"
+                },
+                {
+                    "question": "What is the difference between `unique_ptr`, `shared_ptr` and `weak_ptr`?",
+                    "answer": [
+                        "| Type | Ownership | Copyable | Cost |\n|---|---|---|---|\n| `unique_ptr` | Exclusive | No (movable) | Almost zero |\n| `shared_ptr` | Shared (ref-count) | Yes | Control block + atomic counts |\n| `weak_ptr` | None (observer) | Yes | Small |",
+                        "Prefer **`unique_ptr`** by default. Use `shared_ptr` only when ownership is truly shared."
+                    ]
+                },
+                {
+                    "question": "How do circular references leak with `shared_ptr`, and how does `weak_ptr` fix it?",
+                    "answer": [
+                        "If two objects hold `shared_ptr` to each other, their reference counts **never reach zero**, so neither is destroyed.",
+                        "**Fix:** make one direction a `weak_ptr`."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n\nstruct B;\nstruct A {\n    std::shared_ptr<B> b;\n    ~A() { std::cout << \"~A\" << std::endl; }\n};\nstruct B {\n    std::weak_ptr<A> a;         // weak: breaks the cycle\n    ~B() { std::cout << \"~B\" << std::endl; }\n};\n\nint main() {\n    auto a = std::make_shared<A>();\n    a->b = std::make_shared<B>();\n    a->b->a = a;\n}   // both destructors run"
+                },
+                {
+                    "question": "Why prefer `make_shared` / `make_unique` over `new`?",
+                    "answer": [
+                        "- **Exception-safe:** no leak if another argument throws.\n- **Shorter:** no repeated type name and no explicit `new`.\n- `make_shared` does **one allocation** for both the object and its control block (faster)."
+                    ],
+                    "code": "#include <memory>\n\nint main() {\n    auto a = std::make_unique<int>(5);\n    auto b = std::make_shared<int>(10);\n\n    std::shared_ptr<int> c(new int(10));   // two allocations, more error-prone\n}"
+                },
+                {
+                    "question": "What is the difference between `std::move` and `std::forward`?",
+                    "answer": [
+                        "- **`std::move(x)`** *always* casts `x` to an **rvalue** (allows moving). It does not move anything by itself.\n- **`std::forward<T>(x)`** casts to an rvalue **only if** the original argument was an rvalue. It **preserves** the value category. This is **perfect forwarding**."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <utility>\n\nvoid take(const std::string&) { std::cout << \"lvalue\" << std::endl; }\nvoid take(std::string&&)      { std::cout << \"rvalue\" << std::endl; }\n\ntemplate <typename T>\nvoid wrapper(T&& arg) {\n    take(std::forward<T>(arg));    // keeps the original category\n}\n\nint main() {\n    std::string s = \"x\";\n    wrapper(s);                    // lvalue\n    wrapper(std::string(\"y\"));     // rvalue\n    wrapper(std::move(s));         // rvalue\n}"
+                },
+                {
+                    "question": "What are lvalues, rvalues and forwarding (universal) references?",
+                    "answer": [
+                        "- **lvalue:** has a name and an address (`x`, `arr[0]`).\n- **rvalue:** a temporary with no name (`5`, `x + 1`, `f()`).\n- **`T&&` with a deduced `T`** (templates or `auto&&`) is a **forwarding reference**. It binds to both lvalues and rvalues. A plain `Widget&&` is only an rvalue reference."
+                    ],
+                    "code": "#include <utility>\n\nint make() { return 1; }\n\nint main() {\n    int x = 5;          // x is an lvalue\n    int& l = x;         // lvalue reference\n    int&& r = make();   // rvalue reference (binds to a temporary)\n    auto&& f1 = x;      // forwarding reference: int&\n    auto&& f2 = make(); // forwarding reference: int&&\n    (void)l; (void)r; (void)f1; (void)f2;\n}"
+                },
+                {
+                    "question": "What is RVO / copy elision?",
+                    "answer": [
+                        "The compiler can **construct the returned object directly in the caller's memory**, skipping the copy or move.",
+                        "- **RVO** (return value optimisation) for returning a temporary is **guaranteed in C++17**.\n- **NRVO** (named RVO) for returning a local variable is allowed but optional.",
+                        "*Tip:* do **not** write `return std::move(local);`. It can block elision."
+                    ],
+                    "code": "#include <iostream>\n#include <vector>\n\nstd::vector<int> make() {\n    std::vector<int> v(1000, 1);\n    return v;                // no copy: elided or moved\n}\n\nint main() {\n    auto v = make();\n    std::cout << v.size() << std::endl;\n}"
+                },
+                {
+                    "question": "What is placement new?",
+                    "answer": [
+                        "Placement new **constructs an object in memory you already have**. It does not allocate. You must call the destructor yourself.",
+                        "It is used in memory pools and custom containers."
+                    ],
+                    "code": "#include <iostream>\n#include <new>\n#include <string>\n\nint main() {\n    alignas(std::string) unsigned char buffer[sizeof(std::string)];\n\n    std::string* s = new (buffer) std::string(\"placed\");   // no allocation\n    std::cout << *s << std::endl;\n\n    s->~basic_string();      // call destructor manually\n}"
+                },
+                {
+                    "question": "What is `noexcept` and why does it matter?",
+                    "answer": [
+                        "`noexcept` promises a function will **not throw**. If it does throw, `std::terminate` is called.",
+                        "It matters for **performance**: `std::vector` uses the move constructor during reallocation **only if it is `noexcept`**. Otherwise it copies."
+                    ],
+                    "code": "#include <string>\n#include <utility>\n\nclass Widget {\n    std::string data;\npublic:\n    Widget() = default;\n    Widget(Widget&& o) noexcept : data(std::move(o.data)) {}   // vector will use this\n    Widget& operator=(Widget&& o) noexcept {\n        data = std::move(o.data);\n        return *this;\n    }\n};\n\nint main() {}"
+                },
+                {
+                    "question": "What is exception safety? What are the guarantees?",
+                    "answer": [
+                        "- **No-throw:** the operation never throws (destructors, `swap`).\n- **Strong:** if it throws, the state is **unchanged** (rollback). The *copy-and-swap* idiom gives this.\n- **Basic:** if it throws, no leaks and all invariants hold, but the state may have changed.",
+                        "*Rule:* never let an exception escape a destructor."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "cpp-interview-stl",
+            "title": "Interview: STL",
+            "description": "Containers, iterators, algorithms and strings: the questions asked most often.",
+            "questions": [
+                {
+                    "question": "Compare `vector`, `list`, `deque` and `array`.",
+                    "answer": [
+                        "| Container | Memory | Random access | Insert / erase middle | Notes |\n|---|---|---|---|---|\n| `vector` | Contiguous, dynamic | O(1) | O(n) | Best default |\n| `array` | Contiguous, fixed size | O(1) | n/a | Size known at compile time |\n| `deque` | Chunks | O(1) | O(n) | Fast at both ends |\n| `list` | Doubly linked nodes | O(n) | O(1) with iterator | Poor cache use |"
+                    ]
+                },
+                {
+                    "question": "What is the difference between `size` and `capacity` of a `vector`? When do iterators get invalidated?",
+                    "answer": [
+                        "- **`size()`** is the number of elements.\n- **`capacity()`** is how many elements fit before a reallocation.\n- `reserve(n)` allocates in advance, so there are fewer reallocations.",
+                        "### Iterator invalidation",
+                        "- `push_back` that **reallocates** invalidates **all** iterators and references.\n- `insert` / `erase` invalidate iterators **at and after** that position."
+                    ],
+                    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v;\n    v.reserve(100);                  // capacity 100, size 0\n    for (int i = 0; i < 5; ++i) v.push_back(i);\n    std::cout << v.size() << \" \" << v.capacity() << std::endl;   // 5 100\n\n    auto it = v.begin();\n    v.erase(it);                     // 'it' is now invalid\n}"
+                },
+                {
+                    "question": "What is the difference between `push_back` and `emplace_back`?",
+                    "answer": [
+                        "- **`push_back(x)`** adds an **existing** (or temporary) object, which is copied or moved.\n- **`emplace_back(args...)`** **constructs the element in place** from the arguments, avoiding a temporary."
+                    ],
+                    "code": "#include <string>\n#include <vector>\n\nstruct Person {\n    std::string name;\n    int age;\n    Person(std::string n, int a) : name(std::move(n)), age(a) {}\n};\n\nint main() {\n    std::vector<Person> v;\n    v.push_back(Person(\"Asha\", 25));   // builds a temporary, then moves\n    v.emplace_back(\"Neha\", 30);        // built directly inside the vector\n}"
+                },
+                {
+                    "question": "What is the difference between `map` and `unordered_map`?",
+                    "answer": [
+                        "| `std::map` | `std::unordered_map` |\n|---|---|\n| Red-black tree | Hash table |\n| Keys **sorted** | No order |\n| O(log n) operations | O(1) average, O(n) worst |\n| Needs `operator<` | Needs hash and `==` |\n| Stable iterator order | Rehash can invalidate iterators |"
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <unordered_map>\n\nint main() {\n    std::map<int, char> m{{3, 'c'}, {1, 'a'}, {2, 'b'}};\n    for (auto& [k, v] : m) std::cout << k << v << \" \";     // sorted: 1a 2b 3c\n    std::cout << std::endl;\n\n    std::unordered_map<int, char> u{{3, 'c'}, {1, 'a'}};\n    std::cout << u.at(3) << std::endl;\n}"
+                },
+                {
+                    "question": "How does `operator[]` on a `map` differ from `at()` and `find()`?",
+                    "answer": [
+                        "- **`m[key]`** **inserts** a default value if the key is missing.\n- **`m.at(key)`** throws `std::out_of_range` if the key is missing.\n- **`m.find(key)`** returns an iterator (`end()` if missing) and never inserts.\n- **`m.contains(key)`** (C++20) is a simple yes/no check."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> m;\n\n    int a = m[\"x\"];                 // inserts \"x\" with value 0\n    std::cout << m.size() << std::endl;   // 1\n\n    auto it = m.find(\"y\");\n    std::cout << (it == m.end()) << std::endl;   // 1: not found, nothing inserted\n\n    try { m.at(\"z\"); }\n    catch (const std::out_of_range&) { std::cout << \"missing\" << std::endl; }\n    (void)a;\n}"
+                },
+                {
+                    "question": "What is the erase-remove idiom?",
+                    "answer": [
+                        "`std::remove` / `std::remove_if` only **move** unwanted elements to the end and return a new logical end. You must call `erase` to actually shrink the container.",
+                        "In C++20, `std::erase` / `std::erase_if` do both in one call."
+                    ],
+                    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3, 4, 5, 6};\n\n    // classic idiom (all versions)\n    v.erase(std::remove_if(v.begin(), v.end(),\n                           [](int x) { return x % 2 == 0; }),\n            v.end());\n\n    std::cout << v.size() << std::endl;     // 3\n\n    // C++20\n    std::erase_if(v, [](int x) { return x > 3; });\n}"
+                },
+                {
+                    "question": "How do you sort with a custom comparator? What are common STL algorithms?",
+                    "answer": [
+                        "Pass a lambda that returns `true` if the **first argument should come before the second**.",
+                        "### Common algorithms",
+                        "- `std::sort`, `std::stable_sort`, `std::partial_sort`\n- `std::find`, `std::find_if`, `std::binary_search`, `std::lower_bound`\n- `std::count`, `std::count_if`, `std::accumulate`\n- `std::transform`, `std::for_each`\n- `std::reverse`, `std::unique`, `std::max_element`, `std::min_element`"
+                    ],
+                    "code": "#include <algorithm>\n#include <iostream>\n#include <numeric>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> names{\"Charlie\", \"Al\", \"Bob\"};\n    std::sort(names.begin(), names.end(),\n              [](const std::string& a, const std::string& b) {\n                  return a.size() < b.size();       // shortest first\n              });\n\n    std::vector<int> v{1, 2, 3, 4};\n    int sum = std::accumulate(v.begin(), v.end(), 0);\n    auto it = std::find(v.begin(), v.end(), 3);\n\n    std::cout << names[0] << \" \" << sum << \" \" << (it != v.end()) << std::endl;\n}"
+                },
+                {
+                    "question": "What is the difference between `std::string` and `std::string_view`? What is the small string optimisation?",
+                    "answer": [
+                        "- **`std::string`** owns and may allocate its characters.\n- **`std::string_view`** only looks at characters owned by someone else (no copy).\n- **SSO** (small string optimisation): short strings (about 15 to 22 characters, depends on implementation) are stored **inside the string object**, with no heap allocation."
+                    ]
+                },
+                {
+                    "question": "What are the iterator categories?",
+                    "answer": [
+                        "From weakest to strongest:\n1. **Input:** read once, move forward\n2. **Output:** write once, move forward\n3. **Forward:** multi-pass, forward only (`forward_list`)\n4. **Bidirectional:** forward and backward (`list`, `map`)\n5. **Random access:** jump to any position (`vector`, `deque`)\n6. **Contiguous** (C++20): random access over contiguous memory (`vector`, `array`)"
+                    ]
+                },
+                {
+                    "question": "What is `priority_queue`, `stack` and `queue`?",
+                    "answer": [
+                        "These are **container adaptors**:\n- **`stack`** is LIFO (`push`, `pop`, `top`).\n- **`queue`** is FIFO (`push`, `pop`, `front`).\n- **`priority_queue`** gives the **largest** element first (max-heap by default)."
+                    ],
+                    "code": "#include <functional>\n#include <iostream>\n#include <queue>\n#include <stack>\n#include <vector>\n\nint main() {\n    std::stack<int> s;  s.push(1); s.push(2);\n    std::cout << s.top() << std::endl;                   // 2\n\n    std::queue<int> q;  q.push(1); q.push(2);\n    std::cout << q.front() << std::endl;                 // 1\n\n    std::priority_queue<int> maxHeap;\n    maxHeap.push(5); maxHeap.push(9); maxHeap.push(1);\n    std::cout << maxHeap.top() << std::endl;             // 9\n\n    std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;\n    minHeap.push(5); minHeap.push(1);\n    std::cout << minHeap.top() << std::endl;             // 1\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp-interview-advanced",
+            "title": "Interview: Templates and Concurrency",
+            "description": "Templates, SFINAE vs concepts, CRTP, threads, mutexes, atomics and deadlocks.",
+            "questions": [
+                {
+                    "question": "What are templates? What is template specialisation?",
+                    "answer": [
+                        "**Templates** let you write code once for many types (resolved at compile time).",
+                        "- **Function template:** `template <typename T> T max(T a, T b)`\n- **Class template:** `template <typename T> class Stack`\n- **Specialisation:** a special version for a particular type."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n\ntemplate <typename T>\nstruct Printer {\n    static void print(const T& v) { std::cout << v << std::endl; }\n};\n\ntemplate <>                                  // full specialisation for bool\nstruct Printer<bool> {\n    static void print(bool v) { std::cout << (v ? \"yes\" : \"no\") << std::endl; }\n};\n\nint main() {\n    Printer<int>::print(5);\n    Printer<bool>::print(true);\n}"
+                },
+                {
+                    "question": "What is SFINAE and how do concepts replace it?",
+                    "answer": [
+                        "**SFINAE** (*Substitution Failure Is Not An Error*): if a template argument makes a declaration invalid, that overload is silently removed instead of causing an error.",
+                        "Before C++20 it was done with `std::enable_if`. **Concepts** (C++20) do the same job with **readable syntax and clear error messages**."
+                    ],
+                    "code": "#include <concepts>\n#include <iostream>\n#include <type_traits>\n\n// old way (C++11/14/17)\ntemplate <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>\nT oldAdd(T a, T b) { return a + b; }\n\n// new way (C++20)\ntemplate <std::integral T>\nT newAdd(T a, T b) { return a + b; }\n\nint main() {\n    std::cout << oldAdd(1, 2) << \" \" << newAdd(3, 4) << std::endl;\n}"
+                },
+                {
+                    "question": "What is CRTP (Curiously Recurring Template Pattern)?",
+                    "answer": [
+                        "A class **inherits from a template instantiated with itself**: `class Derived : Base<Derived>`.",
+                        "It gives **static (compile-time) polymorphism** with no virtual function cost."
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename Derived>\nstruct Shape {\n    void draw() const { static_cast<const Derived*>(this)->drawImpl(); }\n};\n\nstruct Circle : Shape<Circle> {\n    void drawImpl() const { std::cout << \"circle\" << std::endl; }\n};\n\nint main() {\n    Circle c;\n    c.draw();      // resolved at compile time\n}"
+                },
+                {
+                    "question": "Compare function pointers, functors, lambdas and `std::function`.",
+                    "answer": [
+                        "- **Function pointer:** simple, no state.\n- **Functor:** a class with `operator()` and state.\n- **Lambda:** an inline anonymous functor (usually the best choice).\n- **`std::function`:** a **type-erased** wrapper that holds any callable. It is flexible but has some overhead."
+                    ],
+                    "code": "#include <functional>\n#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nstruct Adder {\n    int n;\n    int operator()(int x) const { return x + n; }\n};\n\nint main() {\n    int (*fp)(int) = twice;\n    Adder add5{5};\n    auto lam = [](int x) { return x * x; };\n\n    std::function<int(int)> f;\n    f = fp;   std::cout << f(3) << \" \";\n    f = add5; std::cout << f(3) << \" \";\n    f = lam;  std::cout << f(3) << std::endl;\n}"
+                },
+                {
+                    "question": "What is a data race and how do you avoid it?",
+                    "answer": [
+                        "A **data race** occurs when two threads access the same memory at the same time, at least one **writes**, and there is **no synchronisation**. It is **undefined behaviour**.",
+                        "### Ways to avoid it",
+                        "- Protect data with a `std::mutex`\n- Use `std::atomic` for simple shared values\n- Avoid sharing (use thread-local data or message passing)"
+                    ],
+                    "code": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> counter{0};        // safe without a mutex\n\n    auto work = [&] { for (int i = 0; i < 1000; ++i) ++counter; };\n\n    std::thread t1(work), t2(work);\n    t1.join();\n    t2.join();\n\n    std::cout << counter << std::endl;  // always 2000\n}"
+                },
+                {
+                    "question": "What is a deadlock and how do you prevent it?",
+                    "answer": [
+                        "A **deadlock** happens when threads wait for each other's locks forever.",
+                        "### Prevention",
+                        "- Always lock mutexes in the **same order**\n- Lock several at once with `std::scoped_lock` (C++17) or `std::lock`\n- Hold locks for as short a time as possible\n- Avoid calling unknown code while holding a lock"
+                    ],
+                    "code": "#include <iostream>\n#include <mutex>\n#include <thread>\n\nstd::mutex a, b;\n\nvoid task1() {\n    std::scoped_lock lock(a, b);      // locks both safely\n    std::cout << \"task1\" << std::endl;\n}\nvoid task2() {\n    std::scoped_lock lock(b, a);      // order does not matter here\n    std::cout << \"task2\" << std::endl;\n}\n\nint main() {\n    std::thread t1(task1), t2(task2);\n    t1.join();\n    t2.join();\n}"
+                },
+                {
+                    "question": "What is the difference between `lock_guard`, `unique_lock` and `scoped_lock`?",
+                    "answer": [
+                        "- **`lock_guard`** is the simplest: locks on construction and unlocks on destruction.\n- **`unique_lock`** is flexible: it can unlock early, relock and defer locking. It is **required** for `condition_variable`.\n- **`scoped_lock`** (C++17) locks **several** mutexes together, deadlock-free."
+                    ]
+                },
+                {
+                    "question": "How does `std::condition_variable` work?",
+                    "answer": [
+                        "It lets a thread **sleep until another thread signals** that something is ready.",
+                        "- The waiting thread uses `wait(lock, predicate)`.\n- The other thread changes the data and calls `notify_one()` or `notify_all()`.\n- Always use a **predicate** to handle spurious wake-ups."
+                    ],
+                    "code": "#include <condition_variable>\n#include <iostream>\n#include <mutex>\n#include <thread>\n\nstd::mutex m;\nstd::condition_variable cv;\nbool ready = false;\n\nint main() {\n    std::thread consumer([] {\n        std::unique_lock<std::mutex> lock(m);\n        cv.wait(lock, [] { return ready; });     // sleeps until ready is true\n        std::cout << \"got the signal\" << std::endl;\n    });\n\n    {\n        std::lock_guard<std::mutex> lock(m);\n        ready = true;\n    }\n    cv.notify_one();\n    consumer.join();\n}"
+                },
+                {
+                    "question": "What are `std::async`, `std::future` and `std::promise`?",
+                    "answer": [
+                        "- **`std::async`** runs a function, possibly on another thread, and returns a `future`.\n- **`std::future`** gets the result later with `get()` (blocks until ready).\n- **`std::promise`** lets a thread **set** a value that a future will receive."
+                    ],
+                    "code": "#include <future>\n#include <iostream>\n#include <thread>\n\nint main() {\n    auto f = std::async(std::launch::async, [] { return 6 * 7; });\n    std::cout << f.get() << std::endl;         // 42\n\n    std::promise<int> p;\n    std::future<int> fut = p.get_future();\n    std::thread t([&p] { p.set_value(99); });\n    std::cout << fut.get() << std::endl;       // 99\n    t.join();\n}"
+                },
+                {
+                    "question": "What is the difference between `std::atomic` and `volatile`?",
+                    "answer": [
+                        "- **`std::atomic<T>`** guarantees **thread-safe**, indivisible operations and memory ordering.\n- **`volatile`** only stops the compiler from optimising reads/writes (for hardware). It gives **no thread safety**."
+                    ]
+                },
+                {
+                    "question": "What are lambda capture modes and common pitfalls?",
+                    "answer": [
+                        "- `[=]` copies used variables. `[&]` references them.\n- **Pitfall:** capturing a local by reference and using the lambda **after** the variable is destroyed (dangling reference). This is common with threads and async code.\n- `[this]` captures the object pointer. `[*this]` (C++17) copies the whole object."
+                    ],
+                    "code": "#include <functional>\n#include <iostream>\n\nstd::function<int()> bad() {\n    int x = 10;\n    return [&x] { return x; };     // dangling reference after return!\n}\n\nstd::function<int()> good() {\n    int x = 10;\n    return [x] { return x; };      // copy: safe\n}\n\nint main() {\n    std::cout << good()() << std::endl;\n    (void)bad;\n}"
+                },
+                {
+                    "question": "What are the most important C++ features by version (a quick revision)?",
+                    "answer": [
+                        "| Version | Headline features |\n|---|---|\n| **C++11** | `auto`, lambdas, move semantics, smart pointers, `nullptr`, threads |\n| **C++14** | Generic lambdas, `make_unique`, relaxed `constexpr`, return type deduction |\n| **C++17** | Structured bindings, `optional`, `variant`, `string_view`, `if constexpr`, `filesystem` |\n| **C++20** | Concepts, ranges, coroutines, modules, `<=>`, `span`, `format` |\n| **C++23** | `expected`, `print`, deducing `this`, `mdspan`, `generator`, more ranges |\n| **C++26** | Reflection, contracts, `std::execution`, pack indexing, `#embed` |"
+                    ]
+                }
+            ]
+        },
+        {
             "id": "functions",
             "title": "Functions",
             "description": "Reusable blocks of code.",
@@ -273,9 +734,9 @@
                     "question": "What are the different cast operators in C++?",
                     "answer": [
                         "**1.static_cast** (Compile time): Basic conversions between related types (e.g., int to float, or upcasting in class hierarchies).",
-                        "**2.dynamic_cast** (Runtime): Safe downcasting in polymorphic class hierarchies; verifies validity.", 
+                        "**2.dynamic_cast** (Runtime): Safe downcasting in polymorphic class hierarchies; verifies validity.",
                         "**3.const_cast** (Compile time): Adding or removing const or volatile modifiers.",
-                        "**4.reinterpret_cast** (Compile time): Low-level reinterpretation of system bits (e.g., pointer-to-pointer or pointer-to-integer).", 
+                        "**4.reinterpret_cast** (Compile time): Low-level reinterpretation of system bits (e.g., pointer-to-pointer or pointer-to-integer).",
                         "\n*They are preferred over the old C-style cast because each one states its intent and is easy to search for.*"
                     ]
                 },
@@ -504,7 +965,7 @@
             "title": "Classes",
             "description": "Access specifiers, initializer lists, friend functions and static members.",
             "questions": [
-                 {
+                {
                     "question": "Which C++'s special member functions are provided by compiler?",
                     "answer": [
                         "The compiler can generate up to six special member functions for a class if you don’t write them yourself.",
@@ -1028,96 +1489,96 @@
                         "1. Store a **raw pointer**\n2. **Destructor** that calls `delete`\n3. **Delete** the copy constructor and copy assignment\n4. Add a **move constructor and move assignment** that steal the pointer and set the source to `nullptr`\n5. Add `operator*`, `operator->`, `get()`, `release()`, `reset()` and `operator bool`",
                         "### Example",
                         {
-                        "code": [
-                            "#include <iostream>",
-                            "#include <utility>",
-                            "using namespace std;",
-                            "",
-                            "template <typename T>",
-                            "class UniquePtr {",
-                            "    T* ptr_;                                   // the raw pointer we own",
-                            "",
-                            "public:",
-                            "    // Take ownership of a raw pointer",
-                            "    explicit UniquePtr(T* p = nullptr) : ptr_(p) {}",
-                            "",
-                            "    // Destructor: free the object automatically",
-                            "    ~UniquePtr() { delete ptr_; }",
-                            "",
-                            "    // Copying is forbidden: only ONE owner is allowed",
-                            "    UniquePtr(const UniquePtr&) = delete;",
-                            "    UniquePtr& operator=(const UniquePtr&) = delete;",
-                            "",
-                            "    // Moving is allowed: ownership is transferred",
-                            "    UniquePtr(UniquePtr&& other) noexcept : ptr_(other.ptr_) {",
-                            "        other.ptr_ = nullptr;                  // the old owner gives up the object",
-                            "    }",
-                            "    UniquePtr& operator=(UniquePtr&& other) noexcept {",
-                            "        if (this != &other) {",
-                            "            delete ptr_;                       // free what we currently own",
-                            "            ptr_ = other.ptr_;                 // take the new object",
-                            "            other.ptr_ = nullptr;",
-                            "        }",
-                            "        return *this;",
-                            "    }",
-                            "",
-                            "    // Behave like a pointer",
-                            "    T& operator*() const { return *ptr_; }",
-                            "    T* operator->() const { return ptr_; }",
-                            "    T* get() const { return ptr_; }",
-                            "    explicit operator bool() const { return ptr_ != nullptr; }",
-                            "",
-                            "    // Give up ownership WITHOUT deleting",
-                            "    T* release() {",
-                            "        T* tmp = ptr_;",
-                            "        ptr_ = nullptr;",
-                            "        return tmp;",
-                            "    }",
-                            "",
-                            "    // Delete the current object and optionally own a new one",
-                            "    void reset(T* p = nullptr) {",
-                            "        if (ptr_ != p) {",
-                            "            delete ptr_;",
-                            "            ptr_ = p;",
-                            "        }",
-                            "    }",
-                            "};",
-                            "",
-                            "struct Car {",
-                            "    int id;",
-                            "    Car(int i) : id(i) { cout << \"Car \" << id << \" created\" << endl; }",
-                            "    ~Car() { cout << \"Car \" << id << \" destroyed\" << endl; }",
-                            "    void drive() { cout << \"Car \" << id << \" is driving\" << endl; }",
-                            "};",
-                            "",
-                            "int main() {",
-                            "    UniquePtr<Car> a(new Car(1));",
-                            "    a->drive();",
-                            "",
-                            "    // UniquePtr<Car> b = a;               // error: copy is deleted",
-                            "    UniquePtr<Car> b = move(a);            // ownership moves from a to b",
-                            "",
-                            "    cout << \"a is \" << (a ? \"not empty\" : \"empty\") << endl;",
-                            "    cout << \"b is \" << (b ? \"not empty\" : \"empty\") << endl;",
-                            "",
-                            "    b.reset(new Car(2));                   // Car 1 is destroyed, b owns Car 2",
-                            "    cout << \"End of main\" << endl;",
-                            "    return 0;                              // Car 2 is destroyed here",
-                            "}"
-                        ]
+                            "code": [
+                                "#include <iostream>",
+                                "#include <utility>",
+                                "using namespace std;",
+                                "",
+                                "template <typename T>",
+                                "class UniquePtr {",
+                                "    T* ptr_;                                   // the raw pointer we own",
+                                "",
+                                "public:",
+                                "    // Take ownership of a raw pointer",
+                                "    explicit UniquePtr(T* p = nullptr) : ptr_(p) {}",
+                                "",
+                                "    // Destructor: free the object automatically",
+                                "    ~UniquePtr() { delete ptr_; }",
+                                "",
+                                "    // Copying is forbidden: only ONE owner is allowed",
+                                "    UniquePtr(const UniquePtr&) = delete;",
+                                "    UniquePtr& operator=(const UniquePtr&) = delete;",
+                                "",
+                                "    // Moving is allowed: ownership is transferred",
+                                "    UniquePtr(UniquePtr&& other) noexcept : ptr_(other.ptr_) {",
+                                "        other.ptr_ = nullptr;                  // the old owner gives up the object",
+                                "    }",
+                                "    UniquePtr& operator=(UniquePtr&& other) noexcept {",
+                                "        if (this != &other) {",
+                                "            delete ptr_;                       // free what we currently own",
+                                "            ptr_ = other.ptr_;                 // take the new object",
+                                "            other.ptr_ = nullptr;",
+                                "        }",
+                                "        return *this;",
+                                "    }",
+                                "",
+                                "    // Behave like a pointer",
+                                "    T& operator*() const { return *ptr_; }",
+                                "    T* operator->() const { return ptr_; }",
+                                "    T* get() const { return ptr_; }",
+                                "    explicit operator bool() const { return ptr_ != nullptr; }",
+                                "",
+                                "    // Give up ownership WITHOUT deleting",
+                                "    T* release() {",
+                                "        T* tmp = ptr_;",
+                                "        ptr_ = nullptr;",
+                                "        return tmp;",
+                                "    }",
+                                "",
+                                "    // Delete the current object and optionally own a new one",
+                                "    void reset(T* p = nullptr) {",
+                                "        if (ptr_ != p) {",
+                                "            delete ptr_;",
+                                "            ptr_ = p;",
+                                "        }",
+                                "    }",
+                                "};",
+                                "",
+                                "struct Car {",
+                                "    int id;",
+                                "    Car(int i) : id(i) { cout << \"Car \" << id << \" created\" << endl; }",
+                                "    ~Car() { cout << \"Car \" << id << \" destroyed\" << endl; }",
+                                "    void drive() { cout << \"Car \" << id << \" is driving\" << endl; }",
+                                "};",
+                                "",
+                                "int main() {",
+                                "    UniquePtr<Car> a(new Car(1));",
+                                "    a->drive();",
+                                "",
+                                "    // UniquePtr<Car> b = a;               // error: copy is deleted",
+                                "    UniquePtr<Car> b = move(a);            // ownership moves from a to b",
+                                "",
+                                "    cout << \"a is \" << (a ? \"not empty\" : \"empty\") << endl;",
+                                "    cout << \"b is \" << (b ? \"not empty\" : \"empty\") << endl;",
+                                "",
+                                "    b.reset(new Car(2));                   // Car 1 is destroyed, b owns Car 2",
+                                "    cout << \"End of main\" << endl;",
+                                "    return 0;                              // Car 2 is destroyed here",
+                                "}"
+                            ]
                         },
                         "### Output",
                         {
-                        "code": [
-                            "Car 1 created",
-                            "Car 1 is driving",
-                            "a is empty",
-                            "b is not empty",
-                            "Car 2 created",
-                            "Car 1 destroyed",
-                            "End of main",
-                            "Car 2 destroyed"
-                        ]
+                            "code": [
+                                "Car 1 created",
+                                "Car 1 is driving",
+                                "a is empty",
+                                "b is not empty",
+                                "Car 2 created",
+                                "Car 1 destroyed",
+                                "End of main",
+                                "Car 2 destroyed"
+                            ]
                         },
                         "### How it works",
                         "- `b = move(a)` transfers ownership. `a` becomes empty (`nullptr`), so the object is deleted only once.\n- `reset(new Car(2))` deletes the old object (Car 1) and takes the new one.\n- At the end of `main`, `b` goes out of scope and its destructor deletes Car 2. No `delete` is written by hand.\n- `release()` gives the raw pointer back **without** deleting it. The caller becomes responsible for it.",
@@ -1125,8 +1586,8 @@
                         "- Forgetting to set `other.ptr_ = nullptr` after a move causes a **double delete**.\n- Forgetting the `this != &other` check in move assignment can delete the object you are about to keep.\n- The real `std::unique_ptr` also supports arrays (`unique_ptr<T[]>`), custom deleters, and `make_unique`.",
                         "Compile and run: `g++ -std=c++17 main.cpp -o app && ./app`"
                     ]
-                    },
-                    {
+                },
+                {
                     "question": "How do you write your own `shared_ptr`?",
                     "answer": [
                         "A `shared_ptr` lets **many owners** share one object. The object is deleted when the **last owner** goes away. To know how many owners exist, all copies share a **reference count**, which lives on the heap so every copy can see it.",
@@ -1134,121 +1595,121 @@
                         "1. A **raw pointer** to the object\n2. A **pointer to a shared counter** (`size_t*`), created with value `1` for the first owner\n3. **Copy constructor and copy assignment** that share the pointer and do `count + 1`\n4. **Move constructor and move assignment** that steal both pointers, with no change in count\n5. **Destructor** that does `count - 1` and deletes the object and the counter when it reaches `0`\n6. `operator*`, `operator->`, `get()`, `use_count()`, `reset()`",
                         "### Example",
                         {
-                        "code": [
-                            "#include <iostream>",
-                            "#include <utility>",
-                            "using namespace std;",
-                            "",
-                            "template <typename T>",
-                            "class SharedPtr {",
-                            "    T* ptr_;                                   // the managed object",
-                            "    size_t* count_;                            // shared reference count",
-                            "",
-                            "    void release() {                           // drop one owner",
-                            "        if (count_ && --(*count_) == 0) {      // last owner?",
-                            "            delete ptr_;",
-                            "            delete count_;",
-                            "        }",
-                            "        ptr_ = nullptr;",
-                            "        count_ = nullptr;",
-                            "    }",
-                            "",
-                            "public:",
-                            "    // Take ownership of a raw pointer (count starts at 1)",
-                            "    explicit SharedPtr(T* p = nullptr)",
-                            "        : ptr_(p), count_(p ? new size_t(1) : nullptr) {}",
-                            "",
-                            "    // Copy constructor: share the object, count + 1",
-                            "    SharedPtr(const SharedPtr& other) : ptr_(other.ptr_), count_(other.count_) {",
-                            "        if (count_) ++(*count_);",
-                            "    }",
-                            "",
-                            "    // Copy assignment: leave the old object, join the new one",
-                            "    SharedPtr& operator=(const SharedPtr& other) {",
-                            "        if (this != &other) {",
-                            "            release();                         // let go of the current object",
-                            "            ptr_ = other.ptr_;",
-                            "            count_ = other.count_;",
-                            "            if (count_) ++(*count_);",
-                            "        }",
-                            "        return *this;",
-                            "    }",
-                            "",
-                            "    // Move constructor: steal, the count does not change",
-                            "    SharedPtr(SharedPtr&& other) noexcept : ptr_(other.ptr_), count_(other.count_) {",
-                            "        other.ptr_ = nullptr;",
-                            "        other.count_ = nullptr;",
-                            "    }",
-                            "",
-                            "    // Move assignment",
-                            "    SharedPtr& operator=(SharedPtr&& other) noexcept {",
-                            "        if (this != &other) {",
-                            "            release();",
-                            "            ptr_ = other.ptr_;",
-                            "            count_ = other.count_;",
-                            "            other.ptr_ = nullptr;",
-                            "            other.count_ = nullptr;",
-                            "        }",
-                            "        return *this;",
-                            "    }",
-                            "",
-                            "    // Destructor: count - 1, delete if it was the last owner",
-                            "    ~SharedPtr() { release(); }",
-                            "",
-                            "    // Behave like a pointer",
-                            "    T& operator*() const { return *ptr_; }",
-                            "    T* operator->() const { return ptr_; }",
-                            "    T* get() const { return ptr_; }",
-                            "    explicit operator bool() const { return ptr_ != nullptr; }",
-                            "",
-                            "    size_t use_count() const { return count_ ? *count_ : 0; }",
-                            "",
-                            "    void reset(T* p = nullptr) {",
-                            "        release();",
-                            "        if (p) {",
-                            "            ptr_ = p;",
-                            "            count_ = new size_t(1);",
-                            "        }",
-                            "    }",
-                            "};",
-                            "",
-                            "struct Car {",
-                            "    int id;",
-                            "    Car(int i) : id(i) { cout << \"Car \" << id << \" created\" << endl; }",
-                            "    ~Car() { cout << \"Car \" << id << \" destroyed\" << endl; }",
-                            "};",
-                            "",
-                            "int main() {",
-                            "    SharedPtr<Car> a(new Car(1));",
-                            "    cout << \"count = \" << a.use_count() << endl;        // 1",
-                            "",
-                            "    {",
-                            "        SharedPtr<Car> b = a;                           // copy: share",
-                            "        SharedPtr<Car> c = a;",
-                            "        cout << \"count = \" << a.use_count() << endl;    // 3",
-                            "    }                                                   // b and c die: count goes back to 1",
-                            "",
-                            "    cout << \"count = \" << a.use_count() << endl;        // 1",
-                            "",
-                            "    SharedPtr<Car> d = move(a);                         // move: a becomes empty",
-                            "    cout << \"a count = \" << a.use_count() << \", d count = \" << d.use_count() << endl;",
-                            "",
-                            "    cout << \"End of main\" << endl;",
-                            "    return 0;                                           // last owner d dies, Car 1 destroyed",
-                            "}"
-                        ]
+                            "code": [
+                                "#include <iostream>",
+                                "#include <utility>",
+                                "using namespace std;",
+                                "",
+                                "template <typename T>",
+                                "class SharedPtr {",
+                                "    T* ptr_;                                   // the managed object",
+                                "    size_t* count_;                            // shared reference count",
+                                "",
+                                "    void release() {                           // drop one owner",
+                                "        if (count_ && --(*count_) == 0) {      // last owner?",
+                                "            delete ptr_;",
+                                "            delete count_;",
+                                "        }",
+                                "        ptr_ = nullptr;",
+                                "        count_ = nullptr;",
+                                "    }",
+                                "",
+                                "public:",
+                                "    // Take ownership of a raw pointer (count starts at 1)",
+                                "    explicit SharedPtr(T* p = nullptr)",
+                                "        : ptr_(p), count_(p ? new size_t(1) : nullptr) {}",
+                                "",
+                                "    // Copy constructor: share the object, count + 1",
+                                "    SharedPtr(const SharedPtr& other) : ptr_(other.ptr_), count_(other.count_) {",
+                                "        if (count_) ++(*count_);",
+                                "    }",
+                                "",
+                                "    // Copy assignment: leave the old object, join the new one",
+                                "    SharedPtr& operator=(const SharedPtr& other) {",
+                                "        if (this != &other) {",
+                                "            release();                         // let go of the current object",
+                                "            ptr_ = other.ptr_;",
+                                "            count_ = other.count_;",
+                                "            if (count_) ++(*count_);",
+                                "        }",
+                                "        return *this;",
+                                "    }",
+                                "",
+                                "    // Move constructor: steal, the count does not change",
+                                "    SharedPtr(SharedPtr&& other) noexcept : ptr_(other.ptr_), count_(other.count_) {",
+                                "        other.ptr_ = nullptr;",
+                                "        other.count_ = nullptr;",
+                                "    }",
+                                "",
+                                "    // Move assignment",
+                                "    SharedPtr& operator=(SharedPtr&& other) noexcept {",
+                                "        if (this != &other) {",
+                                "            release();",
+                                "            ptr_ = other.ptr_;",
+                                "            count_ = other.count_;",
+                                "            other.ptr_ = nullptr;",
+                                "            other.count_ = nullptr;",
+                                "        }",
+                                "        return *this;",
+                                "    }",
+                                "",
+                                "    // Destructor: count - 1, delete if it was the last owner",
+                                "    ~SharedPtr() { release(); }",
+                                "",
+                                "    // Behave like a pointer",
+                                "    T& operator*() const { return *ptr_; }",
+                                "    T* operator->() const { return ptr_; }",
+                                "    T* get() const { return ptr_; }",
+                                "    explicit operator bool() const { return ptr_ != nullptr; }",
+                                "",
+                                "    size_t use_count() const { return count_ ? *count_ : 0; }",
+                                "",
+                                "    void reset(T* p = nullptr) {",
+                                "        release();",
+                                "        if (p) {",
+                                "            ptr_ = p;",
+                                "            count_ = new size_t(1);",
+                                "        }",
+                                "    }",
+                                "};",
+                                "",
+                                "struct Car {",
+                                "    int id;",
+                                "    Car(int i) : id(i) { cout << \"Car \" << id << \" created\" << endl; }",
+                                "    ~Car() { cout << \"Car \" << id << \" destroyed\" << endl; }",
+                                "};",
+                                "",
+                                "int main() {",
+                                "    SharedPtr<Car> a(new Car(1));",
+                                "    cout << \"count = \" << a.use_count() << endl;        // 1",
+                                "",
+                                "    {",
+                                "        SharedPtr<Car> b = a;                           // copy: share",
+                                "        SharedPtr<Car> c = a;",
+                                "        cout << \"count = \" << a.use_count() << endl;    // 3",
+                                "    }                                                   // b and c die: count goes back to 1",
+                                "",
+                                "    cout << \"count = \" << a.use_count() << endl;        // 1",
+                                "",
+                                "    SharedPtr<Car> d = move(a);                         // move: a becomes empty",
+                                "    cout << \"a count = \" << a.use_count() << \", d count = \" << d.use_count() << endl;",
+                                "",
+                                "    cout << \"End of main\" << endl;",
+                                "    return 0;                                           // last owner d dies, Car 1 destroyed",
+                                "}"
+                            ]
                         },
                         "### Output",
                         {
-                        "code": [
-                            "Car 1 created",
-                            "count = 1",
-                            "count = 3",
-                            "count = 1",
-                            "a count = 0, d count = 1",
-                            "End of main",
-                            "Car 1 destroyed"
-                        ]
+                            "code": [
+                                "Car 1 created",
+                                "count = 1",
+                                "count = 3",
+                                "count = 1",
+                                "a count = 0, d count = 1",
+                                "End of main",
+                                "Car 1 destroyed"
+                            ]
                         },
                         "### How it works",
                         "- `SharedPtr<Car> b = a;` calls the copy constructor. Both point to the same Car and the count becomes `2`. Then `c` makes it `3`.\n- When `b` and `c` leave their block, each destructor does `count - 1`. The count returns to `1` and the Car is **not** deleted.\n- `move(a)` transfers ownership to `d` without touching the count. `a` becomes empty, so `a.use_count()` is `0`.\n- At the end of `main`, `d` is the last owner. The count reaches `0`, so the Car and the counter are both deleted.",
@@ -1263,114 +1724,7 @@
                 }
             ]
         },
-        {
-            "id": "cpp11",
-            "title": "C++11",
-            "description": "The major modern C++ features introduced in C++11.",
-            "questions": [
                 {
-                    "question": "What are the C++11 features?",
-                    "answer": [
-                        "1.auto\n2.nullptr\n3.range-based for loops\n4.override and final\n5.strongly-typed enums (enum class)\n6.smart pointers\n7.lambdas\n8.non-member begin() and end()\n9.static_assert and type traits\n10.move semantics (rvalue references).\nOthers: constexpr, initializer lists, delegating constructors, = default / = delete, variadic templates, std::thread, unordered containers."
-                    ]
-                },
-                {
-                    "question": "What is auto?",
-                    "answer": [
-                        "auto lets the compiler deduce the type of a variable from its initialiser. It is useful for long iterator and template types."
-                    ],
-                    "code": "#include <map>\n#include <string>\n\nint main() {\n    auto i = 10;                       // int\n    auto d = 3.5;                      // double\n    std::map<std::string, int> m{{\"a\", 1}};\n    for (auto it = m.begin(); it != m.end(); ++it) {}\n    (void)i; (void)d;\n}"
-                },
-                {
-                    "question": "What is nullptr?",
-                    "answer": [
-                        "nullptr is a typed null pointer literal (type std::nullptr_t). It replaces NULL/0, which is an integer and causes wrong overload resolution. 0 is still valid but ambiguous."
-                    ],
-                    "code": "#include <iostream>\n\nvoid f(int)   { std::cout << \"int\" << std::endl; }\nvoid f(char*) { std::cout << \"pointer\" << std::endl; }\n\nint main() {\n    f(0);          // int\n    f(nullptr);    // pointer\n}"
-                },
-                {
-                    "question": "What are range-based for loops?",
-                    "answer": [
-                        "Syntax: for (range_declaration : range_expression) loop_statement. It iterates over every element of an array or container. Use const auto& to avoid copies."
-                    ],
-                    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> myMap{{\"a\", 1}, {\"b\", 2}};\n    for (const auto& kv : myMap) {\n        std::cout << kv.first << \" has value \" << kv.second << std::endl;\n    }\n}"
-                },
-                {
-                    "question": "What are override and final?",
-                    "answer": [
-                        "override ensures that a virtual function in a derived class really overrides a base class virtual function with the same signature; a mismatch is a compile error.",
-                        "final on a virtual function blocks further overriding; final on a class blocks further derivation."
-                    ],
-                    "code": "class Base {\npublic:\n    virtual void f() {}\n    virtual void g() {}\n    virtual ~Base() {}\n};\nclass Derived : public Base {\npublic:\n    void f() override {}            // checked against Base::f\n    void g() override final {}      // cannot be overridden again\n};\n\nclass TaskManager final {};\n// class PrioritizedTaskManager : public TaskManager {};  // error: base class TaskManager is final\n\nint main() {}"
-                },
-                {
-                    "question": "What are strongly-typed enums?",
-                    "answer": [
-                        "enum class has its own scope and does not implicitly convert to int, so names do not leak into the surrounding scope and cannot clash."
-                    ],
-                    "code": "#include <iostream>\n\nenum class Color { Red, Green };\n\nint main() {\n    Color c = Color::Red;\n    // int x = c;                       // error: no implicit conversion\n    int x = static_cast<int>(c);\n    std::cout << x << std::endl;        // 0\n}"
-                },
-                {
-                    "question": "What are non-member begin() and end(), and static_assert?",
-                    "answer": [
-                        "std::begin(x) and std::end(x) work for containers and plain arrays, which makes generic code easier.",
-                        "static_assert(condition, message) checks a condition at compile time; type traits (<type_traits>) provide the conditions, e.g. std::is_integral."
-                    ],
-                    "code": "#include <iostream>\n#include <iterator>\n#include <type_traits>\n\ntemplate <typename T>\nT twice(T x) {\n    static_assert(std::is_integral<T>::value, \"T must be an integer type\");\n    return x * 2;\n}\n\nint main() {\n    int arr[] = {1, 2, 3};\n    for (auto it = std::begin(arr); it != std::end(arr); ++it)\n        std::cout << *it << \" \";\n    std::cout << twice(4) << std::endl;\n}"
-                },
-                {
-                    "question": "What is move semantics?",
-                    "answer": [
-                        "Move semantics lets an object transfer (steal) the resources of a temporary or expiring object instead of copying them. It uses rvalue references (T&&), a move constructor, a move assignment operator and std::move. Moved-from objects remain valid but unspecified.",
-                        "It makes returning and passing large objects (vectors, strings) cheap."
-                    ],
-                    "code": "#include <iostream>\n#include <string>\n#include <utility>\n#include <vector>\n\nint main() {\n    std::string a = \"a long string that would be expensive to copy\";\n    std::string b = std::move(a);            // b steals a's buffer\n    std::cout << b << std::endl;\n\n    std::vector<int> v1(1000, 1);\n    std::vector<int> v2 = std::move(v1);     // no element copy\n    std::cout << v2.size() << std::endl;     // 1000\n}"
-                }
-            ]
-        },
-        {
-            "id": "cpp14",
-            "title": "C++14",
-            "description": "Features added in C++14.",
-            "questions": [
-                {
-                    "question": "What are the new features in C++14?",
-                    "answer": [
-                        "**New language features:** \n1.Function return type deduction\n2.Alternate type deduction on declaration (decltype(auto))\n3.Relaxed constexpr restrictions\n4.Variable templates\n5.Aggregate member initialisation\n6.Binary literals\n7.Digit separators\n8.Generic lambdas\n9.Lambda capture expressions (init-capture) and the [[deprecated]] attribute.",
-                        "**New library features:** \n1.Shared mutexes and locking (std::shared_timed_mutex)\n2.Heterogeneous lookup in associative containers\n3.Standard user-defined literals\n4.tuple addressing via type and smaller features such as std::make_unique."
-                    ]
-                },
-                {
-                    "question": "Show examples of C++14 features (digit separators, binary literals, generic lambda, return type deduction, make_unique).",
-                    "answer": [
-                        "Digit separators: auto integer_literal = 1'000'000;",
-                        "Generic lambda: auto lambda = [](auto x, auto y) { return x + y; };"
-                    ],
-                    "code": "#include <iostream>\n#include <memory>\n\nauto square(int x) { return x * x; }            // return type deduction\n\nint main() {\n    auto big = 1'000'000;                        // digit separators\n    int b = 0b1010;                              // binary literal = 10\n    auto add = [](auto x, auto y) { return x + y; };   // generic lambda\n    auto p = std::make_unique<int>(7);           // make_unique\n    int n = 5;\n    auto f = [v = n * 2]() { return v; };        // lambda init-capture\n\n    std::cout << big << \" \" << b << \" \" << add(1, 2.5) << \" \"\n              << square(4) << \" \" << *p << \" \" << f() << std::endl;\n}"
-                }
-            ]
-        },
-        {
-            "id": "cpp17",
-            "title": "C++17",
-            "description": "Features added in C++17.",
-            "questions": [
-                {
-                    "question": "What are the new features in C++17?",
-                    "answer": [
-                        "C++17 enables writing simple, clearer and more expressive code. Features: nested namespaces, variable declaration in if and switch (init-statement), if constexpr, structured bindings, fold expressions, direct list initialisation of enums, std::optional, std::variant, std::string_view, inline variables, std::filesystem, parallel algorithms."
-                    ]
-                },
-                {
-                    "question": "Show examples of C++17 features.",
-                    "answer": [
-                        "Nested namespaces: namespace A::B::C { }. Init-statement: if (auto it = m.find(k); it != m.end()). Structured bindings: auto [a, b] = pair. if constexpr: compile-time branch that discards the untaken branch. Fold expression: (args + ...)."
-                    ],
-                    "code": "#include <iostream>\n#include <map>\n#include <string>\n#include <type_traits>\n\nnamespace A::B::C { int value = 1; }              // nested namespaces\n\ntemplate <typename T>\nauto describe(T x) {\n    if constexpr (std::is_integral_v<T>) return x + 1;   // compile-time branch\n    else return x;\n}\n\ntemplate <typename... Args>\nauto sum(Args... args) { return (args + ...); }   // fold expression\n\nint main() {\n    std::map<std::string, int> m{{\"a\", 1}};\n    if (auto it = m.find(\"a\"); it != m.end())      // variable in if\n        std::cout << it->second << std::endl;\n\n    auto [k, v] = *m.begin();                      // structured bindings\n    std::cout << k << v << \" \" << A::B::C::value << \" \"\n              << describe(1) << \" \" << sum(1, 2, 3) << std::endl;\n}"
-                }
-            ]
-        },
-        {
             "id": "lambda-expressions",
             "title": "Lambda Expressions",
             "description": "Anonymous function objects.",
@@ -1404,6 +1758,720 @@
                         "RAII stands for Resource Acquisition Is Initialization. It’s a design principle in C++ where resource allocation happens when an object is created (in the constructor), and the resource is automatically released when the object goes out of scope (in the destructor). This ensures that resources like memory, file handles, or mutexes are properly managed without needing manual cleanup, making the code more robust and exception-safe"
                     ],
                     "code": "#include <memory>\nauto value = std::make_unique<int>(42); // automatic cleanup"
+                }
+            ]
+        },
+        {
+            "id": "cpp11",
+            "title": "C++11",
+            "description": "The big *modern C++* release: `auto`, lambdas, smart pointers, move semantics and more.",
+            "questions": [
+                {
+                    "question": "What are the C++11 features?",
+                    "answer": [
+                        "### Core language features",
+                        "1. `auto` type deduction and `decltype`\n2. `nullptr`\n3. Range-based `for` loops\n4. `override` and `final`\n5. Strongly-typed enums (`enum class`)\n6. Lambda expressions\n7. Move semantics (rvalue references `T&&`)\n8. `static_assert`\n9. `constexpr`\n10. Uniform (brace) initialisation and `std::initializer_list`\n11. Delegating and inheriting constructors\n12. `= default` and `= delete`\n13. Variadic templates\n14. Alias templates (`using`) and trailing return types\n15. `noexcept`, `alignas` / `alignof`, raw string literals, user-defined literals",
+                        "### Library features",
+                        "- **Smart pointers:** `unique_ptr`, `shared_ptr`, `weak_ptr`\n- **Threads:** `std::thread`, `std::mutex`, `std::atomic`, `std::future`\n- **Containers:** `std::array`, `std::unordered_map`, `std::unordered_set`, `std::tuple`\n- **Utilities:** `std::function`, `std::bind`, `std::chrono`, `<random>`, `<regex>`\n- **Free functions:** `std::begin()` / `std::end()`, `<type_traits>`"
+                    ]
+                },
+                {
+                    "question": "What is `auto`?",
+                    "answer": [
+                        "`auto` lets the compiler **deduce the type** of a variable from its initialiser.",
+                        "It is most useful for long iterator and template types.",
+                        "- The variable **must** be initialised.\n- `auto` drops top-level `const` and references. Use `const auto&` to keep them."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    auto i = 10;     // int\n    auto d = 3.5;    // double\n\n    std::map<std::string, int> m{{\"a\", 1}};\n    for (auto it = m.begin(); it != m.end(); ++it) {\n        std::cout << it->first << \" \" << it->second << std::endl;\n    }\n    std::cout << i << \" \" << d << std::endl;\n}"
+                },
+                {
+                    "question": "What is `decltype`?",
+                    "answer": [
+                        "`decltype(expr)` gives the **exact type** of an expression or variable (including references and `const`), without evaluating it.",
+                        "It is often used with templates and trailing return types."
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename A, typename B>\nauto add(A a, B b) -> decltype(a + b) {   // trailing return type\n    return a + b;\n}\n\nint main() {\n    int x = 5;\n    decltype(x) y = 10;                    // y is int\n    std::cout << add(x, 2.5) << \" \" << y << std::endl;\n}"
+                },
+                {
+                    "question": "What is `nullptr`?",
+                    "answer": [
+                        "`nullptr` is a **typed null pointer literal** (type `std::nullptr_t`).",
+                        "It replaces `NULL` / `0`, which are integers and can cause the wrong overload to be chosen."
+                    ],
+                    "code": "#include <iostream>\n\nvoid f(int)   { std::cout << \"int\" << std::endl; }\nvoid f(char*) { std::cout << \"pointer\" << std::endl; }\n\nint main() {\n    f(0);         // calls f(int)\n    f(nullptr);   // calls f(char*)\n}"
+                },
+                {
+                    "question": "What are range-based `for` loops?",
+                    "answer": [
+                        "**Syntax:** `for (declaration : range) statement`",
+                        "It visits every element of an array or container.\n- Use `const auto&` to avoid copies.\n- Use `auto&` if you want to modify the elements."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    for (int& x : v) x *= 2;               // modify\n    for (const auto& x : v) std::cout << x << \" \";\n    std::cout << std::endl;\n\n    std::map<std::string, int> m{{\"a\", 1}, {\"b\", 2}};\n    for (const auto& kv : m)\n        std::cout << kv.first << \" = \" << kv.second << std::endl;\n}"
+                },
+                {
+                    "question": "What are `override` and `final`?",
+                    "answer": [
+                        "- **`override`** checks that a derived function really overrides a base `virtual` function. A signature mismatch becomes a **compile error**.\n- **`final`** on a virtual function stops further overriding.\n- **`final`** on a class stops further inheritance."
+                    ],
+                    "code": "class Base {\npublic:\n    virtual void f() {}\n    virtual void g() {}\n    virtual ~Base() {}\n};\n\nclass Derived : public Base {\npublic:\n    void f() override {}           // checked against Base::f\n    void g() override final {}     // cannot be overridden again\n};\n\nclass Leaf final {};\n// class Bad : public Leaf {};     // error: Leaf is final\n\nint main() {}"
+                },
+                {
+                    "question": "What are strongly-typed enums (`enum class`)?",
+                    "answer": [
+                        "An `enum class` has its **own scope** and does **not** convert implicitly to `int`.",
+                        "Names do not leak into the surrounding scope, so two enums can use the same enumerator names."
+                    ],
+                    "code": "#include <iostream>\n\nenum class Color { Red, Green };\nenum class Light { Red, Yellow };     // no clash with Color::Red\n\nint main() {\n    Color c = Color::Red;\n    // int x = c;                       // error: no implicit conversion\n    int x = static_cast<int>(c);\n    std::cout << x << std::endl;        // 0\n}"
+                },
+                {
+                    "question": "What are lambda expressions?",
+                    "answer": [
+                        "A **lambda** is an unnamed function object you can write inline.",
+                        "**Syntax:** `[capture](parameters) -> return_type { body }`",
+                        "### Capture options",
+                        "- `[]` captures nothing\n- `[=]` captures everything by **copy**\n- `[&]` captures everything by **reference**\n- `[x, &y]` captures `x` by copy and `y` by reference"
+                    ],
+                    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{5, 2, 8, 1};\n\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n\n    int factor = 10;\n    auto times = [factor](int x) { return x * factor; };\n\n    for (int x : v) std::cout << times(x) << \" \";\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What are smart pointers?",
+                    "answer": [
+                        "Smart pointers manage heap memory **automatically** (RAII), so you rarely need `delete`.",
+                        "- **`std::unique_ptr`** is the single owner. It cannot be copied, only moved.\n- **`std::shared_ptr`** has shared ownership through reference counting.\n- **`std::weak_ptr`** is a non-owning observer of a `shared_ptr`. It breaks circular references.",
+                        "*Note:* `std::auto_ptr` was deprecated in C++11 and removed in C++17."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> u(new int(10));\n    std::unique_ptr<int> u2 = std::move(u);     // ownership moves\n\n    std::shared_ptr<int> s1 = std::make_shared<int>(20);\n    std::shared_ptr<int> s2 = s1;               // count = 2\n    std::weak_ptr<int> w = s1;                  // count stays 2\n\n    std::cout << s1.use_count() << std::endl;   // 2\n    if (auto locked = w.lock()) std::cout << *locked << std::endl;\n}"
+                },
+                {
+                    "question": "What is move semantics?",
+                    "answer": [
+                        "Move semantics lets an object **steal** the resources of a temporary (or expiring) object instead of copying them.",
+                        "It uses:\n- rvalue references (`T&&`)\n- a **move constructor** and a **move assignment operator**\n- `std::move` (a cast to an rvalue)",
+                        "A moved-from object stays **valid but unspecified**. It is safe to destroy or assign to.",
+                        "This makes returning and passing large objects (vectors, strings) cheap."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <utility>\n#include <vector>\n\nint main() {\n    std::string a = \"a long string that would be expensive to copy\";\n    std::string b = std::move(a);            // b steals a's buffer\n    std::cout << b << std::endl;\n\n    std::vector<int> v1(1000, 1);\n    std::vector<int> v2 = std::move(v1);     // no element copy\n    std::cout << v2.size() << std::endl;     // 1000\n}"
+                },
+                {
+                    "question": "What are initializer lists and uniform (brace) initialisation?",
+                    "answer": [
+                        "Braces `{}` can initialise **any** type in the same way. Brace initialisation also **prevents narrowing conversions**.",
+                        "`std::initializer_list<T>` lets your own class accept a `{...}` list."
+                    ],
+                    "code": "#include <initializer_list>\n#include <iostream>\n#include <vector>\n\nstruct Bag {\n    std::vector<int> items;\n    Bag(std::initializer_list<int> list) : items(list) {}\n};\n\nint main() {\n    int x{5};\n    std::vector<int> v{1, 2, 3};\n    Bag b{4, 5, 6};\n    // int n{3.5};                // error: narrowing\n    std::cout << x << \" \" << v.size() << \" \" << b.items.size() << std::endl;\n}"
+                },
+                {
+                    "question": "What is `constexpr`?",
+                    "answer": [
+                        "`constexpr` marks a value or function that **can be evaluated at compile time**.",
+                        "In C++11 a `constexpr` function had to be a single `return` statement. This was relaxed in C++14."
+                    ],
+                    "code": "#include <iostream>\n\nconstexpr int square(int x) { return x * x; }\n\nint main() {\n    constexpr int n = square(5);   // computed at compile time\n    int arr[n];                    // array size must be a constant\n    std::cout << n << \" \" << sizeof(arr) / sizeof(int) << std::endl;\n}"
+                },
+                {
+                    "question": "What are delegating constructors, `= default` and `= delete`?",
+                    "answer": [
+                        "- **Delegating constructor:** one constructor calls another in the same class.\n- **`= default`:** ask the compiler to generate the default version of a special member.\n- **`= delete`:** forbid a function (for example, copying)."
+                    ],
+                    "code": "#include <iostream>\n\nclass Account {\npublic:\n    Account() : Account(0) {}                      // delegates\n    explicit Account(int b) : balance(b) {}\n\n    Account(const Account&) = delete;              // not copyable\n    Account& operator=(const Account&) = delete;\n    ~Account() = default;\n\n    int get() const { return balance; }\nprivate:\n    int balance;\n};\n\nint main() {\n    Account a;\n    // Account b = a;                              // error: deleted\n    std::cout << a.get() << std::endl;\n}"
+                },
+                {
+                    "question": "What are variadic templates?",
+                    "answer": [
+                        "A variadic template accepts **any number of template arguments** using a *parameter pack* (`typename... Args`).",
+                        "A pack is usually processed with recursion, with a base case that ends it."
+                    ],
+                    "code": "#include <iostream>\n\nvoid print() {}                          // base case\n\ntemplate <typename T, typename... Rest>\nvoid print(T first, Rest... rest) {\n    std::cout << first << \" \";\n    print(rest...);                      // recurse\n}\n\nint main() {\n    print(1, 2.5, \"hello\");\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What are alias templates (`using`) and trailing return types?",
+                    "answer": [
+                        "- `using` is a clearer replacement for `typedef` and also works with templates.\n- A **trailing return type** (`auto f() -> T`) lets the return type use the parameter names."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n#include <vector>\n\nusing IntVec = std::vector<int>;\n\ntemplate <typename T>\nusing StrMap = std::map<std::string, T>;   // alias template\n\nauto twice(int x) -> int { return x * 2; }\n\nint main() {\n    IntVec v{1, 2};\n    StrMap<int> m{{\"a\", 1}};\n    std::cout << v.size() << m.size() << twice(4) << std::endl;\n}"
+                },
+                {
+                    "question": "What are non-member `begin()` / `end()`, `static_assert` and type traits?",
+                    "answer": [
+                        "- `std::begin(x)` and `std::end(x)` work for containers **and plain arrays**, which makes generic code easier.\n- `static_assert(condition, message)` checks a condition **at compile time**.\n- `<type_traits>` provides the conditions, e.g. `std::is_integral`."
+                    ],
+                    "code": "#include <iostream>\n#include <iterator>\n#include <type_traits>\n\ntemplate <typename T>\nT twice(T x) {\n    static_assert(std::is_integral<T>::value, \"T must be an integer type\");\n    return x * 2;\n}\n\nint main() {\n    int arr[] = {1, 2, 3};\n    for (auto it = std::begin(arr); it != std::end(arr); ++it)\n        std::cout << *it << \" \";\n    std::cout << twice(4) << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::thread`, `std::mutex` and `std::async`?",
+                    "answer": [
+                        "C++11 added a **standard threading library**.",
+                        "- `std::thread` runs a function on a new thread.\n- `std::mutex` with `std::lock_guard` protects shared data.\n- `std::async` and `std::future` run a task and fetch its result later."
+                    ],
+                    "code": "#include <future>\n#include <iostream>\n#include <mutex>\n#include <thread>\n\nint counter = 0;\nstd::mutex m;\n\nvoid work() {\n    for (int i = 0; i < 1000; ++i) {\n        std::lock_guard<std::mutex> lock(m);   // unlocks automatically\n        ++counter;\n    }\n}\n\nint main() {\n    std::thread t1(work), t2(work);\n    t1.join();\n    t2.join();\n    std::cout << counter << std::endl;         // 2000\n\n    std::future<int> f = std::async([] { return 42; });\n    std::cout << f.get() << std::endl;\n}"
+                },
+                {
+                    "question": "What are the new containers and utilities in C++11 (`array`, `unordered_map`, `tuple`, `function`)?",
+                    "answer": [
+                        "- **`std::array<T, N>`** is a fixed-size array with a container interface.\n- **`std::unordered_map` / `std::unordered_set`** are hash tables with average O(1) lookup.\n- **`std::tuple`** holds a fixed group of values of different types.\n- **`std::function`** can store any callable (function, lambda, functor)."
+                    ],
+                    "code": "#include <array>\n#include <functional>\n#include <iostream>\n#include <string>\n#include <tuple>\n#include <unordered_map>\n\nint main() {\n    std::array<int, 3> arr{1, 2, 3};\n    std::unordered_map<std::string, int> ages{{\"Amit\", 30}};\n    std::tuple<int, std::string> t(1, \"one\");\n    std::function<int(int)> f = [](int x) { return x + 1; };\n\n    std::cout << arr.size() << \" \" << ages[\"Amit\"] << \" \"\n              << std::get<1>(t) << \" \" << f(1) << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp14",
+            "title": "C++14",
+            "description": "A small refinement of C++11: generic lambdas, better `constexpr`, return type deduction.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++14?",
+                    "answer": [
+                        "### Language features",
+                        "1. Function return type deduction (`auto f()`)\n2. `decltype(auto)`\n3. Relaxed `constexpr` restrictions\n4. Variable templates\n5. Generic lambdas (`auto` parameters)\n6. Lambda init-capture (`[v = expr]`)\n7. Binary literals (`0b1010`)\n8. Digit separators (`1'000'000`)\n9. Aggregate member initialisation (default member initialisers in aggregates)\n10. `[[deprecated]]` attribute",
+                        "### Library features",
+                        "1. `std::make_unique`\n2. `std::shared_timed_mutex` (shared locking)\n3. Heterogeneous lookup in associative containers\n4. Standard user-defined literals (`s`, `ms`, `i`)\n5. Tuple access by type (`std::get<int>(t)`)\n6. `std::exchange`, `std::integer_sequence`\n7. `std::cbegin` / `std::cend` / `std::rbegin` / `std::rend`"
+                    ]
+                },
+                {
+                    "question": "What are generic lambdas and lambda init-capture?",
+                    "answer": [
+                        "- **Generic lambda:** use `auto` as a parameter type. The lambda then works with many types.\n- **Init-capture:** create a new variable inside the capture list. This is also how you **move** an object into a lambda."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto add = [](auto x, auto y) { return x + y; };\n    std::cout << add(1, 2) << \" \" << add(1.5, 2.5) << std::endl;\n\n    int n = 5;\n    auto f = [v = n * 2]() { return v; };      // init-capture\n    std::cout << f() << std::endl;             // 10\n\n    auto p = std::make_unique<int>(7);\n    auto g = [q = std::move(p)]() { return *q; };   // move into lambda\n    std::cout << g() << std::endl;\n}"
+                },
+                {
+                    "question": "What is function return type deduction and `decltype(auto)`?",
+                    "answer": [
+                        "- A function can use `auto` as its return type. The compiler deduces it from the `return` statements.\n- `decltype(auto)` deduces the type using the **`decltype` rules**. It keeps references and `const`, which plain `auto` would drop."
+                    ],
+                    "code": "#include <iostream>\n\nauto square(int x) { return x * x; }          // deduced as int\n\nint value = 10;\nint& ref() { return value; }\n\nauto       a() { return ref(); }              // int   (copy)\ndecltype(auto) b() { return ref(); }          // int&  (reference kept)\n\nint main() {\n    b() = 99;                                 // modifies 'value'\n    std::cout << square(4) << \" \" << value << std::endl;   // 16 99\n    (void)a;\n}"
+                },
+                {
+                    "question": "What are relaxed `constexpr` rules and variable templates?",
+                    "answer": [
+                        "- **Relaxed `constexpr`:** a `constexpr` function may now contain local variables, loops and several statements.\n- **Variable template:** a variable that is parameterised by a type."
+                    ],
+                    "code": "#include <iostream>\n\nconstexpr int factorial(int n) {\n    int result = 1;\n    for (int i = 2; i <= n; ++i) result *= i;   // loops allowed in C++14\n    return result;\n}\n\ntemplate <typename T>\nconstexpr T pi = T(3.1415926535897932385);\n\nint main() {\n    constexpr int f5 = factorial(5);\n    std::cout << f5 << \" \" << pi<double> << \" \" << pi<float> << std::endl;\n}"
+                },
+                {
+                    "question": "What are binary literals and digit separators?",
+                    "answer": [
+                        "- **Binary literal:** `0b` prefix, for example `0b1010` is `10`.\n- **Digit separator:** a single quote `'` that makes long numbers readable. It does not change the value."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int flags = 0b1010;            // 10\n    int million = 1'000'000;       // 1000000\n    int mask = 0b1111'0000;        // 240\n    std::cout << flags << \" \" << million << \" \" << mask << std::endl;\n}"
+                },
+                {
+                    "question": "What is `std::make_unique`?",
+                    "answer": [
+                        "`std::make_unique<T>(args...)` creates a `unique_ptr` **without writing `new`**.",
+                        "It is shorter and exception-safe. It completes the pair with `std::make_shared` from C++11."
+                    ],
+                    "code": "#include <iostream>\n#include <memory>\n#include <string>\n\nstruct Person {\n    std::string name;\n    explicit Person(std::string n) : name(std::move(n)) {}\n};\n\nint main() {\n    auto p = std::make_unique<Person>(\"Asha\");\n    auto arr = std::make_unique<int[]>(3);     // array version\n    arr[0] = 1;\n    std::cout << p->name << \" \" << arr[0] << std::endl;\n}"
+                },
+                {
+                    "question": "What are `[[deprecated]]`, `std::exchange` and user-defined literals in the standard library?",
+                    "answer": [
+                        "- **`[[deprecated(\"reason\")]]`** makes the compiler warn when an entity is used.\n- **`std::exchange(obj, new_value)`** replaces a value and returns the old one.\n- **Standard literals:** `\"text\"s` (`std::string`), `100ms` (`std::chrono::milliseconds`)."
+                    ],
+                    "code": "#include <chrono>\n#include <iostream>\n#include <string>\n#include <utility>\n\n[[deprecated(\"use newFunc instead\")]]\nvoid oldFunc() {}\n\nint main() {\n    using namespace std::literals;\n\n    int a = 1;\n    int old = std::exchange(a, 5);             // old = 1, a = 5\n    std::string s = \"hello\"s;                  // std::string, not const char*\n    auto delay = 100ms;                        // std::chrono::milliseconds\n\n    std::cout << old << a << s << delay.count() << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::shared_timed_mutex` and heterogeneous lookup?",
+                    "answer": [
+                        "- **`std::shared_timed_mutex`** allows many readers or one writer (read/write lock).\n- **Heterogeneous lookup** lets you search a `std::set` / `std::map` with a different key type, using a transparent comparator such as `std::less<>`. This avoids creating a temporary key object."
+                    ],
+                    "code": "#include <iostream>\n#include <mutex>\n#include <set>\n#include <shared_mutex>\n#include <string>\n\nstd::shared_timed_mutex rw;\nint shared_data = 0;\n\nint read() {\n    std::shared_lock<std::shared_timed_mutex> lock(rw);   // many readers\n    return shared_data;\n}\n\nvoid write(int v) {\n    std::unique_lock<std::shared_timed_mutex> lock(rw);   // one writer\n    shared_data = v;\n}\n\nint main() {\n    write(5);\n    std::set<std::string, std::less<>> names{\"Amit\", \"Neha\"};\n    std::cout << read() << \" \" << (names.find(\"Amit\") != names.end()) << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp17",
+            "title": "C++17",
+            "description": "Simpler and more expressive code: structured bindings, `optional`, `variant`, `filesystem`, parallel algorithms.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++17?",
+                    "answer": [
+                        "C++17 makes code **simpler, clearer and more expressive**.",
+                        "### Language features",
+                        "1. Structured bindings\n2. `if` / `switch` with an init-statement\n3. `if constexpr`\n4. Fold expressions\n5. Class template argument deduction (CTAD)\n6. Inline variables\n7. Nested namespaces (`namespace A::B::C`)\n8. Guaranteed copy elision\n9. `[[nodiscard]]`, `[[maybe_unused]]`, `[[fallthrough]]`\n10. `auto` for non-type template parameters\n11. Direct list-initialisation of enums\n12. `__has_include`, `u8` character literals",
+                        "### Library features",
+                        "1. `std::optional`, `std::variant`, `std::any`\n2. `std::string_view`\n3. `std::filesystem`\n4. Parallel algorithms (execution policies)\n5. `std::byte`, `std::clamp`, `std::gcd`, `std::lcm`\n6. `std::invoke`, `std::apply`, `std::scoped_lock`, `std::shared_mutex`\n7. `try_emplace`, `insert_or_assign`, node handles (`extract`) for maps\n8. Polymorphic memory resources (`std::pmr`)"
+                    ]
+                },
+                {
+                    "question": "What are structured bindings?",
+                    "answer": [
+                        "Structured bindings **unpack** a pair, tuple, array or simple struct into named variables in one line."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n#include <tuple>\n\nstruct Point { int x; int y; };\n\nint main() {\n    std::pair<int, std::string> p{1, \"one\"};\n    auto [num, name] = p;\n\n    Point pt{3, 4};\n    auto [x, y] = pt;\n\n    std::map<std::string, int> m{{\"a\", 1}, {\"b\", 2}};\n    for (const auto& [key, value] : m)\n        std::cout << key << \"=\" << value << \" \";\n\n    std::cout << num << name << x << y << std::endl;\n}"
+                },
+                {
+                    "question": "What is the `if` / `switch` init-statement?",
+                    "answer": [
+                        "You can declare a variable **inside** the `if` or `switch` header. Its scope is limited to that statement.",
+                        "**Syntax:** `if (init; condition)`"
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> m{{\"a\", 1}};\n\n    if (auto it = m.find(\"a\"); it != m.end())\n        std::cout << it->second << std::endl;\n    // 'it' does not exist here\n\n    switch (int n = 2; n) {\n        case 2: std::cout << \"two\" << std::endl; break;\n        default: break;\n    }\n}"
+                },
+                {
+                    "question": "What is `if constexpr`?",
+                    "answer": [
+                        "`if constexpr` is a **compile-time `if`**. The branch that is not taken is **discarded** and is not even compiled for that type.",
+                        "It replaces many SFINAE tricks."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <type_traits>\n\ntemplate <typename T>\nauto describe(T x) {\n    if constexpr (std::is_integral_v<T>)\n        return std::string(\"integer: \") + std::to_string(x);\n    else\n        return std::string(\"other\");\n}\n\nint main() {\n    std::cout << describe(5) << std::endl;\n    std::cout << describe(\"hi\") << std::endl;\n}"
+                },
+                {
+                    "question": "What are fold expressions?",
+                    "answer": [
+                        "A fold expression **reduces a parameter pack** with an operator, with no recursion needed.",
+                        "**Forms:** `(args + ...)`, `(... + args)`, `(init + ... + args)`"
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename... Args>\nauto sum(Args... args) { return (args + ...); }\n\ntemplate <typename... Args>\nvoid printAll(Args... args) {\n    ((std::cout << args << \" \"), ...);     // comma fold\n    std::cout << std::endl;\n}\n\nint main() {\n    std::cout << sum(1, 2, 3, 4) << std::endl;   // 10\n    printAll(1, \"two\", 3.0);\n}"
+                },
+                {
+                    "question": "What is class template argument deduction (CTAD)?",
+                    "answer": [
+                        "The compiler can **deduce class template arguments** from the constructor arguments, so you do not write them yourself."
+                    ],
+                    "code": "#include <iostream>\n#include <utility>\n#include <vector>\n\nint main() {\n    std::pair p(1, 2.5);          // pair<int, double>\n    std::vector v{1, 2, 3};       // vector<int>\n    std::cout << p.first << \" \" << v.size() << std::endl;\n}"
+                },
+                {
+                    "question": "What is `std::optional`?",
+                    "answer": [
+                        "`std::optional<T>` holds **either a value or nothing**. It is a safer alternative to special values such as `-1` or `nullptr`.",
+                        "- `has_value()` or `if (opt)` checks it.\n- `*opt` or `value()` reads it.\n- `value_or(x)` gives a default."
+                    ],
+                    "code": "#include <iostream>\n#include <optional>\n#include <string>\n\nstd::optional<int> parse(const std::string& s) {\n    if (s.empty()) return std::nullopt;\n    return std::stoi(s);\n}\n\nint main() {\n    auto a = parse(\"42\");\n    auto b = parse(\"\");\n\n    if (a) std::cout << *a << std::endl;\n    std::cout << b.value_or(-1) << std::endl;   // -1\n}"
+                },
+                {
+                    "question": "What is `std::variant` and `std::visit`?",
+                    "answer": [
+                        "`std::variant<A, B, ...>` is a **type-safe union**. It holds one value of one of the listed types.",
+                        "`std::visit` calls the right code for whichever type is currently stored."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, double, std::string> v = 10;\n    v = std::string(\"hello\");\n\n    std::visit([](auto&& value) { std::cout << value << std::endl; }, v);\n\n    if (std::holds_alternative<std::string>(v))\n        std::cout << std::get<std::string>(v) << std::endl;\n}"
+                },
+                {
+                    "question": "What is `std::any`?",
+                    "answer": [
+                        "`std::any` can hold **a value of any copyable type**. You get it back with `std::any_cast<T>`, which throws `std::bad_any_cast` for the wrong type."
+                    ],
+                    "code": "#include <any>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::any a = 5;\n    std::cout << std::any_cast<int>(a) << std::endl;\n\n    a = std::string(\"text\");\n    std::cout << std::any_cast<std::string>(a) << std::endl;\n\n    try { std::any_cast<int>(a); }\n    catch (const std::bad_any_cast&) { std::cout << \"wrong type\" << std::endl; }\n}"
+                },
+                {
+                    "question": "What is `std::string_view`?",
+                    "answer": [
+                        "`std::string_view` is a **non-owning, read-only view** of a character sequence. It does not copy the characters.",
+                        "- Use it for function parameters that only read text.\n- **Danger:** it must not outlive the string it views."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <string_view>\n\nvoid show(std::string_view sv) {            // no copy\n    std::cout << sv << \" (\" << sv.size() << \")\" << std::endl;\n}\n\nint main() {\n    std::string s = \"hello world\";\n    show(s);\n    show(\"literal\");\n    show(std::string_view(s).substr(0, 5));   // \"hello\", still no copy\n}"
+                },
+                {
+                    "question": "What are inline variables and nested namespaces?",
+                    "answer": [
+                        "- **`inline` variables** can be defined in a header and included in many files without breaking the One Definition Rule.\n- **Nested namespaces** can be written as `namespace A::B::C { }`."
+                    ],
+                    "code": "#include <iostream>\n\nnamespace Company::Project::Utils {\n    inline int counter = 0;               // safe in a header\n    inline void bump() { ++counter; }\n}\n\nint main() {\n    Company::Project::Utils::bump();\n    std::cout << Company::Project::Utils::counter << std::endl;\n}"
+                },
+                {
+                    "question": "What are the new attributes `[[nodiscard]]`, `[[maybe_unused]]` and `[[fallthrough]]`?",
+                    "answer": [
+                        "- **`[[nodiscard]]`** warns if the return value is ignored.\n- **`[[maybe_unused]]`** silences an unused-variable warning.\n- **`[[fallthrough]]`** says that a `switch` case is *intentionally* falling through."
+                    ],
+                    "code": "#include <iostream>\n\n[[nodiscard]] int compute() { return 42; }\n\nint main() {\n    [[maybe_unused]] int debug = 0;\n\n    // compute();                     // warning: result ignored\n    int r = compute();\n\n    switch (r) {\n        case 42:\n            std::cout << \"forty-two\" << std::endl;\n            [[fallthrough]];\n        case 1:\n            std::cout << \"one\" << std::endl;\n            break;\n        default: break;\n    }\n}"
+                },
+                {
+                    "question": "What is `std::filesystem`?",
+                    "answer": [
+                        "`std::filesystem` is a portable API for **paths, files and directories**: check existence, list a folder, create directories, get file size and more.",
+                        "*Compile note:* older GCC versions may need `-lstdc++fs`."
+                    ],
+                    "code": "#include <filesystem>\n#include <iostream>\n\nnamespace fs = std::filesystem;\n\nint main() {\n    fs::path p = fs::current_path();\n    std::cout << \"Current: \" << p << std::endl;\n\n    for (const auto& entry : fs::directory_iterator(p))\n        std::cout << entry.path().filename() << std::endl;\n\n    std::cout << std::boolalpha << fs::exists(\"data.txt\") << std::endl;\n}"
+                },
+                {
+                    "question": "What are parallel algorithms?",
+                    "answer": [
+                        "Many standard algorithms accept an **execution policy** as the first argument.",
+                        "- `std::execution::seq` runs sequentially.\n- `std::execution::par` runs in parallel.\n- `std::execution::par_unseq` runs in parallel and may vectorise.",
+                        "*Note:* some compilers need an extra library (for example TBB with GCC)."
+                    ],
+                    "code": "#include <algorithm>\n#include <execution>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{5, 3, 9, 1, 7};\n    std::sort(std::execution::par, v.begin(), v.end());\n    for (int x : v) std::cout << x << \" \";\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What is guaranteed copy elision?",
+                    "answer": [
+                        "In C++17, when you **return or initialise from a temporary** (a prvalue), no copy or move happens at all. This is *required*, not just allowed.",
+                        "So it works even for types that are **not copyable or movable**."
+                    ],
+                    "code": "#include <iostream>\n\nstruct NoCopy {\n    NoCopy() { std::cout << \"constructed\" << std::endl; }\n    NoCopy(const NoCopy&) = delete;\n    NoCopy(NoCopy&&) = delete;\n};\n\nNoCopy make() { return NoCopy(); }    // OK in C++17\n\nint main() {\n    NoCopy x = make();                // constructed once only\n    (void)x;\n}"
+                },
+                {
+                    "question": "What are the small library additions: `std::clamp`, `std::gcd`, `std::scoped_lock`, `try_emplace`, `std::apply`?",
+                    "answer": [
+                        "- `std::clamp(v, lo, hi)` limits a value to a range.\n- `std::gcd` and `std::lcm` work with integers.\n- `std::scoped_lock` locks several mutexes at once without deadlock.\n- `map::try_emplace` inserts only if the key is missing.\n- `std::apply` calls a function with the elements of a tuple."
+                    ],
+                    "code": "#include <iostream>\n#include <map>\n#include <mutex>\n#include <numeric>\n#include <algorithm>\n#include <tuple>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    std::cout << std::clamp(15, 0, 10) << std::endl;       // 10\n    std::cout << std::gcd(12, 18) << \" \" << std::lcm(4, 6) << std::endl;\n\n    std::map<int, std::string> m;\n    m.try_emplace(1, \"one\");\n    m.try_emplace(1, \"uno\");                               // ignored\n    std::cout << m[1] << std::endl;\n\n    std::mutex a, b;\n    std::scoped_lock lock(a, b);                           // deadlock-free\n\n    std::cout << std::apply(add, std::make_tuple(2, 3)) << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp20",
+            "title": "C++20",
+            "description": "A major release: concepts, ranges, coroutines, modules and the spaceship operator.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++20?",
+                    "answer": [
+                        "### The \"big four\"",
+                        "1. **Concepts**\n2. **Ranges**\n3. **Coroutines**\n4. **Modules**",
+                        "### Other language features",
+                        "1. Three-way comparison (`<=>`, spaceship operator)\n2. Designated initialisers\n3. `consteval` and `constinit`\n4. Template parameter lists for lambdas (`[]<typename T>`)\n5. `using enum`\n6. Range-`for` with an init-statement\n7. `[[likely]]` / `[[unlikely]]`\n8. Abbreviated function templates (`void f(auto x)`)\n9. More `constexpr` (`std::vector`, `std::string`, virtual functions)",
+                        "### Library features",
+                        "1. `std::span`\n2. `std::format`\n3. `std::jthread` and `std::stop_token`\n4. `std::latch`, `std::barrier`, `std::counting_semaphore`\n5. Calendar and time-zone support in `<chrono>`\n6. `std::source_location`\n7. `<bit>` (`std::bit_cast`, `std::popcount`)\n8. `std::erase` / `std::erase_if`, `contains()`, `starts_with()`\n9. `std::to_array`, `std::ssize`, `std::midpoint`, `std::lerp`, `<numbers>`"
+                    ]
+                },
+                {
+                    "question": "What are concepts?",
+                    "answer": [
+                        "A **concept** is a named compile-time *requirement* on template arguments.",
+                        "It gives much clearer error messages than old-style template errors.",
+                        "Ways to use one:\n- `template <std::integral T>`\n- `requires` clause\n- `auto` shorthand: `void f(std::integral auto x)`"
+                    ],
+                    "code": "#include <concepts>\n#include <iostream>\n\ntemplate <typename T>\nconcept Number = std::integral<T> || std::floating_point<T>;\n\ntemplate <Number T>\nT add(T a, T b) { return a + b; }\n\ntemplate <typename T>\n    requires std::floating_point<T>\nT half(T x) { return x / 2; }\n\nint main() {\n    std::cout << add(2, 3) << \" \" << add(1.5, 2.5) << std::endl;\n    std::cout << half(5.0) << std::endl;\n    // add(\"a\", \"b\");        // error: constraint not satisfied\n}"
+                },
+                {
+                    "question": "What are ranges and views?",
+                    "answer": [
+                        "**Ranges** let you pass a whole container to an algorithm. **Views** are *lazy* pipelines built with `|`, and no temporary containers are created.",
+                        "Common views: `filter`, `transform`, `take`, `drop`, `reverse`, `iota`."
+                    ],
+                    "code": "#include <iostream>\n#include <ranges>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3, 4, 5, 6};\n\n    auto result = v\n        | std::views::filter([](int n) { return n % 2 == 0; })   // 2 4 6\n        | std::views::transform([](int n) { return n * n; });    // 4 16 36\n\n    for (int x : result) std::cout << x << \" \";\n    std::cout << std::endl;\n\n    for (int i : std::views::iota(1, 4)) std::cout << i << \" \";   // 1 2 3\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What are coroutines?",
+                    "answer": [
+                        "A **coroutine** is a function that can **pause and resume**. It uses one of these keywords:\n- `co_await` to suspend\n- `co_yield` to produce a value\n- `co_return` to finish",
+                        "C++20 gives only the *machinery*. You write (or use a library for) the return type with a `promise_type`.",
+                        "In C++23, `std::generator` makes generators easy."
+                    ],
+                    "code": "#include <coroutine>\n#include <iostream>\n\nstruct Task {\n    struct promise_type {\n        Task get_return_object() { return {}; }\n        std::suspend_never initial_suspend() { return {}; }\n        std::suspend_never final_suspend() noexcept { return {}; }\n        void return_void() {}\n        void unhandled_exception() {}\n    };\n};\n\nTask hello() {\n    std::cout << \"Hello from a coroutine\" << std::endl;\n    co_return;\n}\n\nint main() {\n    hello();\n}"
+                },
+                {
+                    "question": "What are modules?",
+                    "answer": [
+                        "**Modules** replace `#include` header files. They are faster to compile, avoid macro leakage and have no include guards.",
+                        "- `export module name;` declares a module.\n- `export` marks what is visible.\n- `import name;` uses it.",
+                        "*Note:* build-system setup differs between compilers."
+                    ],
+                    "code": [
+                        "// ---- math.cppm ----",
+                        "export module math;",
+                        "",
+                        "export int add(int a, int b) {",
+                        "    return a + b;",
+                        "}",
+                        "",
+                        "// ---- main.cpp ----",
+                        "import math;",
+                        "import <iostream>;",
+                        "",
+                        "int main() {",
+                        "    std::cout << add(2, 3) << std::endl;",
+                        "}"
+                    ]
+                },
+                {
+                    "question": "What is the three-way comparison operator (`<=>`)?",
+                    "answer": [
+                        "The **spaceship operator** `<=>` compares two objects and returns *less*, *equal* or *greater*.",
+                        "Writing `auto operator<=>(const T&) const = default;` makes the compiler generate **all** of `<`, `<=`, `>`, `>=`, `==` and `!=`."
+                    ],
+                    "code": "#include <compare>\n#include <iostream>\n\nstruct Version {\n    int major;\n    int minor;\n    auto operator<=>(const Version&) const = default;   // generates everything\n};\n\nint main() {\n    Version a{1, 2}, b{1, 5};\n    std::cout << std::boolalpha;\n    std::cout << (a < b) << \" \" << (a == b) << \" \" << (a >= b) << std::endl;\n}"
+                },
+                {
+                    "question": "What are designated initialisers?",
+                    "answer": [
+                        "You can initialise an aggregate **by member name** with `.name = value`. The order must match the declaration order."
+                    ],
+                    "code": "#include <iostream>\n\nstruct Point {\n    int x = 0;\n    int y = 0;\n    int z = 0;\n};\n\nint main() {\n    Point p{.x = 1, .z = 3};          // y stays 0\n    std::cout << p.x << p.y << p.z << std::endl;\n}"
+                },
+                {
+                    "question": "What are `consteval` and `constinit`?",
+                    "answer": [
+                        "- **`constexpr`**: *may* run at compile time.\n- **`consteval`**: *must* run at compile time (an \"immediate function\").\n- **`constinit`**: a variable is initialised at compile time but can **change later**. It avoids the static initialisation order problem."
+                    ],
+                    "code": "#include <iostream>\n\nconsteval int square(int x) { return x * x; }\n\nconstinit int counter = square(3);      // initialised at compile time\n\nint main() {\n    constexpr int a = square(4);        // OK\n    // int n = 5; square(n);            // error: n is not a constant\n    ++counter;                          // allowed (not const)\n    std::cout << a << \" \" << counter << std::endl;\n}"
+                },
+                {
+                    "question": "What is `std::span`?",
+                    "answer": [
+                        "`std::span<T>` is a **non-owning view of a contiguous sequence** (array, `vector`, `std::array`). It carries pointer and size together, so you do not pass them separately."
+                    ],
+                    "code": "#include <array>\n#include <iostream>\n#include <span>\n#include <vector>\n\nvoid print(std::span<const int> s) {\n    for (int x : s) std::cout << x << \" \";\n    std::cout << \"(size \" << s.size() << \")\" << std::endl;\n}\n\nint main() {\n    int arr[] = {1, 2, 3};\n    std::vector<int> v{4, 5, 6, 7};\n    std::array<int, 2> a{8, 9};\n\n    print(arr);\n    print(v);\n    print(a);\n    print(std::span(v).subspan(1, 2));   // 5 6\n}"
+                },
+                {
+                    "question": "What is `std::format`?",
+                    "answer": [
+                        "`std::format` is **type-safe, Python-style formatting** that replaces `printf` and long `<<` chains.",
+                        "Use `{}` for the next argument, `{:.2f}` for precision, `{:>10}` for alignment and `{0}` for positions."
+                    ],
+                    "code": "#include <format>\n#include <iostream>\n\nint main() {\n    std::string s = std::format(\"{} is {} years old\", \"Asha\", 25);\n    std::cout << s << std::endl;\n\n    std::cout << std::format(\"Pi = {:.2f}\", 3.14159) << std::endl;\n    std::cout << std::format(\"[{:>6}] [{:<6}]\", 42, 42) << std::endl;\n    std::cout << std::format(\"{0} {1} {0}\", \"a\", \"b\") << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::jthread` and `std::stop_token`?",
+                    "answer": [
+                        "`std::jthread` is a thread that **joins automatically** in its destructor and supports **cooperative cancellation** through `std::stop_token`."
+                    ],
+                    "code": "#include <chrono>\n#include <iostream>\n#include <thread>\n\nint main() {\n    using namespace std::chrono_literals;\n\n    std::jthread worker([](std::stop_token st) {\n        while (!st.stop_requested()) {\n            std::cout << \"working...\" << std::endl;\n            std::this_thread::sleep_for(100ms);\n        }\n        std::cout << \"stopped\" << std::endl;\n    });\n\n    std::this_thread::sleep_for(350ms);\n    worker.request_stop();       // destructor then joins automatically\n}"
+                },
+                {
+                    "question": "What are `std::latch`, `std::barrier` and `std::counting_semaphore`?",
+                    "answer": [
+                        "New synchronisation tools:\n- **`std::latch`** is a one-time countdown. Threads wait until it reaches zero.\n- **`std::barrier`** is a reusable sync point for a group of threads.\n- **`std::counting_semaphore`** limits how many threads use a resource at once."
+                    ],
+                    "code": "#include <iostream>\n#include <latch>\n#include <thread>\n#include <vector>\n\nint main() {\n    std::latch done(3);\n    std::vector<std::jthread> workers;\n\n    for (int i = 0; i < 3; ++i)\n        workers.emplace_back([&done] { done.count_down(); });\n\n    done.wait();               // returns after all 3 finished\n    std::cout << \"all workers done\" << std::endl;\n}"
+                },
+                {
+                    "question": "What are template lambdas and `using enum`?",
+                    "answer": [
+                        "- **Template lambda:** `[]<typename T>(T x) { ... }` gives an explicit type name inside a lambda.\n- **`using enum`** brings all enumerators of an enum into the current scope."
+                    ],
+                    "code": "#include <iostream>\n#include <vector>\n\nenum class Color { Red, Green, Blue };\n\nconst char* name(Color c) {\n    switch (c) {\n        using enum Color;                 // no need to write Color:: below\n        case Red:   return \"Red\";\n        case Green: return \"Green\";\n        case Blue:  return \"Blue\";\n    }\n    return \"?\";\n}\n\nint main() {\n    auto size = []<typename T>(const std::vector<T>& v) { return v.size(); };\n    std::cout << size(std::vector<int>{1, 2, 3}) << \" \" << name(Color::Green) << std::endl;\n}"
+                },
+                {
+                    "question": "What are the small library improvements in C++20 (`erase_if`, `contains`, `starts_with`, `to_array`, `<numbers>`, `<bit>`)?",
+                    "answer": [
+                        "- **`std::erase_if(container, pred)`** removes elements in one call (no erase-remove idiom).\n- **`contains(key)`** works on maps and sets.\n- **`starts_with` / `ends_with`** work on strings.\n- **`std::to_array`** creates a `std::array` from a C array.\n- **`<numbers>`** gives constants such as `std::numbers::pi`.\n- **`<bit>`** has `std::popcount`, `std::has_single_bit`, `std::bit_cast`."
+                    ],
+                    "code": "#include <array>\n#include <bit>\n#include <iostream>\n#include <map>\n#include <numbers>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3, 4, 5, 6};\n    std::erase_if(v, [](int x) { return x % 2 == 0; });   // 1 3 5\n\n    std::map<std::string, int> m{{\"a\", 1}};\n    std::string s = \"hello world\";\n\n    std::cout << v.size() << \" \"\n              << m.contains(\"a\") << \" \"\n              << s.starts_with(\"hello\") << \" \"\n              << std::popcount(7u) << \" \"          // 3 set bits\n              << std::numbers::pi << std::endl;\n\n    auto arr = std::to_array({1, 2, 3});\n    std::cout << arr.size() << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::source_location`, `[[likely]]` and `std::chrono` calendar support?",
+                    "answer": [
+                        "- **`std::source_location`** gives the file, line and function name. It is a clean replacement for `__FILE__` and `__LINE__` macros.\n- **`[[likely]]` / `[[unlikely]]`** hint which branch is more common.\n- **`<chrono>`** now has dates (`year_month_day`) and time zones."
+                    ],
+                    "code": "#include <chrono>\n#include <iostream>\n#include <source_location>\n\nvoid log(const char* msg,\n         std::source_location loc = std::source_location::current()) {\n    std::cout << loc.file_name() << \":\" << loc.line() << \" \" << msg << std::endl;\n}\n\nint main() {\n    log(\"hello\");\n\n    int x = 5;\n    if (x > 0) [[likely]] std::cout << \"positive\" << std::endl;\n\n    auto d = std::chrono::year{2026} / std::chrono::November / 25;\n    std::cout << d << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp23",
+            "title": "C++23",
+            "description": "Polishing release: `std::expected`, `std::print`, deducing `this`, more ranges, `mdspan`.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++23?",
+                    "answer": [
+                        "### Language features",
+                        "1. Deducing `this` (explicit object parameter)\n2. Multidimensional subscript operator `operator[](a, b)`\n3. `if consteval`\n4. `static operator()` and `static operator[]`, static lambdas\n5. `auto(x)` / `auto{x}` decay-copy\n6. `[[assume(expr)]]` attribute\n7. `#elifdef`, `#elifndef`, `#warning`\n8. `size_t` literal suffix (`1uz`)\n9. Extended `constexpr` (more library and language support)",
+                        "### Library features",
+                        "1. `std::expected`\n2. `std::print` and `std::println`\n3. `import std;` (standard library modules)\n4. `std::mdspan`\n5. `std::flat_map`, `std::flat_set`\n6. `std::generator`\n7. New ranges: `zip`, `enumerate`, `chunk`, `slide`, `stride`, `join_with`, `cartesian_product`, `std::ranges::to`\n8. Monadic operations for `std::optional` (`and_then`, `transform`, `or_else`)\n9. `std::move_only_function`\n10. `std::stacktrace`\n11. `std::to_underlying`, `std::unreachable`, `std::byteswap`\n12. `string::contains`, `resize_and_overwrite`"
+                    ]
+                },
+                {
+                    "question": "What is `std::expected`?",
+                    "answer": [
+                        "`std::expected<T, E>` holds **either a value (`T`) or an error (`E`)**. It is an exception-free way to return errors.",
+                        "- `has_value()` or `if (e)` checks success.\n- `*e` gets the value.\n- `e.error()` gets the error.\n- `std::unexpected(err)` creates an error result."
+                    ],
+                    "code": "#include <expected>\n#include <iostream>\n#include <string>\n\nstd::expected<int, std::string> divide(int a, int b) {\n    if (b == 0) return std::unexpected(\"division by zero\");\n    return a / b;\n}\n\nint main() {\n    auto ok = divide(10, 2);\n    auto bad = divide(1, 0);\n\n    if (ok)  std::cout << *ok << std::endl;\n    if (!bad) std::cout << \"error: \" << bad.error() << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::print` and `std::println`?",
+                    "answer": [
+                        "They print with `std::format` syntax **directly**, without `iostream`. Simple and fast.",
+                        "`println` adds a newline for you."
+                    ],
+                    "code": "#include <print>\n\nint main() {\n    std::println(\"Hello, {}!\", \"world\");\n    std::print(\"{} + {} = {}\\n\", 2, 3, 2 + 3);\n    std::println(\"Pi is about {:.3f}\", 3.14159);\n}"
+                },
+                {
+                    "question": "What is deducing `this` (explicit object parameter)?",
+                    "answer": [
+                        "A member function can declare its object as an **explicit first parameter** named `this`. It lets you write one function that works for `const`, non-`const`, lvalue and rvalue objects, instead of several overloads."
+                    ],
+                    "code": "#include <iostream>\n#include <string>\n#include <utility>\n\nstruct Box {\n    std::string value = \"data\";\n\n    // one function replaces const / non-const / && overloads\n    template <typename Self>\n    auto&& get(this Self&& self) {\n        return std::forward<Self>(self).value;\n    }\n};\n\nint main() {\n    Box b;\n    const Box cb;\n    b.get() = \"changed\";                // non-const: modifiable\n    std::cout << b.get() << \" \" << cb.get() << std::endl;\n}"
+                },
+                {
+                    "question": "What are the multidimensional subscript operator and `std::mdspan`?",
+                    "answer": [
+                        "- `operator[]` can now take **several indices**: `m[row, col]`.\n- `std::mdspan` is a **non-owning multidimensional view** over flat memory."
+                    ],
+                    "code": "#include <iostream>\n#include <mdspan>\n#include <vector>\n\nint main() {\n    std::vector<int> data{1, 2, 3, 4, 5, 6};\n    std::mdspan m(data.data(), 2, 3);      // 2 rows, 3 columns\n\n    std::cout << m[1, 2] << std::endl;     // 6  (row 1, column 2)\n\n    for (std::size_t r = 0; r < m.extent(0); ++r) {\n        for (std::size_t c = 0; c < m.extent(1); ++c)\n            std::cout << m[r, c] << \" \";\n        std::cout << std::endl;\n    }\n}"
+                },
+                {
+                    "question": "What are the new range adaptors in C++23 (`zip`, `enumerate`, `chunk`, `join_with`, `ranges::to`)?",
+                    "answer": [
+                        "- **`views::zip`** walks several ranges together.\n- **`views::enumerate`** gives index and value.\n- **`views::chunk`** splits a range into groups.\n- **`views::join_with`** joins ranges with a delimiter.\n- **`std::ranges::to<Container>()`** converts a range into a container."
+                    ],
+                    "code": "#include <iostream>\n#include <ranges>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 2, 3};\n    std::vector<std::string> b{\"x\", \"y\", \"z\"};\n\n    for (auto [i, v] : a | std::views::enumerate)\n        std::cout << i << \":\" << v << \" \";\n    std::cout << std::endl;\n\n    for (auto [n, s] : std::views::zip(a, b))\n        std::cout << n << s << \" \";\n    std::cout << std::endl;\n\n    auto squares = a\n        | std::views::transform([](int n) { return n * n; })\n        | std::ranges::to<std::vector>();\n    std::cout << squares.size() << std::endl;\n\n    for (auto chunk : std::views::iota(1, 8) | std::views::chunk(3)) {\n        for (int x : chunk) std::cout << x << \" \";\n        std::cout << \"| \";\n    }\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What is `std::generator`?",
+                    "answer": [
+                        "`std::generator<T>` is a ready-made **coroutine return type** that lazily produces a sequence with `co_yield`. This removes the boilerplate that C++20 coroutines needed."
+                    ],
+                    "code": "#include <generator>\n#include <iostream>\n\nstd::generator<int> count(int n) {\n    for (int i = 0; i < n; ++i)\n        co_yield i;               // pause, hand out a value\n}\n\nstd::generator<unsigned long long> fibonacci() {\n    unsigned long long a = 0, b = 1;\n    while (true) {\n        co_yield a;\n        auto next = a + b;\n        a = b;\n        b = next;\n    }\n}\n\nint main() {\n    for (int x : count(5)) std::cout << x << \" \";\n    std::cout << std::endl;\n\n    int taken = 0;\n    for (auto f : fibonacci()) {\n        std::cout << f << \" \";\n        if (++taken == 10) break;\n    }\n    std::cout << std::endl;\n}"
+                },
+                {
+                    "question": "What are the monadic operations of `std::optional`?",
+                    "answer": [
+                        "They let you **chain** steps without many `if` checks:\n- **`and_then(f)`** calls `f` if there is a value. `f` returns another `optional`.\n- **`transform(f)`** changes the value if there is one.\n- **`or_else(f)`** runs `f` if there is no value."
+                    ],
+                    "code": "#include <iostream>\n#include <optional>\n#include <string>\n\nstd::optional<int> parse(const std::string& s) {\n    if (s.empty()) return std::nullopt;\n    return std::stoi(s);\n}\n\nint main() {\n    auto r = parse(\"21\")\n        .transform([](int x) { return x * 2; })\n        .and_then([](int x) -> std::optional<int> {\n            return x > 10 ? std::optional<int>(x) : std::nullopt;\n        });\n    std::cout << r.value_or(-1) << std::endl;   // 42\n\n    auto none = parse(\"\").or_else([] { return std::optional<int>(0); });\n    std::cout << *none << std::endl;            // 0\n}"
+                },
+                {
+                    "question": "What are `if consteval`, `static operator()` and `auto(x)`?",
+                    "answer": [
+                        "- **`if consteval`** chooses a branch depending on whether the code runs at compile time.\n- **`static operator()`** (and static lambdas) avoid carrying a hidden `this` pointer.\n- **`auto(x)`** makes a decayed copy of `x` as a prvalue."
+                    ],
+                    "code": "#include <iostream>\n\nconstexpr int pick() {\n    if consteval { return 1; }     // compile-time evaluation\n    else         { return 2; }     // run-time evaluation\n}\n\nstruct Add {\n    static int operator()(int a, int b) { return a + b; }\n};\n\nint main() {\n    constexpr int c = pick();      // 1\n    int r = pick();                // 2 (run-time call)\n\n    auto square = [](int x) static { return x * x; };\n\n    std::cout << c << r << Add{}(2, 3) << square(4) << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::flat_map`, `std::move_only_function` and `std::stacktrace`?",
+                    "answer": [
+                        "- **`std::flat_map` / `std::flat_set`** store keys in a **sorted contiguous array**. They are cache-friendly and fast to read.\n- **`std::move_only_function`** is like `std::function` but can hold **move-only** callables (for example a lambda owning a `unique_ptr`).\n- **`std::stacktrace`** captures the call stack for diagnostics."
+                    ],
+                    "code": "#include <flat_map>\n#include <functional>\n#include <iostream>\n#include <memory>\n#include <stacktrace>\n#include <string>\n\nint main() {\n    std::flat_map<std::string, int> m;\n    m[\"b\"] = 2;\n    m[\"a\"] = 1;\n    for (const auto& [k, v] : m) std::cout << k << v << \" \";   // a1 b2\n    std::cout << std::endl;\n\n    auto p = std::make_unique<int>(5);\n    std::move_only_function<int()> f = [p = std::move(p)] { return *p; };\n    std::cout << f() << std::endl;\n\n    std::cout << std::stacktrace::current() << std::endl;\n}"
+                },
+                {
+                    "question": "What are the small utilities `std::to_underlying`, `std::unreachable`, `std::byteswap`, `contains` and the `uz` suffix?",
+                    "answer": [
+                        "- **`std::to_underlying(e)`** converts an enum to its integer type.\n- **`std::unreachable()`** tells the compiler a path can never be reached.\n- **`std::byteswap`** reverses byte order.\n- **`std::string::contains`** checks for a substring or character.\n- **`uz`** is the literal suffix for `std::size_t`."
+                    ],
+                    "code": "#include <bit>\n#include <cstdint>\n#include <iostream>\n#include <string>\n#include <utility>\n\nenum class Level : int { Low = 1, High = 5 };\n\nint main() {\n    std::cout << std::to_underlying(Level::High) << std::endl;   // 5\n\n    std::uint16_t x = 0x1234;\n    std::cout << std::hex << std::byteswap(x) << std::dec << std::endl;   // 3412\n\n    std::string s = \"hello world\";\n    std::cout << s.contains(\"world\") << std::endl;\n\n    auto n = 10uz;                 // std::size_t\n    std::cout << n << std::endl;\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp26",
+            "title": "C++26",
+            "description": "The latest standard: static reflection, contracts, `std::execution`, pack indexing, `#embed` and more.",
+            "questions": [
+                {
+                    "question": "What are the new features in C++26?",
+                    "answer": [
+                        "*Note:* compiler support for C++26 is still arriving. Compile with `-std=c++2c` (GCC / Clang) or `/std:c++latest` (MSVC), and check [cppreference compiler support](https://en.cppreference.com/w/cpp/compiler_support) for your compiler version.",
+                        "### Language features",
+                        "1. **Static reflection** (`^^` operator, `std::meta`, splices `[: :]`)\n2. **Contracts** (`pre`, `post`, `contract_assert`)\n3. **Pack indexing** (`ts...[0]`)\n4. **`#embed`** (include binary data at compile time)\n5. **Placeholder `_`** (unnamed variables, can be repeated)\n6. **`= delete(\"reason\")`** with a message\n7. **Erroneous behaviour** for reading uninitialised variables (`[[indeterminate]]`)\n8. **User-generated `static_assert` messages**\n9. **Variadic friends** (`friend Ts...;`)\n10. **Structured binding declaration as a condition**\n11. **`constexpr` exceptions**, `constexpr` placement new, `constexpr` cast from `void*`\n12. Removal of some undefined behaviour from the preprocessor and lexer",
+                        "### Library features",
+                        "1. **`std::execution`** (senders / receivers for async work)\n2. **`std::inplace_vector`**\n3. **`std::hive`**\n4. **`std::simd`** (data-parallel types)\n5. **`std::linalg`** (BLAS-style linear algebra)\n6. **Hardened standard library** (bounds checks, preconditions)\n7. **Saturation arithmetic** (`std::add_sat`, `std::sub_sat`, ...)\n8. `std::optional` is a range\n9. `std::function_ref`, `std::copyable_function`\n10. `std::text_encoding`\n11. `std::is_within_lifetime`\n12. Hazard pointers and RCU\n13. `std::span::at`, `std::views::concat`, `std::views::cache_latest`\n14. `constexpr` for more of `<cmath>`, `<algorithm>`, `std::stable_sort`"
+                    ]
+                },
+                {
+                    "question": "What is static reflection in C++26?",
+                    "answer": [
+                        "**Reflection** lets a program **inspect its own types at compile time**: names of members, enumerators, base classes and so on.",
+                        "- `^^T` is the *reflection operator*. It turns a type or entity into a reflection value (`std::meta::info`).\n- `[: r :]` is a *splice*. It turns a reflection back into code.\n- `<meta>` provides queries such as `enumerators_of`, `nonstatic_data_members_of` and `identifier_of`.",
+                        "**Typical uses:** enum-to-string, serialisation (JSON), automatic printing, bindings to other languages.",
+                        "*The example is simplified; exact spelling may change between compiler versions.*"
+                    ],
+                    "code": "#include <meta>\n#include <iostream>\n#include <string_view>\n\nenum class Color { Red, Green, Blue };\n\ntemplate <typename E>\nconstexpr std::string_view enum_name(E value) {\n    template for (constexpr auto e :\n                  std::define_static_array(std::meta::enumerators_of(^^E))) {\n        if (value == [:e:])\n            return std::meta::identifier_of(e);\n    }\n    return \"unknown\";\n}\n\nint main() {\n    std::cout << enum_name(Color::Green) << std::endl;   // Green\n}"
+                },
+                {
+                    "question": "What are contracts in C++26?",
+                    "answer": [
+                        "**Contracts** let you write *preconditions*, *postconditions* and *assertions* as part of the language, and the compiler or tooling can check them.",
+                        "- **`pre(condition)`** must be true when the function is called.\n- **`post(r : condition)`** must be true when it returns (`r` names the result).\n- **`contract_assert(condition)`** is a checked assertion inside a function body.",
+                        "Each contract can be *ignored*, *observed* (reported and continued) or *enforced* (terminate), depending on the build settings."
+                    ],
+                    "code": "#include <iostream>\n\nint safe_div(int a, int b)\n    pre(b != 0)\n    post(r : r * b <= a || a < 0)\n{\n    return a / b;\n}\n\nint main() {\n    int x = 10;\n    contract_assert(x > 0);\n\n    std::cout << safe_div(10, 2) << std::endl;\n    // safe_div(1, 0);     // precondition violation\n}"
+                },
+                {
+                    "question": "What is `std::execution` (senders and receivers)?",
+                    "answer": [
+                        "`std::execution` is the standard framework for **asynchronous and parallel work**.",
+                        "- A **sender** describes work (it does not start it).\n- You build pipelines with `|` (`then`, `let_value`, `when_all`, ...).\n- A **scheduler** says where the work runs.\n- `std::this_thread::sync_wait` starts the work and waits for the result."
+                    ],
+                    "code": "#include <execution>\n#include <iostream>\n#include <thread>\n\nnamespace ex = std::execution;\n\nint main() {\n    auto work = ex::just(21)\n              | ex::then([](int x) { return x * 2; });\n\n    auto [result] = std::this_thread::sync_wait(std::move(work)).value();\n    std::cout << result << std::endl;   // 42\n}"
+                },
+                {
+                    "question": "What is pack indexing?",
+                    "answer": [
+                        "You can now pick **one element of a parameter pack by index**, with `pack...[N]`. Before C++26 this needed recursion or tricks."
+                    ],
+                    "code": "#include <iostream>\n\ntemplate <typename... Ts>\nauto first(Ts... ts) {\n    return ts...[0];                 // value pack indexing\n}\n\ntemplate <typename... Ts>\nusing Last = Ts...[sizeof...(Ts) - 1];   // type pack indexing\n\nint main() {\n    std::cout << first(10, 20, 30) << std::endl;   // 10\n    Last<int, double, char> c = 'z';\n    std::cout << c << std::endl;\n}"
+                },
+                {
+                    "question": "What is `#embed`?",
+                    "answer": [
+                        "`#embed \"file\"` **includes the bytes of a file** as a list of integers at compile time. It is fast and replaces tools that convert files into C arrays."
+                    ],
+                    "code": "#include <cstddef>\n#include <iostream>\n\nconst unsigned char logo[] = {\n    #embed \"logo.png\"\n};\n\nint main() {\n    std::cout << \"Embedded bytes: \" << sizeof(logo) << std::endl;\n}"
+                },
+                {
+                    "question": "What is the placeholder `_` and `= delete(\"reason\")`?",
+                    "answer": [
+                        "- **`_`** names a variable you do not need. It can be declared **many times** in the same scope without a clash.\n- **`= delete(\"reason\")`** gives the programmer a readable message when a deleted function is called."
+                    ],
+                    "code": "#include <iostream>\n#include <utility>\n\nvoid print(double d) { std::cout << d << std::endl; }\nvoid print(int) = delete(\"use a double, not an int\");\n\nint main() {\n    auto [_, value] = std::pair{1, 2};   // ignore the first element\n    auto [_, other] = std::pair{3, 4};   // '_' reused, no error\n\n    std::cout << value << other << std::endl;\n    print(2.5);\n    // print(5);                         // error shows the reason message\n}"
+                },
+                {
+                    "question": "What is erroneous behaviour (uninitialised variables)?",
+                    "answer": [
+                        "In C++26, reading an uninitialised local variable is no longer *undefined behaviour*. It is **erroneous behaviour**:\n- The variable gets a well-defined (implementation-chosen) value.\n- Compilers and tools are encouraged to **diagnose** it.\n- It is still a **bug** in your code.",
+                        "Use **`[[indeterminate]]`** to keep the old behaviour deliberately (for performance of large buffers)."
+                    ],
+                    "code": "#include <iostream>\n\nint main() {\n    int x;                       // not initialised: reading it is erroneous\n    // std::cout << x;           // diagnosable, not undefined behaviour\n\n    [[indeterminate]] int buffer[1024];   // opt out on purpose\n    buffer[0] = 1;\n\n    int y = 0;                   // best practice: always initialise\n    std::cout << y << buffer[0] << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::inplace_vector` and `std::hive`?",
+                    "answer": [
+                        "- **`std::inplace_vector<T, N>`** is a vector with **fixed capacity `N` stored inside the object** (no heap allocation). Great for embedded and real-time code.\n- **`std::hive<T>`** is a container with **stable references** and fast insert/erase in the middle. Good for games and particle systems."
+                    ],
+                    "code": "#include <hive>\n#include <inplace_vector>\n#include <iostream>\n\nint main() {\n    std::inplace_vector<int, 4> v;      // capacity 4, no heap\n    v.push_back(1);\n    v.push_back(2);\n    if (!v.try_push_back(3)) std::cout << \"full\" << std::endl;\n    std::cout << v.size() << \" / \" << v.capacity() << std::endl;\n\n    std::hive<int> h;\n    auto it = h.insert(10);\n    h.insert(20);\n    h.erase(it);                         // other elements stay where they are\n    for (int x : h) std::cout << x << std::endl;\n}"
+                },
+                {
+                    "question": "What are `std::simd`, `std::linalg` and saturation arithmetic?",
+                    "answer": [
+                        "- **`std::simd`** (`<simd>`): portable **SIMD** types that process several numbers at once.\n- **`std::linalg`** (`<linalg>`): standard **linear-algebra** functions (matrix-vector and matrix-matrix operations) on top of `std::mdspan`.\n- **Saturation arithmetic** (`std::add_sat`, `std::sub_sat`, `std::mul_sat`, `std::div_sat`, `std::saturate_cast`): the result **clamps** at the type limits instead of overflowing."
+                    ],
+                    "code": "#include <iostream>\n#include <numeric>\n\nint main() {\n    unsigned char a = 200, b = 100;\n\n    int wrapped = static_cast<unsigned char>(a + b);   // 44 (overflow)\n    unsigned char saturated = std::add_sat(a, b);      // 255 (clamped)\n\n    std::cout << wrapped << \" \" << +saturated << std::endl;\n}"
+                },
+                {
+                    "question": "What are the small library changes in C++26 (`optional` as a range, `function_ref`, hardened library, `text_encoding`)?",
+                    "answer": [
+                        "- **`std::optional` is a range** of 0 or 1 element, so you can use it in a range-`for`.\n- **`std::function_ref`** is a lightweight, **non-owning** reference to a callable (cheaper than `std::function`).\n- **`std::copyable_function`** is a better, `const`-correct `std::function`.\n- **Hardened standard library** adds precondition checks (for example out-of-bounds `vector::operator[]`).\n- **`std::text_encoding`** identifies character encodings.\n- **`std::span::at`** checks bounds."
+                    ],
+                    "code": "#include <functional>\n#include <iostream>\n#include <optional>\n\nint apply(std::function_ref<int(int)> f, int x) { return f(x); }\n\nint main() {\n    std::optional<int> maybe = 5;\n    for (int v : maybe)                       // loops 0 or 1 times\n        std::cout << v << std::endl;\n\n    std::cout << apply([](int n) { return n * 3; }, 4) << std::endl;   // 12\n}"
+                }
+            ]
+        },
+        {
+            "id": "cpp-upcoming",
+            "title": "What's in Upcoming C++ Versions",
+            "description": "What comes after C++26: the release schedule and the proposals being discussed for **C++29** and later.",
+            "questions": [
+                {
+                    "question": "How are new C++ versions released?",
+                    "answer": [
+                        "The ISO committee (**WG21**) releases a new standard **every 3 years**.",
+                        "| Version | Year |\n|---|---|\n| C++11 | 2011 |\n| C++14 | 2014 |\n| C++17 | 2017 |\n| C++20 | 2020 |\n| C++23 | 2023 |\n| **C++26** | **2026** |\n| C++29 | 2029 (planned) |",
+                        "Each version goes through stages: **proposal → working draft → committee draft → ISO approval**.",
+                        "*Important:* compiler vendors (GCC, Clang, MSVC) add features one by one, so a feature can be in the standard long before your compiler supports it."
+                    ]
+                },
+                {
+                    "question": "What is expected in C++29 and later?",
+                    "answer": [
+                        "*These are **proposals and ideas under discussion**. Nothing here is guaranteed to be accepted, and the syntax may change.*",
+                        "### Language ideas",
+                        "- **Pattern matching** (`inspect`), a more powerful `switch`\n- **More reflection:** code generation / injection, reflecting on functions and attributes\n- **Contracts extensions:** contracts on virtual functions, more control over checking\n- **Safety profiles / memory-safety work:** compiler-checked rules against dangling pointers and out-of-bounds access\n- **Trivial relocatability** improvements and other optimisations\n- **Further `constexpr`** growth and better compile-time programming",
+                        "### Library ideas",
+                        "- More of **`std::execution`:** async I/O, networking, parallel-algorithm integration\n- **Networking** library\n- **Unicode and text** handling improvements\n- More **`std::simd`**, **`std::linalg`** and **`mdspan`** features\n- Extra **ranges** adaptors and containers\n- A replacement or addition for **`std::regex`**"
+                    ]
+                },
+                {
+                    "question": "What might pattern matching look like?",
+                    "answer": [
+                        "Pattern matching would let you test the **shape and value** of data in a single expression, similar to `match` in Rust or `switch` in modern Java / C#.",
+                        "*This is a **proposal sketch only** (P2688-style). The final syntax may be different, and it does not compile today.*"
+                    ],
+                    "code": "// PROPOSED syntax - does not compile today\n#include <variant>\n\nstruct Circle { double r; };\nstruct Square { double side; };\n\ndouble area(const std::variant<Circle, Square>& shape) {\n    return shape match {\n        Circle c => 3.14159 * c.r * c.r,\n        Square s => s.side * s.side,\n    };\n}"
+                },
+                {
+                    "question": "How can I try new C++ features today?",
+                    "answer": [
+                        "1. **Compiler flags**\n   - GCC / Clang: `-std=c++2c` (C++26), `-std=c++23`\n   - MSVC: `/std:c++latest`\n2. **Compiler Explorer** (godbolt.org) lets you test features with many compiler versions online.\n3. **Compiler support tables:** [cppreference.com/w/cpp/compiler_support](https://en.cppreference.com/w/cpp/compiler_support)\n4. **Proposals** are published as papers (`Pxxxx`) at [open-std.org](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/).",
+                        "*Tip:* read the paper number (for example **P2996** for reflection) to see the exact design and examples."
+                    ]
                 }
             ]
         }
